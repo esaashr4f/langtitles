@@ -151,7 +151,7 @@
   // Detection is "confident" when it names the exact movie or episode, which is what
   // automatic loading needs; anything else only pre-fills the search form.
   function confident(ep) {
-    if (!ep || !(ep.tmdbId || ep.imdbId) || !ep.type) return false;
+    if (!ep || !(ep.tmdbId || ep.imdbId || ep.jimakuId) || !ep.type) return false;
     return ep.type === 'movie' || (ep.season != null && ep.episode != null);
   }
 

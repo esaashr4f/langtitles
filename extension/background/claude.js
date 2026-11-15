@@ -29,13 +29,19 @@
     return client;
   }
 
-  function baseParams(settings, maxTokens) {
+  // The model for bulk line breakdowns, separate from the one for guides and questions.
+  function lineModelOf(settings) {
+    return settings.lineModel || settings.model;
+  }
+
+  function baseParams(settings, maxTokens, model) {
+    const m = model || settings.model;
     const params = {
-      model: settings.model,
+      model: m,
       max_tokens: maxTokens,
       output_config: { effort: settings.effort || 'low' },
     };
-    if (FALLBACK_MODELS.has(settings.model)) {
+    if (FALLBACK_MODELS.has(m)) {
       params.betas = ['server-side-fallback-2026-07-01'];
       params.fallbacks = 'default';
     }
@@ -119,7 +125,7 @@
   // The request for one batch of lines; also used for batch (season) jobs.
   function analysisParams(settings, lines, context, langHint) {
     const { prompt } = SG;
-    const params = baseParams(settings, 32000);
+    const params = baseParams(settings, 32000, lineModelOf(settings));
     params.system = [
       { type: 'text', text: prompt.systemPrompt(settings.nativeLang), cache_control: { type: 'ephemeral' } },
     ];
@@ -231,7 +237,7 @@
     await capGuard(settings);
     let message;
     try {
-      const params = baseParams(settings, 24000);
+      const params = baseParams(settings, 24000, lineModelOf(settings));
       params.system = prompt.wordsSystemPrompt(settings.nativeLang);
       params.messages = [{ role: 'user', content: lines.map((l, i) => `${i}: ${l}`).join('\n') }];
       params.output_config.format = { type: 'json_schema', schema: prompt.WORDS_SCHEMA };
@@ -349,5 +355,5 @@
     }
   }
 
-  SG.claude = { spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
+  SG.claude = { lineModelOf, spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

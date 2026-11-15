@@ -173,7 +173,7 @@
     return SG.lang.langCode(s.length <= 3 ? s.toLowerCase() : s);
   }
 
-  async function subdlSearch(settings, ep, langs) {
+  async function subdlQuery(settings, ep, langs, level) {
     const q = new URLSearchParams();
     q.set('api_key', settings.subdlKey);
     if (ep.tmdbId) q.set('tmdb_id', ep.tmdbId);
@@ -181,8 +181,8 @@
     else q.set('film_name', ep.title);
     if (ep.type) q.set('type', ep.type);
     if (ep.type === 'tv') {
-      if (ep.season != null) q.set('season_number', ep.season);
-      if (ep.episode != null) q.set('episode_number', ep.episode);
+      if (level >= 1 && ep.season != null) q.set('season_number', ep.season);
+      if (level >= 2 && ep.episode != null) q.set('episode_number', ep.episode);
     }
     if (ep.year && ep.type === 'movie') q.set('year', ep.year);
     q.set('languages', [...new Set(langs.flatMap(subdlLang))].join(','));
@@ -192,8 +192,19 @@
     const body = await getJson(SUBDL_API + '?' + q, { headers: { Accept: 'application/json' } }, 'SubDL');
     if (body && body.status === false) {
       // "No subtitles found" comes back as an error with status false.
-      if (/not found|no subtitle/i.test(body.error || '')) return [];
+      if (/not found|no subtitle|can't find|cannot find/i.test(body.error || '')) return { subtitles: [], results: [] };
       throw new ProviderError('http', 'SubDL: ' + (body.error || 'search failed'));
+    }
+    return body;
+  }
+
+  async function subdlSearch(settings, ep, langs) {
+    // Many SubDL entries, anime season packs especially, have no season or episode recorded,
+    // so an exact search finds nothing. Widen step by step: episode, season, the whole show.
+    let body = null;
+    for (const level of ep.type === 'tv' ? [2, 1, 0] : [0]) {
+      body = await subdlQuery(settings, ep, langs, level);
+      if ((body.subtitles || []).length) break;
     }
     const title = (body.results && body.results[0] && body.results[0].name) || '';
     const out = [];
@@ -204,6 +215,9 @@
       const files = Array.isArray(s.unpack_files) ? s.unpack_files : [];
       const match = ep.episode != null ? files.find((f) => Number(f.episode) === Number(ep.episode) && (ep.season == null || f.season == null || Number(f.season) === Number(ep.season))) : null;
       if (s.full_season && ep.episode != null && !match && files.length) continue;
+      if (!s.full_season && ep.episode != null && s.episode != null && Number(s.episode) !== Number(ep.episode) && !match) continue;
+      if (s.full_season && ep.episode != null && s.episode_from != null && s.episode_end != null
+        && (Number(ep.episode) < Number(s.episode_from) || Number(ep.episode) > Number(s.episode_end))) continue;
       out.push({
         provider: 'subdl',
         id: match ? match.url : s.url,
@@ -238,7 +252,10 @@
     if (!langs.includes('ja')) return [];
     const headers = jimakuHeaders(settings);
     let entries = [];
-    if (ep.tmdbId && ep.type) {
+    if (ep.jimakuId) {
+      // The show was picked by hand: use exactly that entry.
+      entries = [await getJson(`${JIMAKU}/entries/${ep.jimakuId}`, { headers }, 'Jimaku')];
+    } else if (ep.tmdbId && ep.type) {
       for (const anime of ['true', 'false']) {
         entries = await getJson(`${JIMAKU}/entries/search?anime=${anime}&tmdb_id=${ep.type}:${ep.tmdbId}`, { headers }, 'Jimaku');
         if (entries.length) break;
@@ -275,6 +292,101 @@
 
   async function jimakuDownload(settings, result) {
     return { bytes: await getBytes(result.id, { headers: jimakuHeaders(settings) }, 'Jimaku'), note: '' };
+  }
+
+  // ------------------------------------------------------- finding the show by title
+
+  function imdbFromNumber(n) {
+    return n ? 'tt' + String(n).padStart(7, '0') : null;
+  }
+
+  async function osShows(settings, title) {
+    const q = new URLSearchParams([['query', title.toLowerCase()]]);
+    const body = await getJson(OS_BASE + '/features?' + q, { headers: osHeaders(settings, false) }, 'OpenSubtitles');
+    return (body.data || [])
+      .map((d) => d.attributes || {})
+      .filter((a) => a.feature_type === 'Movie' || a.feature_type === 'Tvshow')
+      .map((a) => ({
+        title: a.title || '', original: a.original_title || '', year: Number(a.year) || null,
+        type: a.feature_type === 'Movie' ? 'movie' : 'tv',
+        tmdbId: a.tmdb_id ? String(a.tmdb_id) : null, imdbId: imdbFromNumber(a.imdb_id),
+        counts: a.subtitles_counts || {}, sources: ['OpenSubtitles'],
+      }));
+  }
+
+  async function subdlShows(settings, title) {
+    const q = new URLSearchParams([['api_key', settings.subdlKey], ['film_name', title], ['subs_per_page', '1'], ['client', 'custom_integration']]);
+    const body = await getJson(SUBDL_API + '?' + q, { headers: { Accept: 'application/json' } }, 'SubDL');
+    if (!body || body.status === false) return [];
+    return (body.results || []).map((r) => ({
+      title: r.name || '', original: '', year: Number(r.year) || null, type: r.type === 'movie' ? 'movie' : 'tv',
+      tmdbId: r.tmdb_id ? String(r.tmdb_id) : null, imdbId: r.imdb_id || null, counts: {}, sources: ['SubDL'],
+    }));
+  }
+
+  async function jimakuShows(settings, title) {
+    const headers = jimakuHeaders(settings);
+    const seen = new Set();
+    const out = [];
+    for (const anime of ['true', 'false']) {
+      const entries = await getJson(`${JIMAKU}/entries/search?anime=${anime}&query=${encodeURIComponent(title)}`, { headers }, 'Jimaku');
+      for (const e of entries.slice(0, 8)) {
+        if (seen.has(e.id)) continue;
+        seen.add(e.id);
+        const tm = /^(tv|movie):(\d+)$/.exec(e.tmdb_id || '');
+        out.push({
+          title: e.english_name || e.name || '', original: e.japanese_name || e.name || '', year: null,
+          type: (e.flags && e.flags.movie) || (tm && tm[1] === 'movie') ? 'movie' : 'tv',
+          tmdbId: tm ? tm[2] : null, imdbId: null, jimakuId: e.id, anilistId: e.anilist_id || null,
+          counts: {}, sources: ['Jimaku'],
+        });
+      }
+    }
+    return out;
+  }
+
+  // Shows and movies matching a title, from every set-up site, merged by their ids.
+  // "Monster (2004)" searches for "Monster" and puts 2004 first.
+  async function findShows(settings, text) {
+    const m = /^(.*?)\s*\((19\d{2}|20\d{2})\)\s*$/.exec(String(text || '').trim());
+    const title = (m ? m[1] : text).trim();
+    const year = m ? Number(m[2]) : null;
+    const report = {};
+    const lists = [];
+    const tasks = [];
+    if (settings.osApiKey) tasks.push(['opensubtitles', osShows]);
+    if (settings.subdlKey) tasks.push(['subdl', subdlShows]);
+    if (settings.jimakuKey) tasks.push(['jimaku', jimakuShows]);
+    await Promise.all(tasks.map(async ([id, fn]) => {
+      try {
+        const found = await fn(settings, title);
+        report[id] = { ok: true, count: found.length };
+        lists.push(found);
+      } catch (e) {
+        report[id] = { ok: false, message: e.message || String(e) };
+      }
+    }));
+    const merged = [];
+    const byId = new Map();
+    for (const c of lists.flat()) {
+      const keys = [c.tmdbId && c.type + ':' + c.tmdbId, c.imdbId].filter(Boolean);
+      const hit = keys.map((k) => byId.get(k)).find(Boolean);
+      if (hit) {
+        for (const k of ['title', 'original', 'year', 'tmdbId', 'imdbId', 'jimakuId', 'anilistId']) if (hit[k] == null || hit[k] === '') hit[k] = c[k];
+        hit.sources = Array.from(new Set(hit.sources.concat(c.sources)));
+        hit.counts = Object.assign({}, c.counts, hit.counts);
+        for (const k of keys) byId.set(k, hit);
+      } else {
+        merged.push(c);
+        for (const k of keys) byId.set(k, c);
+      }
+    }
+    const want = title.toLowerCase();
+    const score = (c) => (year && c.year === year ? 100 : 0)
+      + ([c.title, c.original].some((t) => String(t).toLowerCase() === want) ? 50 : 0)
+      + c.sources.length * 5 + (c.jimakuId ? 3 : 0);
+    merged.sort((a, b) => score(b) - score(a));
+    return { shows: merged.slice(0, 25), report };
   }
 
   // -------------------------------------------------------------- together
@@ -332,5 +444,5 @@
     return { cues: sub.cues, file: sub.name || result.name, note };
   }
 
-  SG.providers = { search, download, configured, rank, PROVIDERS, ProviderError, _internals: { osLang, subdlLang, fromSubdlLang } };
+  SG.providers = { findShows, search, download, configured, rank, PROVIDERS, ProviderError, _internals: { osLang, subdlLang, fromSubdlLang } };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

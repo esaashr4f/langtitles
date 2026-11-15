@@ -221,7 +221,7 @@
       onDeep(msg);
     } else if (msg.type === 'askDelta' || msg.type === 'askDone' || msg.type === 'askError') {
       onAsk(msg);
-    } else if (['tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs'].includes(msg.type)) {
+    } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs'].includes(msg.type)) {
       const cb = subReqs.get(msg.reqId);
       subReqs.delete(msg.reqId);
       if (cb) cb(msg);
@@ -2197,7 +2197,51 @@
     if (tabUrl && tabUrl !== location.href) sources.push({ url: tabUrl, title: tabTitle });
     const og = document.querySelector('meta[property="og:title"]');
     if (og && og.content) sources.push({ url: '', title: og.content });
-    return SG.episode.detect(sources);
+    const ep = SG.episode.detect(sources);
+    // A show picked by hand on this page fills in what the addresses do not say.
+    const pick = await showPickFor();
+    if (pick) {
+      // Picks are saved per page (the page address names the show), so a pick without ids of its
+      // own, such as a Jimaku entry, belongs to this page's show too.
+      const sameShow = (!pick.tmdbId && !pick.imdbId) || (!ep.tmdbId && !ep.imdbId)
+        || (pick.tmdbId && pick.tmdbId === ep.tmdbId) || (pick.imdbId && pick.imdbId === ep.imdbId);
+      if (sameShow) {
+        for (const k of ['tmdbId', 'imdbId', 'jimakuId', 'type']) if (pick[k] && !ep[k]) ep[k] = pick[k];
+        if (pick.title) ep.title = pick.title;
+        if (ep.type === 'tv' && ep.episode != null && ep.season == null) ep.season = 1;
+      }
+    }
+    return ep;
+  }
+
+  // The show picked by hand is remembered per page, without the episode in the address,
+  // so every episode of that show on this site uses it.
+  function pageKey() {
+    try {
+      const u = new URL(tabUrl || location.href);
+      for (const k of ['season', 'episode', 's', 'e', 'ep', 'seasonId', 'episodeId', 'season_number', 'episode_number', 'server', 't']) u.searchParams.delete(k);
+      return u.origin + u.pathname + (u.searchParams.toString() ? '?' + u.searchParams : '');
+    } catch (e) {
+      return '';
+    }
+  }
+
+  async function showPickFor() {
+    const k = pageKey();
+    if (!k) return null;
+    const r = await browser.storage.local.get('showPicks');
+    return (r.showPicks || {})[k] || null;
+  }
+
+  async function saveShowPick(show) {
+    const k = pageKey();
+    if (!k) return;
+    const r = await browser.storage.local.get('showPicks');
+    const all = r.showPicks || {};
+    all[k] = { tmdbId: show.tmdbId || null, imdbId: show.imdbId || null, jimakuId: show.jimakuId || null, type: show.type, title: show.title, savedAt: Date.now() };
+    const keys = Object.keys(all);
+    if (keys.length > 300) delete all[keys.sort((a, b) => all[a].savedAt - all[b].savedAt)[0]];
+    await browser.storage.local.set({ showPicks: all });
   }
 
   function wantedLangs() {
@@ -2360,11 +2404,66 @@
       if (!langs.includes(code)) lang.append(new Option(langName(code), code));
     }
     const go = h('button', 'sg-btn sg-go', 'Search');
-    form.append(field('Title', title), field('Type', type), field('ID', id), field('Season', season), field('Episode', episode), field('Language', lang));
+    let picked = ep.jimakuId ? { jimakuId: ep.jimakuId } : null;
+    const findShow = h('button', 'sg-btn', 'Find the show');
+    findShow.title = 'Search the subtitle sites for shows and movies with this title, then pick the right one';
+    const shows = h('div', 'sg-results sg-shows');
+    findShow.addEventListener('click', async () => {
+      const text = title.value.trim();
+      if (!text) {
+        status.textContent = 'Type the title first, for example Monster (2004).';
+        return;
+      }
+      shows.textContent = '';
+      status.textContent = 'Looking for the show…';
+      findShow.disabled = true;
+      const res = await request({ type: 'findShows', title: text });
+      findShow.disabled = false;
+      if (res.error) {
+        status.textContent = res.error;
+        return;
+      }
+      const list = res.found.shows || [];
+      const notes = Object.entries(res.found.report).filter(([, r]) => !r.ok).map(([, r]) => r.message);
+      status.textContent = (list.length ? 'Pick the right one:' : 'No shows found with that title. Try the English or Japanese title.') + (notes.length ? ' ' + notes.join(' · ') : '');
+      for (const s of list) {
+        const row = h('button', 'sg-result');
+        const top = h('div', 'sg-result-top');
+        top.append(h('span', 'sg-result-name', `${s.title || s.original}${s.year ? ` (${s.year})` : ''}`), h('span', 'sg-result-lang', s.type === 'movie' ? 'movie' : 'TV'));
+        const meta = [];
+        if (s.original && s.original !== s.title) meta.push(s.original);
+        meta.push(s.sources.join(' + '));
+        const want = lang.value === 'zh' ? ['zh-CN', 'zh-TW', 'zh-cn', 'zh-tw'] : [lang.value];
+        const n = want.reduce((a, k) => a + (Number(s.counts[k]) || 0), 0);
+        if (Object.keys(s.counts).length) meta.push(`OpenSubtitles: ${n} ${langName(lang.value)}`);
+        if (s.jimakuId) meta.push('Jimaku entry');
+        if (s.imdbId) meta.push(s.imdbId);
+        row.append(top, h('div', 'sg-result-meta', meta.join(' · ')));
+        row.addEventListener('click', async () => {
+          picked = s;
+          title.value = s.title || s.original;
+          type.value = s.type;
+          id.value = s.tmdbId || s.imdbId || '';
+          toggleSeason();
+          if (s.type === 'tv' && !season.value) season.value = '1';
+          shows.textContent = '';
+          await saveShowPick(s);
+          status.textContent = `Using ${s.title || s.original}${s.year ? ` (${s.year})` : ''}. Remembered for this page.`;
+          run();
+        });
+        shows.append(row);
+      }
+    });
+    title.addEventListener('input', () => {
+      picked = null;
+    });
+    const titleRow = h('div', 'sg-title-row');
+    titleRow.append(title, findShow);
+    form.append(field('Title', titleRow), field('Type', type), field('ID', id), field('Season', season), field('Episode', episode), field('Language', lang));
     const status = h('div', 'sg-find-status');
     status.textContent = SG.episode.confident(ep) ? `Detected ${SG.episode.describe(ep)}.` : 'Check the title, season and episode, then search.';
     const results = h('div', 'sg-results');
-    body.append(form, go, status, results);
+    body.append(form, go, status, shows, results);
     const toggleSeason = () => {
       const tv = type.value === 'tv';
       season.parentNode.style.display = tv ? '' : 'none';
@@ -2382,9 +2481,10 @@
         imdbId: /^tt\d+$/i.test(raw) ? raw.toLowerCase() : null,
         season: type.value === 'tv' && season.value !== '' ? Number(season.value) : null,
         episode: type.value === 'tv' && episode.value !== '' ? Number(episode.value) : null,
-        year: ep.year,
+        year: (picked && picked.year) || ep.year,
+        jimakuId: picked && picked.jimakuId ? picked.jimakuId : null,
       };
-      if (!query.title && !query.tmdbId && !query.imdbId) {
+      if (!query.title && !query.tmdbId && !query.imdbId && !query.jimakuId) {
         status.textContent = 'Enter a title or an id.';
         return;
       }

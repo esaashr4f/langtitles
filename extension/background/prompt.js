@@ -4,7 +4,7 @@
   const SG = (root.SG = root.SG || {});
 
   // Bump when the prompt or schema changes so cached analyses from the old version are not reused.
-  const PROMPT_VERSION = 6;
+  const PROMPT_VERSION = 7;
   // Grammar guides are cached by form, separately from line analyses.
   const GUIDE_VERSION = 1;
 
@@ -100,7 +100,7 @@
                   },
                   c: { type: 'integer', description: 'Phrase number, starting at 0. Consecutive words in the same phrase share it.' },
                   role: { type: 'string', enum: ROLES, description: 'The job this word\'s phrase does in the sentence.' },
-                  n: { type: 'string', description: 'One or two sentences shown when the learner hovers the word.' },
+                  n: { type: 'string', description: 'A short note shown when the learner hovers the word, or an empty string when there is nothing to add.' },
                   g: {
                     type: 'array',
                     description: 'Grammar forms this word carries that are worth studying, most important first.',
@@ -152,7 +152,7 @@ x: for a word built from Chinese characters (a kanji compound, a Chinese word, a
 d: the dictionary form.
 pos: part of speech and the form it is in.
 c and role: group the words into phrases. Words in the same phrase share a phrase number c, counted from 0 in order, and share the role that phrase plays in the sentence. A noun and the particle or case ending that marks it belong to one phrase.
-n: one or two sentences for the hover note: why this form is used here, the nuance against a near-synonym, the register, a common confusion, the literal image behind the expression. Say something the gloss does not already say.
+n: a hover note of one short sentence, only when there is something worth knowing that the meaning and pieces do not already show: why this form is used here, the nuance against a near-synonym, the register, a common confusion, the literal image behind an expression. Otherwise an empty string: most particles and plain everyday words need no note, and a note that repeats the gloss wastes the learner's attention.
 g: the grammar forms this word carries that a learner would want to study, most important first. These open a full guide to the form, so list forms, not vocabulary: conjugations and auxiliaries (causative-passive, ～ている, conditional ～ば), particles and endings with a grammatical job (topic は, connective -아서/어서, aspect 了), and, for a pattern spread over several words (把 sentences, ～ば～ほど, 是…的), the word that carries it. Each has:
   k: a stable identifier made of the language code, a dot and an English snake_case name for the form, written the same way every time the form appears, in any word and any line (ja.causative_passive, ja.te_iru, ja.particle_wa, ko.connective_aseo, zh.ba_construction, de.konjunktiv_2). One identifier per form, not per use: the guide for a form covers all of its uses.
   name: a short label in ${nativeLang} that includes the form itself, for example "causative-passive させられる".

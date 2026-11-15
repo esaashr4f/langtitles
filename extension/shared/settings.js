@@ -16,7 +16,8 @@
     disabledHosts: [],
     apiKey: '',
     baseURL: '', // advanced: an API-compatible proxy; empty means api.anthropic.com
-    model: 'claude-opus-5-5',
+    model: 'claude-opus-5-5', // guides, questions, character entries, review questions
+    lineModel: 'claude-haiku-5-5', // line-by-line breakdowns and episode word lists: almost all of the cost
     effort: 'low',
     nativeLang: 'English',
     learning: ['ja', 'ko', 'zh'],

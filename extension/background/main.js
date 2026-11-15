@@ -38,7 +38,7 @@
   const inflight = new Map(); // cache key -> promise of analysis
 
   function fingerprint() {
-    return [prompt.PROMPT_VERSION, settings.model, settings.nativeLang].join('|');
+    return [prompt.PROMPT_VERSION, claude.lineModelOf(settings), settings.nativeLang].join('|');
   }
 
   // Ask Claude for a batch; if the reply was cut off, split the batch and try the halves.
@@ -222,7 +222,7 @@
 
   async function wordList(lines, sig) {
     await ready;
-    const key = [prompt.WORDS_VERSION, settings.model, settings.nativeLang, 'words', sig].join('|');
+    const key = [prompt.WORDS_VERSION, claude.lineModelOf(settings), settings.nativeLang, 'words', sig].join('|');
     const hit = (await cache.getMany('deep', [key])).get(key);
     if (hit) return hit;
     const words = await claude.episodeWords(settings, lines);
@@ -329,7 +329,7 @@
     const job = {
       id: 'job' + Date.now(),
       show: SG.episode.describe(Object.assign({}, base, { episode: null })) + ` · season ${req.season}`,
-      season: req.season, from: req.from, to: req.to, model: settings.model,
+      season: req.season, from: req.from, to: req.to, model: claude.lineModelOf(settings),
       status: 'downloading', created: Date.now(), episodes: [], lines: 0, requests: 0,
     };
     await saveJob(job);
@@ -523,7 +523,8 @@
     const found = await SG.providers.search(settings, ep, langs);
     const errors = Object.entries(found.report).filter(([, r]) => !r.ok).map(([, r]) => r.message);
     // Only take a result that is clearly this episode (or this movie).
-    const usable = found.results.filter((r) => !r.pack && (ep.type !== 'tv' || r.episode == null || Number(r.episode) === Number(ep.episode)));
+    const fits = (r) => ep.type !== 'tv' || r.episode == null || Number(r.episode) === Number(ep.episode);
+    const usable = found.results.filter((r) => !r.pack && fits(r)).concat(found.results.filter((r) => r.pack && fits(r)));
     for (const result of usable.slice(0, 3)) {
       try {
         const loaded = await loadSubtitle(result, ep);
@@ -655,6 +656,13 @@
           .then(
             (found) => send(port, { type: 'subsFound', reqId: msg.reqId, found }),
             (err) => send(port, { type: 'subsFound', reqId: msg.reqId, error: err.message }),
+          );
+      } else if (msg.type === 'findShows') {
+        ready
+          .then(() => SG.providers.findShows(settings, msg.title))
+          .then(
+            (found) => send(port, { type: 'showsFound', reqId: msg.reqId, found }),
+            (err) => send(port, { type: 'showsFound', reqId: msg.reqId, error: err.message }),
           );
       } else if (msg.type === 'loadSub') {
         ready

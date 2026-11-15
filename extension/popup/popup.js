@@ -13,6 +13,9 @@
 
   const modelSel = $('model');
   for (const m of SG.MODELS) modelSel.append(new Option(m.name, m.id));
+  const lineSel = $('lineModel');
+  for (const m of SG.MODELS) lineSel.append(new Option(m.name, m.id));
+  lineSel.addEventListener('change', () => save({ lineModel: lineSel.value }));
 
   function fillAnnotations() {
     const box = $('annotations');
@@ -67,6 +70,7 @@
     $('siteEnabled').checked = !(settings.disabledHosts || []).includes(host);
     $('siteEnabled').disabled = !host || !settings.enabled;
     modelSel.value = settings.model;
+    lineSel.value = settings.lineModel || settings.model;
   }
 
   async function save(patch) {

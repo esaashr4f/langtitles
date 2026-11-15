@@ -9,11 +9,15 @@
 
   const modelSel = $('model');
   for (const m of SG.MODELS) modelSel.append(new Option(m.name, m.id));
+  const lineSel = $('lineModel');
+  for (const m of SG.MODELS) lineSel.append(new Option(`${m.name} · $${m.outPrice} per million output tokens`, m.id));
+  lineSel.addEventListener('change', () => save({ lineModel: lineSel.value }));
 
   function fill() {
     for (const id of CHECKS) $(id).checked = Boolean(settings[id]);
     for (const id of TEXTS) $(id).value = settings[id] || '';
     modelSel.value = settings.model;
+    lineSel.value = settings.lineModel || settings.model;
     $('effort').value = settings.effort;
     $('learning').value = (settings.learning || []).join(', ');
     $('fontScale').value = settings.fontScale;

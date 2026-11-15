@@ -148,5 +148,65 @@ test('a site that fails does not stop the others', async () => {
   assert.equal(found.results.length, 0);
   assert.equal(found.report.opensubtitles.ok, false);
   assert.match(found.report.opensubtitles.message, /cannot consume/);
-  assert.equal(found.report.subdl.ok, false);
+  // "can't find movie or tv" means no results, not a broken site.
+  assert.deepEqual(found.report.subdl, { ok: true, count: 0 });
+});
+
+test('find the show by title: merged across sites, year first, Jimaku entry used directly', async () => {
+  const calls = [];
+  globalThis.fetch = async (url) => {
+    const u = new URL(url);
+    calls.push(u);
+    if (u.host === 'api.opensubtitles.com' && u.pathname.endsWith('/features')) {
+      return json({ data: [
+        { attributes: { title: 'Monster', year: '2003', feature_type: 'Movie', imdb_id: 340855, tmdb_id: 504, subtitles_counts: { ja: 2 } } },
+        { attributes: { title: 'Monster', original_title: 'モンスター', year: '2004', feature_type: 'Tvshow', imdb_id: 434706, tmdb_id: 30981, subtitles_counts: { ja: 0, en: 70 } } },
+      ] });
+    }
+    if (u.host === 'api.subdl.com') return json({ status: true, results: [{ name: 'Monster', year: 2004, type: 'tv', tmdb_id: 30981, imdb_id: 'tt0434706' }], subtitles: [] });
+    if (u.host === 'jimaku.cc' && u.pathname === '/api/entries/search') {
+      return json(u.searchParams.get('anime') === 'true' ? [{ id: 552, name: 'Monster', english_name: 'Monster', japanese_name: 'MONSTER', anilist_id: 19, tmdb_id: null, flags: {} }] : []);
+    }
+    if (u.host === 'jimaku.cc' && u.pathname === '/api/entries/552') return json({ id: 552, name: 'Monster', english_name: 'Monster', japanese_name: 'MONSTER', flags: {} });
+    if (u.host === 'jimaku.cc' && u.pathname === '/api/entries/552/files') return json([{ name: 'Monster.S01E05.ja.srt', url: 'https://jimaku.cc/x.srt', size: 1 }]);
+    throw new Error('unexpected ' + url);
+  };
+  const settings = Object.assign({}, SG.DEFAULTS, { osApiKey: 'k', subdlKey: 'k', jimakuKey: 'k' });
+  const { shows, report } = await SG.providers.findShows(settings, 'Monster (2004)');
+  assert.ok(Object.values(report).every((r) => r.ok));
+  assert.equal(shows[0].year, 2004);
+  assert.equal(shows[0].type, 'tv');
+  assert.equal(shows[0].tmdbId, '30981');
+  assert.equal(shows[0].imdbId, 'tt0434706');
+  assert.deepEqual(shows[0].sources.sort(), ['OpenSubtitles', 'SubDL']);
+  const jm = shows.find((s) => s.jimakuId === 552);
+  assert.ok(jm, 'Jimaku entry listed');
+  assert.equal(calls.find((u) => u.pathname.endsWith('/features')).searchParams.get('query'), 'monster');
+
+  calls.length = 0;
+  const found = await SG.providers.search(Object.assign({}, settings, { osApiKey: '', subdlKey: '' }), { type: 'tv', title: 'Monster', jimakuId: 552, season: 1, episode: 5 }, ['ja']);
+  assert.equal(found.results.length, 1);
+  assert.equal(found.results[0].provider, 'jimaku');
+  assert.ok(calls.some((u) => u.pathname === '/api/entries/552'));
+  assert.equal(calls.find((u) => u.pathname === '/api/entries/552/files').searchParams.get('episode'), '5');
+});
+
+test('SubDL widens the search when the episode is not recorded, and keeps a pack that covers it', async () => {
+  const asked = [];
+  globalThis.fetch = async (url) => {
+    const u = new URL(url);
+    asked.push([u.searchParams.get('season_number'), u.searchParams.get('episode_number')]);
+    if (u.searchParams.get('episode_number')) return json({ status: false, error: "can't find movie or tv" });
+    if (u.searchParams.get('season_number')) return json({ status: true, results: [{ name: 'Monster' }], subtitles: [] });
+    return json({ status: true, results: [{ name: 'Monster' }], subtitles: [
+      { release_name: 'Monster 01-74 [JA]', name: 'monster_ja.zip', url: '/subtitle/7-7.zip', language: 'JA', full_season: true, episode_from: 1, episode_end: 74, hi: false },
+      { release_name: 'Monster 01-10', name: 'm.zip', url: '/subtitle/8-8.zip', language: 'JA', full_season: true, episode_from: 1, episode_end: 10, hi: false },
+    ] });
+  };
+  const settings = Object.assign({}, SG.DEFAULTS, { subdlKey: 'k' });
+  const found = await SG.providers.search(settings, { type: 'tv', tmdbId: '30981', season: 1, episode: 30 }, ['ja']);
+  assert.deepEqual(asked, [['1', '30'], ['1', null], [null, null]]);
+  assert.equal(found.results.length, 1);
+  assert.equal(found.results[0].name, 'Monster 01-74 [JA]');
+  assert.equal(found.results[0].pack, true);
 });

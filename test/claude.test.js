@@ -66,7 +66,7 @@ test('analyzeLines sends the expected request and parses the reply', async (t) =
   });
   await new Promise((r) => server.listen(0, r));
   t.after(() => server.close());
-  const settings = Object.assign({}, SG.DEFAULTS, { apiKey: 'sk-test', baseURL: `http://127.0.0.1:${server.address().port}`, nativeLang: 'English' });
+  const settings = Object.assign({}, SG.DEFAULTS, { apiKey: 'sk-test', baseURL: `http://127.0.0.1:${server.address().port}`, nativeLang: 'English', lineModel: 'claude-opus-5-5' });
 
   const out = await SG.claude.analyzeLines(settings, ['私はりんごを食べた', '♪'], ['前の行'], 'ja');
   assert.equal(out.length, 2);
@@ -169,7 +169,9 @@ test('batch requests drop the beta header and fallbacks; the cap stops requests'
   const p = SG.claude.batchAnalysisParams(settings, ['a'], [], 'ja');
   assert.ok(!('betas' in p) && !('fallbacks' in p));
   assert.equal(p.output_config.format.type, 'json_schema');
-  assert.equal(p.model, 'claude-opus-5-5');
+  // Line breakdowns use the line model (Haiku by default); guides keep the main model.
+  assert.equal(p.model, 'claude-haiku-5-5');
+  assert.equal(SG.claude.lineModelOf(Object.assign({}, settings, { lineModel: '' })), 'claude-opus-5-5');
   store.spend = { [SG.claude.monthKey()]: 12.5 };
   await assert.rejects(
     SG.claude.analyzeLines(Object.assign({}, settings, { monthlyCap: 10 }), ['x'], [], 'ja'),

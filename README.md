@@ -68,6 +68,8 @@ Streaming sites often have no subtitles in the language you are learning. Langti
 - **Automatic:** after a few seconds of playback, if the site has no subtitles in your languages, Langtitles works out which episode is playing, picks the best match and loads it. Embedded players such as the ones donkey.to uses put the show's TMDB id, season and episode in their own address, so the episode is exact. On other sites it falls back to the page title, and only fills in the search form.
 - **Timing:** downloaded files are often a second or more off. If the site has its own subtitles in any language (often English), Langtitles lines the file up with them automatically, including the 25 / 23.976 fps mismatch. Otherwise use **−** / **+** in the panel (Shift-click for 2-second steps). The timing you set is remembered for that episode.
 - **By hand:** press **G** → **Find subtitles** to see every match, best first, and pick another file.
+- **Find the show by title:** if the right show isn't found (or the page doesn't say which show it is), type its title in Find subtitles and click **Find the show**. Langtitles searches OpenSubtitles, SubDL and Jimaku for shows and movies with that title and lists them with year, type, their IMDb id or Jimaku entry, and how many subtitles OpenSubtitles has in your language. Add the year to narrow it down: `Monster (2004)`. Pick one and it is used for the search and remembered for that page, so later episodes find it automatically. For anime, picking the Jimaku entry is often what finds Japanese subtitles.
+- **Season packs:** SubDL often stores anime as whole-season packs without episode numbers. Langtitles widens its SubDL search when an exact episode isn't found and takes the right episode out of a pack.
 - **Limits:** OpenSubtitles allows 5 downloads a day, or 20 if you add your username and password; SubDL and Jimaku are more generous. Every downloaded file is saved, so rewatching uses no downloads.
 
 ## Word guides
@@ -144,13 +146,16 @@ donkey.to and similar sites play the video in an embedded player from another do
 
 ## Cost
 
-Each line is analyzed once and saved. Grammar guides are longer (roughly 500 to 900 words) and written at medium effort or above, but only once per form. The default model is Claude Opus 5.5 with low thinking effort. Claude Haiku 5.5 is far cheaper, with simpler explanations. Claude Fable 5.2 is the most capable and the most expensive. The options page shows token usage and an estimated spend for each model. "Prepare ahead" (10 minutes by default) controls how far ahead Langtitles analyzes, so skipping through a video doesn't pay for lines you never watch.
+Each line is analyzed once and saved; lines use the cheaper line-breakdown model. Grammar guides are longer (roughly 500 to 900 words) and written at medium effort or above, but only once per form. The default model is Claude Opus 5.5 with low thinking effort. Claude Haiku 5.5 is far cheaper, with simpler explanations. Claude Fable 5.2 is the most capable and the most expensive. The options page shows token usage and an estimated spend for each model. "Prepare ahead" (10 minutes by default) controls how far ahead Langtitles analyzes, so skipping through a video doesn't pay for lines you never watch.
 
 ## Phones and tablets
 
 Langtitles works in Firefox for Android. With no hover on touch screens, tap a word to open it (the video pauses) and tap × to close it and carry on. The panel fills the screen on narrow displays.
 
 ## Saving money
+
+- **Two models:** Options and the toolbar popup have one model for **line breakdowns** (every subtitle line goes through it, so it is almost all of the cost; Claude Haiku 5.5 by default, which is by far the cheapest) and one for **guides, questions and character entries** (Claude Opus 5.5 by default, where depth matters most).
+- **Short notes:** each word gets a hover note only when there is something the meaning and pieces don't already show.
 
 - **Prepare a whole season at half price:** side panel → Find subtitles → Prepare a whole season. Langtitles downloads subtitles for each episode and sends every line through Anthropic's batch API, which costs half as much and is usually done within an hour (at most a day). Those episodes then play with every line ready. Each episode uses one subtitle download.
 - **Spending cap:** set a monthly limit in Options. Once this month's estimated spend reaches it, Langtitles stops sending requests until you raise it. The toolbar popup shows this month's spend.
