@@ -27,8 +27,27 @@
     }
   }
 
+  function fillClasses() {
+    const box = $('classes');
+    box.textContent = '';
+    const on = new Set(settings.glossClasses || []);
+    for (const k of SG.WORD_CLASSES) {
+      const b = document.createElement('button');
+      b.textContent = k.label;
+      b.title = k.title + ' (click to switch on or off)';
+      b.className = on.has(k.key) ? 'on' : '';
+      b.addEventListener('click', () => {
+        if (on.has(k.key)) on.delete(k.key);
+        else on.add(k.key);
+        save({ glossClasses: SG.WORD_CLASSES.map((x) => x.key).filter((x) => on.has(x)) });
+      });
+      box.append(b);
+    }
+  }
+
   function fill() {
     fillAnnotations();
+    fillClasses();
     $('enabled').checked = settings.enabled;
     $('host').textContent = host || 'This page';
     $('siteEnabled').checked = !(settings.disabledHosts || []).includes(host);

@@ -662,8 +662,26 @@
       showChips.set(a.key, chip);
       showRow.append(chip);
     }
-    el.append(head, tools, showRow, hint, find, words, guide, detail, listTitle, list);
-    return { el, status, select, offset, hint, showChips, find, findBody, words, wordsBody, guide, guideTitle, guideBody, detail, list, rows: new Map() };
+    const forRow = h('div', 'sg-show-row');
+    forRow.append(h('span', 'sg-show-label', 'For'));
+    const classChips = new Map();
+    for (const k of SG.WORD_CLASSES) {
+      const chip = h('button', 'sg-show-chip', k.label);
+      chip.title = k.title + ': click to give them notes above or not';
+      chip.addEventListener('click', () => {
+        const on = new Set(settings.glossClasses || []);
+        if (on.has(k.key)) on.delete(k.key);
+        else on.add(k.key);
+        const patch = { glossClasses: SG.WORD_CLASSES.map((x) => x.key).filter((x) => on.has(x)) };
+        Object.assign(settings, patch);
+        post({ type: 'saveSettings', patch });
+        applySettings();
+      });
+      classChips.set(k.key, chip);
+      forRow.append(chip);
+    }
+    el.append(head, tools, showRow, forRow, hint, find, words, guide, detail, listTitle, list);
+    return { el, status, select, offset, hint, showChips, classChips, find, findBody, words, wordsBody, guide, guideTitle, guideBody, detail, list, rows: new Map() };
   }
 
   // Keep the overlay glued to the video, including in fullscreen.
@@ -707,6 +725,7 @@
     c.toggle('sg-no-tr', !settings.showTranslation);
     c.toggle('sg-hidden', overlayHidden);
     for (const [key, chip] of ui.panel.showChips) chip.classList.toggle('sg-on', Boolean(settings[key]));
+    for (const [key, chip] of ui.panel.classChips) chip.classList.toggle('sg-on', (settings.glossClasses || []).includes(key));
     place();
     applyHideNative();
     renderTrackList();
@@ -814,7 +833,8 @@
   }
 
   function buildToken(w, index, firstOfPhrase, ctx) {
-    const tok = h('span', 'sg-tok sg-role-' + (w.role || 'other') + (isNewWord(w, ctx.lang) ? ' sg-new' : '') + (settings.hideKnownGlosses && wordKnown(w, ctx.lang) ? ' sg-kw-known' : ''));
+    const plain = (settings.hideKnownGlosses && wordKnown(w, ctx.lang)) || !(settings.glossClasses || []).includes(SG.wordClass(w.pos));
+    const tok = h('span', 'sg-tok sg-role-' + (w.role || 'other') + (isNewWord(w, ctx.lang) ? ' sg-new' : '') + (plain ? ' sg-kw-known' : ''));
     const parts = Array.isArray(w.p) && w.p.length ? w.p : [{ t: w.s, g: w.m }];
     const multi = parts.length > 1;
 

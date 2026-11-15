@@ -27,6 +27,24 @@
     const m = SG.MODELS.find((x) => x.id === settings.model);
     $('modelNote').textContent = m ? `${m.note} $${m.inPrice} / $${m.outPrice} per million input / output tokens.` : '';
     renderHosts();
+    const gc = $('glossClasses');
+    gc.textContent = '';
+    const on = new Set(settings.glossClasses || []);
+    for (const k of SG.WORD_CLASSES) {
+      const label = document.createElement('label');
+      label.className = 'check';
+      label.title = k.title;
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.checked = on.has(k.key);
+      box.addEventListener('change', () => {
+        if (box.checked) on.add(k.key);
+        else on.delete(k.key);
+        save({ glossClasses: SG.WORD_CLASSES.map((x) => x.key).filter((x) => on.has(x)) });
+      });
+      label.append(box, document.createTextNode(' ' + k.label));
+      gc.append(label);
+    }
   }
 
   let savedTimer = null;

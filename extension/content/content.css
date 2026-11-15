@@ -587,3 +587,4 @@ langtitles-root .sg-show-chip {
 }
 langtitles-root .sg-show-chip.sg-on { color: var(--sg-text); border-color: rgba(255, 216, 138, 0.55); background: rgba(255, 216, 138, 0.12); text-decoration: none; }
 langtitles-root .sg-show-chip:hover { border-color: var(--sg-gloss); }
+langtitles-root .sg-show-row + .sg-show-row { padding-top: 0; }

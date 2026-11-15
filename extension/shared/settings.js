@@ -44,6 +44,7 @@
     pitchAccent: true, // Japanese pitch accent in the hover popup, word lists and review
     addGrammarToReview: true, // grammar forms you open guides for become review cards
     monthlyCap: 0, // stop Claude requests once this month's estimated spend reaches this many dollars; 0 = no cap
+    glossClasses: ['noun', 'verb', 'adjective', 'adverb', 'particle', 'other'], // kinds of words that get notes above them
     hideKnownGlosses: true, // no meaning or pieces above words marked as known
     highlightNew: true, // mark words you haven't marked as known (once 20 are known in that language)
     pauseOnePlus: false, // pause after a line with exactly one new word
@@ -71,6 +72,39 @@
     { key: 'highlightNew', label: 'New-word underline', title: 'Underline words you have not marked known' },
     { key: 'hideKnownGlosses', label: 'Plain known words', title: 'No meaning or pieces above words you have marked known' },
   ];
+
+  // Kinds of words, for choosing which get their meaning and pieces drawn above them.
+  SG.WORD_CLASSES = [
+    { key: 'noun', label: 'Nouns', title: 'Nouns, pronouns, names, numbers and counters' },
+    { key: 'verb', label: 'Verbs', title: 'Verbs, in any form' },
+    { key: 'adjective', label: 'Adjectives', title: 'Adjectives, including Japanese i- and na-adjectives' },
+    { key: 'adverb', label: 'Adverbs', title: 'Adverbs' },
+    { key: 'particle', label: 'Particles & endings', title: 'Particles, auxiliaries, copulas, conjunctions and measure words' },
+    { key: 'other', label: 'Other', title: 'Interjections, set expressions and anything else' },
+  ];
+
+  // Sorts a word into one of those kinds from its part of speech ("verb, causative-passive, past",
+  // "na-adjective", "noun + particle"): whichever kind is named first wins.
+  const CLASS_PATTERNS = [
+    ['particle', /\b(particle|auxiliary|copula|conjunction|postposition|classifier|measure word|suffix|ending)\b|助詞|助動詞/i],
+    ['verb', /\bverbs?\b|動詞/i],
+    ['adjective', /\badjectiv\w*|形容/i],
+    ['adverb', /\badverb\w*|副詞/i],
+    ['noun', /\b(noun|pronoun|proper|name|numeral|number|counter)\w*|名詞|代名詞/i],
+  ];
+  SG.wordClass = function (pos) {
+    const text = String(pos || '');
+    let best = 'other';
+    let at = Infinity;
+    for (const [key, re] of CLASS_PATTERNS) {
+      const m = re.exec(text);
+      if (m && m.index < at) {
+        at = m.index;
+        best = key;
+      }
+    }
+    return best;
+  };
 
   // Everything the content script may see. The API key never leaves the background page.
   SG.publicSettings = function (s) {
