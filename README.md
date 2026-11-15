@@ -121,9 +121,11 @@ You need Firefox 140 or newer and an Anthropic API key from [console.anthropic.c
 2. Langtitles picks them up and starts preparing them. The toolbar button shows how many lines are ready.
 3. Hover any word to pause and read more. Move the pointer away and the video resumes.
 
-**Choosing what's shown.** The side panel (**G**) and the toolbar popup both have a **Show** row: click Meaning, Pieces, Furigana, Pinyin, Tone colours, Hanja, Roles, Translation, New-word underline or Plain known words to switch each one on or off (crossed out means off). The choice is remembered. Below it, the **For** row picks which kinds of words get notes above them (Nouns, Verbs, Adjectives, Adverbs, Particles & endings, Other), for example only nouns and verbs. Hovering any word still shows everything.
+**Choosing what's shown.** The side panel (**G**) and the toolbar popup both have a **Show** row: click Meaning, Pieces, Furigana, Pinyin, Tone colours, Hanja, Roles, Translation, New-word underline or Plain known words to switch each one on or off (crossed out means off). The choice is remembered. Below it, the **For** row picks which kinds of words get notes above them (Nouns, Verbs, Adjectives, Adverbs, Particles & endings, Other), for example only nouns and verbs. Hovering any word still shows everything. For Japanese, the **JLPT** row leaves the notes off easier words: **N4+** shows notes only above N4 words and harder, so N5 words stay plain. Levels come from [Jonathan Waller's JLPT lists](http://www.tanos.co.uk/jlpt/) (CC BY; there has been no official list since 2010), and each word's level shows in its hover popup. Words on no list keep their notes.
 
-Keys while a video is playing: **A** / **D** previous / next line, **G** side panel, **H** hide Langtitles subtitles, **R** furigana / pinyin on or off, **S** replay the line slowed down, **L** loop it.
+**Timing.** If the subtitles are slightly out of sync, press **[** to show them earlier or **]** to show them later, 0.25 s at a time (with **Shift**, 1 s); **\\** resets. The side panel has the same as **◀ Earlier** and **Later ▶** buttons. For downloaded subtitles, the shift is remembered for that episode.
+
+Keys while a video is playing: **A** / **D** previous / next line, **G** side panel, **H** hide Langtitles subtitles, **R** furigana / pinyin on or off, **S** replay the line slowed down, **L** loop it, **[** / **]** subtitles earlier / later.
 
 ### Where the subtitles come from
 
@@ -199,4 +201,5 @@ npm run package
 | `extension/shared/speech.js` | Pronunciation with the system's voices |
 | `extension/shared/pitch.js` | Japanese pitch accent patterns and Kanjium lookup |
 | `extension/progress/` | The progress page |
+| `extension/data/jlpt.json` | JLPT levels from Jonathan Waller's lists (CC BY), built by `scripts/build-jlpt.mjs` |
 | `extension/shared/ruby.js` | Furigana and pinyin placement, known characters, Anki formatting |

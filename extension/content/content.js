@@ -80,6 +80,11 @@
 
   // Known characters (furigana / pinyin hidden over them) and a pending jump to a saved line
   const known = { ja: new Set(), zh: new Set() };
+  let jlptData = null;
+  fetch(browser.runtime.getURL('data/jlpt.json')).then((r) => r.json()).then((d) => {
+    jlptData = d;
+    shownKey = null;
+  }, () => {});
   let pendingSeek = null;
 
   // Known words (dictionary forms, per language), and the line-study helpers
@@ -590,25 +595,15 @@
       picking = true;
       showToast('Click the subtitle text on the video. Press Escape to cancel.');
     });
-    const early = h('button', 'sg-btn', '−');
-    early.title = 'Subtitles earlier by 0.25 s';
-    const late = h('button', 'sg-btn', '+');
-    late.title = 'Subtitles later by 0.25 s';
-    const offset = h('span', 'sg-offset', '0.00s');
-    const nudge = (d) => {
-      const t = active();
-      if (!t) return;
-      t.offset = Math.round((t.offset + d) * 100) / 100;
-      t.userOffset = true;
-      offset.textContent = (t.offset >= 0 ? '+' : '') + t.offset.toFixed(2) + 's';
-      rememberOffset(t);
-      shownKey = null;
-      tick();
-    };
-    early.title += ' (Shift: 2 s)';
-    late.title += ' (Shift: 2 s)';
-    early.addEventListener('click', (e) => nudge(e.shiftKey ? -2 : -0.25));
-    late.addEventListener('click', (e) => nudge(e.shiftKey ? 2 : 0.25));
+    const early = h('button', 'sg-btn', '◀ Earlier');
+    early.title = 'Show subtitles 0.25 s earlier (key [ · Shift for 1 s)';
+    const late = h('button', 'sg-btn', 'Later ▶');
+    late.title = 'Show subtitles 0.25 s later (key ] · Shift for 1 s)';
+    const offset = h('button', 'sg-offset', '+0.00s');
+    offset.title = 'Subtitle timing shift; click to reset (key \\)';
+    offset.addEventListener('click', () => nudgeOffset(null));
+    early.addEventListener('click', (e) => nudgeOffset(e.shiftKey ? -1 : -0.25));
+    late.addEventListener('click', (e) => nudgeOffset(e.shiftKey ? 1 : 0.25));
     const findBtn = h('button', 'sg-btn', 'Find subtitles');
     findBtn.title = 'Search OpenSubtitles, SubDL and Jimaku for this episode';
     findBtn.addEventListener('click', () => openFind());
@@ -680,8 +675,23 @@
       classChips.set(k.key, chip);
       forRow.append(chip);
     }
-    el.append(head, tools, showRow, forRow, hint, find, words, guide, detail, listTitle, list);
-    return { el, status, select, offset, hint, showChips, classChips, find, findBody, words, wordsBody, guide, guideTitle, guideBody, detail, list, rows: new Map() };
+    const jlptRow = h('div', 'sg-show-row');
+    jlptRow.append(h('span', 'sg-show-label', 'JLPT'));
+    const jlptChips = new Map();
+    for (const c of SG.JLPT_CHOICES) {
+      const chip = h('button', 'sg-show-chip sg-radio', c.label);
+      chip.title = c.title;
+      chip.addEventListener('click', () => {
+        const patch = { jlptFrom: c.value };
+        Object.assign(settings, patch);
+        post({ type: 'saveSettings', patch });
+        applySettings();
+      });
+      jlptChips.set(c.value, chip);
+      jlptRow.append(chip);
+    }
+    el.append(head, tools, showRow, forRow, jlptRow, hint, find, words, guide, detail, listTitle, list);
+    return { el, status, select, offset, hint, showChips, classChips, jlptChips, find, findBody, words, wordsBody, guide, guideTitle, guideBody, detail, list, rows: new Map() };
   }
 
   // Keep the overlay glued to the video, including in fullscreen.
@@ -726,6 +736,7 @@
     c.toggle('sg-hidden', overlayHidden);
     for (const [key, chip] of ui.panel.showChips) chip.classList.toggle('sg-on', Boolean(settings[key]));
     for (const [key, chip] of ui.panel.classChips) chip.classList.toggle('sg-on', (settings.glossClasses || []).includes(key));
+    for (const [value, chip] of ui.panel.jlptChips) chip.classList.toggle('sg-on', (settings.jlptFrom || 5) === value);
     place();
     applyHideNative();
     renderTrackList();
@@ -833,7 +844,10 @@
   }
 
   function buildToken(w, index, firstOfPhrase, ctx) {
-    const plain = (settings.hideKnownGlosses && wordKnown(w, ctx.lang)) || !(settings.glossClasses || []).includes(SG.wordClass(w.pos));
+    const level = ctx.lang === 'ja' ? SG.jlptLevel(jlptData, w) : null;
+    const plain = (settings.hideKnownGlosses && wordKnown(w, ctx.lang))
+      || !(settings.glossClasses || []).includes(SG.wordClass(w.pos))
+      || (level != null && level > (settings.jlptFrom || 5));
     const tok = h('span', 'sg-tok sg-role-' + (w.role || 'other') + (isNewWord(w, ctx.lang) ? ' sg-new' : '') + (plain ? ' sg-kw-known' : ''));
     const parts = Array.isArray(w.p) && w.p.length ? w.p : [{ t: w.s, g: w.m }];
     const multi = parts.length > 1;
@@ -1059,6 +1073,12 @@
     const head = h('div', 'sg-pop-head');
     head.append(h('span', 'sg-pop-word', w.s));
     if (w.r && !sameText(w.r, w.s)) head.append(h('span', 'sg-pop-read', w.r));
+    const lvl = ctx.lang === 'ja' ? SG.jlptLevel(jlptData, w) : null;
+    if (lvl != null) {
+      const badge = h('span', 'sg-jlpt', 'N' + lvl);
+      badge.title = `JLPT N${lvl} (Waller's lists)`;
+      head.append(badge);
+    }
     head.append(speakButton(w.s, ctx.lang), knownWordButton(w, ctx.lang), starButton('word', ctx.lang, w.d || w.s, () => wordItem(w, ctx)));
     pop.append(head);
     const meta = [w.pos, w.d && !sameText(w.d, w.s) ? 'dictionary form: ' + w.d : ''].filter(Boolean).join(' · ');
@@ -1468,6 +1488,14 @@
     if (!ui || !video || !enabled() || e.ctrlKey || e.metaKey || e.altKey || isEditable(e.target)) return;
     if (!active() && e.key.toLowerCase() !== 'g') return;
     const key = e.key.toLowerCase();
+    // Timing: [ earlier, ] later (Shift: 1 s steps, typed as { and }), \ resets.
+    if (e.key === '[' || e.key === '{' || e.key === ']' || e.key === '}' || e.key === '\\') {
+      if (e.key === '\\') nudgeOffset(null);
+      else nudgeOffset((e.key === '[' || e.key === '{' ? -1 : 1) * (e.shiftKey ? 1 : 0.25));
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     if (key === 'a') seekToCue(-1);
     else if (key === 'd') seekToCue(1);
     else if (key === 's') replayLine(false);
@@ -1987,6 +2015,22 @@
     video.currentTime = Math.max(0, pendingSeek - 1.5);
     pendingSeek = null;
     post({ type: 'seekDone' });
+  }
+
+  // ------------------------------------------------------------ timing nudge
+
+  // d: seconds to add to the shift (negative = earlier), or null to reset.
+  function nudgeOffset(d) {
+    const t = active();
+    if (!t) return;
+    t.offset = d == null ? 0 : Math.round((t.offset + d) * 100) / 100;
+    t.userOffset = true;
+    const label = (t.offset >= 0 ? '+' : '') + t.offset.toFixed(2) + 's';
+    if (ui) ui.panel.offset.textContent = label;
+    rememberOffset(t);
+    shownKey = null;
+    tick();
+    showToast(t.offset === 0 ? 'Subtitle timing reset.' : `Subtitles ${t.offset < 0 ? 'earlier' : 'later'} by ${Math.abs(t.offset).toFixed(2)} s.  [ earlier · ] later · Shift for 1 s · \\ resets`);
   }
 
   // ------------------------------------------------------------ pitch accent

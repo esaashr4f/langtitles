@@ -45,9 +45,23 @@
     }
   }
 
+  function fillJlpt() {
+    const box = $('jlpt');
+    box.textContent = '';
+    for (const c of SG.JLPT_CHOICES) {
+      const b = document.createElement('button');
+      b.textContent = c.label;
+      b.title = c.title;
+      b.className = 'radio' + ((settings.jlptFrom || 5) === c.value ? ' on' : '');
+      b.addEventListener('click', () => save({ jlptFrom: c.value }));
+      box.append(b);
+    }
+  }
+
   function fill() {
     fillAnnotations();
     fillClasses();
+    fillJlpt();
     $('enabled').checked = settings.enabled;
     $('host').textContent = host || 'This page';
     $('siteEnabled').checked = !(settings.disabledHosts || []).includes(host);

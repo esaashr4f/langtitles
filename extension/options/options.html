@@ -116,6 +116,17 @@
         <div id="glossClasses" class="row"></div>
         <small>The meaning and pieces are drawn only above these. Hovering any word still shows everything. Also in the side panel's "For" row and the toolbar popup.</small>
       </div>
+      <label class="field">
+        <span>Japanese: notes above words from this JLPT level</span>
+        <select id="jlptFrom">
+          <option value="5">Every level</option>
+          <option value="4">N4 and harder (no notes above N5 words)</option>
+          <option value="3">N3 and harder</option>
+          <option value="2">N2 and harder</option>
+          <option value="1">N1 only</option>
+        </select>
+        <small>Levels from Jonathan Waller's JLPT lists (tanos.co.uk, CC BY). There is no official list since 2010, so treat levels as a guide. Words on no list keep their notes.</small>
+      </label>
       <label class="check"><input id="hideKnownGlosses" type="checkbox"> Hide the meaning and pieces above words I've marked as known (mark them with "Known?" when you hover a word)</label>
       <label class="check"><input id="highlightNew" type="checkbox"> Underline words I don't know yet (starts once 20 words are marked known in a language)</label>
       <label class="check"><input id="pauseOnePlus" type="checkbox"> Pause after a line with exactly one new word</label>
@@ -212,6 +223,7 @@
         <tr><td><kbd>G</kbd></td><td>Open or close the side panel</td></tr>
         <tr><td><kbd>H</kbd></td><td>Hide or show Langtitles subtitles</td></tr>
         <tr><td><kbd>R</kbd></td><td>Furigana / pinyin on or off</td></tr>
+        <tr><td><kbd>[</kbd> / <kbd>]</kbd></td><td>Subtitles 0.25 s earlier / later (with Shift: 1 s); <kbd>\</kbd> resets</td></tr>
       </table>
     </section>
     <p id="saved" class="saved">Saved</p>

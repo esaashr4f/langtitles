@@ -45,6 +45,7 @@
     addGrammarToReview: true, // grammar forms you open guides for become review cards
     monthlyCap: 0, // stop Claude requests once this month's estimated spend reaches this many dollars; 0 = no cap
     glossClasses: ['noun', 'verb', 'adjective', 'adverb', 'particle', 'other'], // kinds of words that get notes above them
+    jlptFrom: 5, // notes above Japanese words from this JLPT level up: 5 = every level, 4 = N4 and harder (N5 words plain), …
     hideKnownGlosses: true, // no meaning or pieces above words marked as known
     highlightNew: true, // mark words you haven't marked as known (once 20 are known in that language)
     pauseOnePlus: false, // pause after a line with exactly one new word
@@ -104,6 +105,29 @@
       }
     }
     return best;
+  };
+
+  SG.JLPT_CHOICES = [
+    { value: 5, label: 'All', title: 'Notes above Japanese words at every JLPT level' },
+    { value: 4, label: 'N4+', title: 'No notes above N5 words' },
+    { value: 3, label: 'N3+', title: 'No notes above N5 and N4 words' },
+    { value: 2, label: 'N2+', title: 'No notes above N5 to N3 words' },
+    { value: 1, label: 'N1', title: 'Notes only above N1 words (and words on no JLPT list)' },
+  ];
+
+  // JLPT level of a Japanese word (5 = N5 … 1 = N1), or null when it is on no list.
+  // Data: Jonathan Waller's JLPT lists (tanos.co.uk, CC BY), extension/data/jlpt.json.
+  // Words are matched by how they are written; kana-only words match only kana-only entries,
+  // so the particle は is not mistaken for 歯 or 葉.
+  SG.jlptLevel = function (data, w) {
+    if (!data || !w) return null;
+    const HAN = /[\u3400-\u9fff\uf900-\ufaff]/;
+    for (const form of [w.d, w.s]) {
+      if (!form) continue;
+      const map = HAN.test(form) ? data.kanji : data.kana;
+      if (map && map[form] != null) return map[form];
+    }
+    return null;
   };
 
   // Everything the content script may see. The API key never leaves the background page.

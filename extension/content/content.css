@@ -588,3 +588,7 @@ langtitles-root .sg-show-chip {
 langtitles-root .sg-show-chip.sg-on { color: var(--sg-text); border-color: rgba(255, 216, 138, 0.55); background: rgba(255, 216, 138, 0.12); text-decoration: none; }
 langtitles-root .sg-show-chip:hover { border-color: var(--sg-gloss); }
 langtitles-root .sg-show-row + .sg-show-row { padding-top: 0; }
+langtitles-root .sg-show-chip.sg-radio { text-decoration: none; }
+langtitles-root .sg-jlpt { padding: 0 0.4em; border-radius: 0.5em; border: 1px solid var(--sg-line); color: var(--sg-dim); font-size: 0.75em; }
+langtitles-root button.sg-offset { all: unset; min-width: 4.2em; text-align: center; color: var(--sg-dim); font-size: 12px; font-variant-numeric: tabular-nums; cursor: pointer; }
+langtitles-root button.sg-offset:hover { color: var(--sg-text); }

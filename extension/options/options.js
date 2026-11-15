@@ -21,6 +21,7 @@
     $('lookaheadMin').value = String(settings.lookaheadMin);
     $('chunkSize').value = settings.chunkSize;
     $('slowRate').value = String(settings.slowRate);
+    $('jlptFrom').value = String(settings.jlptFrom || 5);
     $('newPerDay').value = settings.newPerDay;
     $('monthlyCap').value = settings.monthlyCap || 0;
     $('concurrency').value = settings.concurrency;
@@ -83,6 +84,7 @@
     const n = Math.round(Number(v));
     return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : dflt;
   };
+  $('jlptFrom').addEventListener('change', (e) => save({ jlptFrom: Number(e.target.value) }));
   $('slowRate').addEventListener('change', (e) => save({ slowRate: Number(e.target.value) }));
   $('monthlyCap').addEventListener('change', (e) => save({ monthlyCap: Math.max(0, Number(e.target.value) || 0) }));
   browser.runtime.sendMessage({ type: 'spend' }).then((r) => {
