@@ -44,6 +44,7 @@
     pitchAccent: true, // Japanese pitch accent in the hover popup, word lists and review
     addGrammarToReview: true, // grammar forms you open guides for become review cards
     monthlyCap: 0, // stop Claude requests once this month's estimated spend reaches this many dollars; 0 = no cap
+    hideKnownGlosses: true, // no meaning or pieces above words marked as known
     highlightNew: true, // mark words you haven't marked as known (once 20 are known in that language)
     pauseOnePlus: false, // pause after a line with exactly one new word
     slowReplay: true, // S replays the line slowed down

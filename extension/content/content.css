@@ -567,3 +567,7 @@ langtitles-root .sg-build-step { display: inline-flex; flex-direction: column; a
 langtitles-root .sg-build-t { font-size: 1.05em; }
 langtitles-root .sg-build-m { color: var(--sg-dim); font-size: 0.8em; text-align: center; }
 langtitles-root .sg-build-arrow { color: var(--sg-gloss); }
+
+/* Words marked known: just the word, no meaning or pieces above it (hover still shows everything). */
+langtitles-root .sg-tok.sg-kw-known .sg-mean, langtitles-root .sg-tok.sg-kw-known .sg-parts { display: none; }
+langtitles-root .sg-tok.sg-kw-known .sg-seg { color: inherit; }

@@ -797,7 +797,7 @@
   }
 
   function buildToken(w, index, firstOfPhrase, ctx) {
-    const tok = h('span', 'sg-tok sg-role-' + (w.role || 'other') + (isNewWord(w, ctx.lang) ? ' sg-new' : ''));
+    const tok = h('span', 'sg-tok sg-role-' + (w.role || 'other') + (isNewWord(w, ctx.lang) ? ' sg-new' : '') + (settings.hideKnownGlosses && wordKnown(w, ctx.lang) ? ' sg-kw-known' : ''));
     const parts = Array.isArray(w.p) && w.p.length ? w.p : [{ t: w.s, g: w.m }];
     const multi = parts.length > 1;
 
@@ -1561,7 +1561,7 @@
       const on = wordKnown(w, lang);
       b.textContent = on ? '✓ Known' : 'Known?';
       b.classList.toggle('sg-on', on);
-      b.title = on ? 'You know this word · click to undo' : 'Mark this word as one you know (it stops being highlighted as new)';
+      b.title = on ? 'You know this word · click to undo' : 'Mark this word as one you know: no meaning or pieces above it, and no new-word underline (hover still shows everything)';
     };
     paint();
     b.addEventListener('click', async (e) => {

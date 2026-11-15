@@ -34,6 +34,7 @@ Under each line in the side panel, ask anything ("why は and not が here?", "c
 
 ## Studying while you watch
 
+- **Words you know stay plain.** Mark a word **Known?** in the hover popup (の, は and other words you already know) and the meaning and pieces above it disappear wherever it appears; hovering still shows everything. This can be turned off in Options.
 - **New words underlined.** Mark words you know with **Known?** in the hover popup, with **Mark every word known** for a line in the side panel, or by learning them in review. Once 20 words are known in a language, words you don't know yet get a wavy underline.
 - **Pause on one new word** (optional, in Options). After a line with exactly one new word, the video pauses with that word shown, since those lines are often the easiest to learn from.
 - **Slow replay.** **S** replays the current line at 0.75× (the speed is adjustable), and **L** loops it until you press L again.
