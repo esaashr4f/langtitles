@@ -98,6 +98,10 @@
       li.title = t.url;
       ul.append(li);
     }
+    if (st && (st.episode || st.subSearch)) {
+      const line = [st.episode ? `Episode: ${st.episode}` : '', st.subSearch ? `Subtitle sites: ${st.subSearch}` : ''].filter(Boolean).join(' · ');
+      $('state').textContent += ' ' + line;
+    }
     const err = (st && st.error) || s.lastError;
     $('error').hidden = !err;
     $('error').textContent = err ? err.message : '';

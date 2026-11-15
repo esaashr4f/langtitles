@@ -39,7 +39,17 @@
   }
 
   for (const id of CHECKS) $(id).addEventListener('change', (e) => save({ [id]: e.target.checked }));
-  for (const id of TEXTS) $(id).addEventListener('change', (e) => save({ [id]: e.target.value.trim() }));
+  const typing = {};
+  for (const id of TEXTS) {
+    $(id).addEventListener('change', (e) => save({ [id]: e.target.value.trim() }));
+    // Pasting a key and closing the tab must not lose it.
+    $(id).addEventListener('input', (e) => {
+      clearTimeout(typing[id]);
+      typing[id] = setTimeout(() => SG.saveSettings({ [id]: e.target.value.trim() }).then((s) => {
+        settings = s;
+      }), 400);
+    });
+  }
   modelSel.addEventListener('change', () => save({ model: modelSel.value }));
   $('effort').addEventListener('change', (e) => save({ effort: e.target.value }));
   $('lookaheadMin').addEventListener('change', (e) => save({ lookaheadMin: Number(e.target.value) }));

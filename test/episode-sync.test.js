@@ -21,6 +21,18 @@ test('donkey.to player frames and pages', () => {
   assert.deepEqual([page.type, page.tmdbId, page.season, page.episode], ['tv', '1399', 3, 4]);
 });
 
+test('player addresses inside parameters (cornclick.com)', () => {
+  const ep = detect([
+    { url: 'https://cornclick.app/play?url=https%3A%2F%2F0vidads.top%2Fembed%2Ftv%2F290295%2F1%2F2%3Fbranding%3DStreameX', title: '' },
+    { url: 'https://cornclick.com/tvshows/31746/mating-season-2026?season=1&episode=2&server=0', title: 'Mating Season - CornClick' },
+  ]);
+  assert.deepEqual([ep.type, ep.tmdbId, ep.season, ep.episode, ep.title], ['tv', '290295', 1, 2, 'Mating Season']);
+  assert.ok(confident(ep));
+  // The site's own id in /tvshows/31746/ is not taken for a TMDB id.
+  const page = detect([{ url: 'https://cornclick.com/tvshows/31746/mating-season-2026?season=1&episode=2', title: '' }]);
+  assert.equal(page.tmdbId, null);
+});
+
 test('query-string players and titles', () => {
   const a = detect([{ url: 'https://example.net/embed/tv?tmdb=94605&season=1&episode=3', title: '' }]);
   assert.deepEqual([a.type, a.tmdbId, a.season, a.episode], ['tv', '94605', 1, 3]);

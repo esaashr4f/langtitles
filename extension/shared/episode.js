@@ -15,7 +15,7 @@
     return Number.isInteger(n) && n >= 0 ? n : null;
   }
 
-  function fromUrl(href) {
+  function fromUrl(href, depth) {
     let u;
     try {
       u = new URL(href);
@@ -53,6 +53,16 @@
     const episode = num(get('episode', 'e', 'ep', 'episode_number', 'episodeId', 'epi'));
     if (season != null) out.season = season;
     if (episode != null) out.episode = episode;
+    // Player wrappers often carry the real player's address in a parameter
+    // (cornclick.app/play?url=https://…/embed/tv/290295/1/1); read that too.
+    if ((depth || 0) < 2) {
+      for (const [, v] of q) {
+        if (!/^https?:\/\//i.test(v)) continue;
+        const inner = fromUrl(v, (depth || 0) + 1);
+        if (!inner) continue;
+        for (const k of Object.keys(inner)) if (out[k] == null) out[k] = inner[k];
+      }
+    }
     if (!out.type && out.season != null && (out.tmdbId || out.imdbId)) out.type = 'tv';
     return Object.keys(out).length ? out : null;
   }

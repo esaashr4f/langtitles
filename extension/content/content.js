@@ -64,6 +64,7 @@
   let domText = '';
   let picking = false;
   let lastSrc = '';
+  const topLayer = typeof HTMLElement !== 'undefined' && 'showPopover' in HTMLElement.prototype;
 
   // Subtitle sites
   let tabUrl = '';
@@ -72,6 +73,8 @@
   let lastTickTime = null;
   const autoTried = new Set(); // episode keys already searched automatically on this page
   let autoBusy = false;
+  let lastEpisode = null; // what was detected, for the toolbar popup
+  let autoNote = ''; // what the automatic search last did
   const subReqs = new Map(); // reqId -> callback
   let offsetSaveTimer = null;
 
@@ -498,6 +501,7 @@
   function buildUI() {
     if (ui) return;
     const root = h('langtitles-root');
+    if (topLayer) root.setAttribute('popover', 'manual');
     if (typeof matchMedia === 'function' && matchMedia('(hover: none)').matches) root.classList.add('sg-touch');
     root.setAttribute('translate', 'no');
     const sub = h('div', 'sg-sub');
@@ -528,7 +532,11 @@
     pop.addEventListener('mouseenter', cancelLeave);
     pop.addEventListener('mouseleave', scheduleLeave);
 
-    document.addEventListener('fullscreenchange', place);
+    document.addEventListener('fullscreenchange', () => {
+      // Re-enter the top layer after the full-screen element, so the overlay stays above it.
+      if (topLayer && ui.root.matches(':popover-open')) ui.root.hidePopover();
+      place();
+    });
     window.addEventListener('resize', place);
     window.addEventListener('scroll', place, true);
     document.addEventListener('mousemove', onMouseMove, true);
@@ -646,8 +654,20 @@
   function place() {
     if (!ui || !video) return;
     const fs = document.fullscreenElement;
-    const parent = fs && fs !== video && fs.contains(video) ? fs : document.documentElement;
-    if (ui.root.parentNode !== parent) parent.appendChild(ui.root);
+    if (topLayer) {
+      // In the browser's top layer the page cannot cover the overlay, whatever it stacks on top.
+      if (ui.root.parentNode !== document.documentElement) document.documentElement.appendChild(ui.root);
+      if (!ui.root.matches(':popover-open')) {
+        try {
+          ui.root.showPopover();
+        } catch (e) {
+          /* not connected yet */
+        }
+      }
+    } else {
+      const parent = fs && fs !== video && fs.contains(video) ? fs : document.documentElement;
+      if (ui.root.parentNode !== parent) parent.appendChild(ui.root);
+    }
     const r = video.getBoundingClientRect();
     const visible = r.width >= 200 && r.height >= 110 && video.isConnected;
     const s = ui.root.style;
@@ -2089,6 +2109,10 @@
     }
     const sources = [{ url: location.href, title: document.title }];
     if (document.referrer) sources.push({ url: document.referrer, title: '' });
+    // Players are often frames inside frames; the episode can be in any of their addresses.
+    for (const f of (res.info && res.info.frames) || []) {
+      if (f !== location.href && f !== tabUrl) sources.push({ url: f, title: '' });
+    }
     if (tabUrl && tabUrl !== location.href) sources.push({ url: tabUrl, title: tabTitle });
     const og = document.querySelector('meta[property="og:title"]');
     if (og && og.content) sources.push({ url: '', title: og.content });
@@ -2185,13 +2209,23 @@
     autoBusy = true;
     try {
       const ep = await currentEpisode();
-      if (!SG.episode.confident(ep)) return;
+      lastEpisode = ep;
+      if (!SG.episode.confident(ep)) {
+        if (!autoTried.has('undetected')) {
+          autoTried.add('undetected');
+          showToast("Langtitles can't tell which episode this is, so it hasn't searched the subtitle sites. Press G → Find subtitles to search by hand.");
+          autoNote = 'episode not detected';
+        }
+        return;
+      }
       const langs = wantedLangs();
       const key = SG.episode.key(ep, langs.join(','));
       if (autoTried.has(key)) return;
       autoTried.add(key);
+      autoNote = 'searching';
       const res = await request({ type: 'autoSubs', episode: ep, langs });
       if (hasLearningTrack()) return; // the site's own subtitles turned up meanwhile
+      autoNote = res.loaded && res.loaded.track ? 'loaded from ' + sourceName(res.loaded.track.provider) : res.error || ((res.loaded && res.loaded.errors && res.loaded.errors[0]) || 'nothing found');
       if (res.loaded && res.loaded.track) useLoaded(res.loaded, ep, 'auto');
       else if (res.loaded && res.loaded.searched) {
         const why = res.loaded.errors && res.loaded.errors.length ? ' (' + res.loaded.errors[0] + ')' : '';
@@ -2396,6 +2430,8 @@
         track: t ? { label: t.label, lang: t.lang, source: t.source, lines: t.cues.length, ready } : null,
         tracks: tracks.size,
         error: lastError,
+        episode: lastEpisode ? (SG.episode.confident(lastEpisode) ? SG.episode.describe(lastEpisode) : 'not detected') : '',
+        subSearch: autoNote,
       },
     });
   }

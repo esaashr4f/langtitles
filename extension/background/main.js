@@ -548,7 +548,13 @@
   async function tabInfo(tabId) {
     try {
       const tab = await browser.tabs.get(tabId);
-      return { url: tab.url || '', title: tab.title || '' };
+      let frames = [];
+      try {
+        frames = (await browser.webNavigation.getAllFrames({ tabId })).map((f) => f.url).filter((u) => /^https?:/.test(u));
+      } catch (e) {
+        /* no frame list; the frame's own address and the page still help */
+      }
+      return { url: tab.url || '', title: tab.title || '', frames };
     } catch (e) {
       return { url: '', title: '' };
     }
