@@ -14,6 +14,9 @@ select { width: 100%; padding: 4px 6px; border: 1px solid var(--line); border-ra
 .warn, .err { margin: 8px 12px 0; padding: 6px 8px; border-radius: 5px; font-size: 12px; }
 .warn { background: rgba(255, 196, 77, 0.18); }
 .err { background: rgba(214, 69, 69, 0.15); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chips button { padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--dim); font: inherit; font-size: 12px; cursor: pointer; text-decoration: line-through; }
+.chips button.on { color: var(--text); border-color: var(--accent); text-decoration: none; }
 .spend { padding: 8px 12px; color: var(--dim); font-size: 12px; }
 footer { padding: 8px 12px 10px; }
 a { color: var(--accent); }

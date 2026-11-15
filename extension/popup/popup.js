@@ -14,7 +14,21 @@
   const modelSel = $('model');
   for (const m of SG.MODELS) modelSel.append(new Option(m.name, m.id));
 
+  function fillAnnotations() {
+    const box = $('annotations');
+    box.textContent = '';
+    for (const a of SG.ANNOTATIONS) {
+      const b = document.createElement('button');
+      b.textContent = a.label;
+      b.title = a.title + ' (click to switch on or off)';
+      b.className = settings[a.key] ? 'on' : '';
+      b.addEventListener('click', () => save({ [a.key]: !settings[a.key] }));
+      box.append(b);
+    }
+  }
+
   function fill() {
+    fillAnnotations();
     $('enabled').checked = settings.enabled;
     $('host').textContent = host || 'This page';
     $('siteEnabled').checked = !(settings.disabledHosts || []).includes(host);

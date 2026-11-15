@@ -58,6 +58,20 @@
     panelOpen: false,
   };
 
+  // Annotations that can be switched on and off while watching (side panel and toolbar popup).
+  SG.ANNOTATIONS = [
+    { key: 'showMeaning', label: 'Meaning', title: 'What each word means, above it' },
+    { key: 'showParts', label: 'Pieces', title: 'The pieces a word is built from, with what each does (x + y + z)' },
+    { key: 'furigana', label: 'Furigana', title: 'Hiragana over kanji you have not marked known' },
+    { key: 'pinyin', label: 'Pinyin', title: 'Pinyin over Chinese characters' },
+    { key: 'toneColors', label: 'Tone colours', title: 'Pinyin coloured by tone' },
+    { key: 'hanja', label: 'Hanja', title: 'Hanja over Sino-Korean words' },
+    { key: 'showRoles', label: 'Roles', title: 'Coloured bars and labels for each phrase\'s job (subject, object, …)' },
+    { key: 'showTranslation', label: 'Translation', title: 'The translation under the line' },
+    { key: 'highlightNew', label: 'New-word underline', title: 'Underline words you have not marked known' },
+    { key: 'hideKnownGlosses', label: 'Plain known words', title: 'No meaning or pieces above words you have marked known' },
+  ];
+
   // Everything the content script may see. The API key never leaves the background page.
   SG.publicSettings = function (s) {
     const out = Object.assign({}, s);

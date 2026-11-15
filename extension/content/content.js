@@ -646,8 +646,24 @@
     wordsHead.append(h('span', 'sg-pguide-title', 'Episode words'), wordsBack);
     const wordsBody = h('div', 'sg-pguide-body');
     words.append(wordsHead, wordsBody);
-    el.append(head, tools, hint, find, words, guide, detail, listTitle, list);
-    return { el, status, select, offset, hint, find, findBody, words, wordsBody, guide, guideTitle, guideBody, detail, list, rows: new Map() };
+    // Quick switches for each annotation, so they can be changed mid-episode.
+    const showRow = h('div', 'sg-show-row');
+    showRow.append(h('span', 'sg-show-label', 'Show'));
+    const showChips = new Map();
+    for (const a of SG.ANNOTATIONS) {
+      const chip = h('button', 'sg-show-chip', a.label);
+      chip.title = a.title;
+      chip.addEventListener('click', () => {
+        const patch = { [a.key]: !settings[a.key] };
+        Object.assign(settings, patch);
+        post({ type: 'saveSettings', patch });
+        applySettings();
+      });
+      showChips.set(a.key, chip);
+      showRow.append(chip);
+    }
+    el.append(head, tools, showRow, hint, find, words, guide, detail, listTitle, list);
+    return { el, status, select, offset, hint, showChips, find, findBody, words, wordsBody, guide, guideTitle, guideBody, detail, list, rows: new Map() };
   }
 
   // Keep the overlay glued to the video, including in fullscreen.
@@ -690,6 +706,7 @@
     c.toggle('sg-no-roles', !settings.showRoles);
     c.toggle('sg-no-tr', !settings.showTranslation);
     c.toggle('sg-hidden', overlayHidden);
+    for (const [key, chip] of ui.panel.showChips) chip.classList.toggle('sg-on', Boolean(settings[key]));
     place();
     applyHideNative();
     renderTrackList();
