@@ -74,6 +74,7 @@
   const autoTried = new Set(); // episode keys already searched automatically on this page
   let autoBusy = false;
   let lastEpisode = null; // what was detected, for the toolbar popup
+  let episodeCost = 0; // estimated dollars spent on this video so far
   let autoNote = ''; // what the automatic search last did
   const subReqs = new Map(); // reqId -> callback
   let offsetSaveTimer = null;
@@ -172,6 +173,8 @@
         manualPick = null;
         chooseActive();
       }
+      // Only a switch to another video starts a new episode total, not the first address appearing.
+      if (lastSrc) episodeCost = 0;
       lastSrc = src;
       playedFor = 0;
     }
@@ -211,14 +214,22 @@
       for (const t of msg.tracks || []) addTrack(t);
       applySettings();
     } else if (msg.type === 'settings') {
+      const was = enabled();
       settings = Object.assign({}, SG.DEFAULTS, msg.settings);
       applySettings();
+      if (ui && was !== enabled()) {
+        // The overlay itself is hidden when off, so say it in a page-level note.
+        flashNote(enabled() ? 'Langtitles on' : 'Langtitles off (Alt+Shift+L turns it back on)');
+      }
     } else if (msg.type === 'track') {
       addTrack(msg.track);
     } else if (msg.type === 'analyzed') {
       onAnalyzed(msg);
     } else if (msg.type === 'deepDelta' || msg.type === 'deepDone' || msg.type === 'deepError') {
       onDeep(msg);
+    } else if (msg.type === 'cost') {
+      episodeCost += Number(msg.cost) || 0;
+      renderStatus();
     } else if (msg.type === 'askDelta' || msg.type === 'askDone' || msg.type === 'askError') {
       onAsk(msg);
     } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs'].includes(msg.type)) {
@@ -531,16 +542,33 @@
         el.addEventListener(type, stop);
       }
     }
-    toggle.addEventListener('click', () => setPanel(!settings.panelOpen));
+    // Some players swallow clicks in full screen, so act on the press itself.
+    let toggleAt = 0;
+    const flipPanel = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (Date.now() - toggleAt < 400) return;
+      toggleAt = Date.now();
+      setPanel(!settings.panelOpen);
+    };
+    toggle.addEventListener('pointerdown', flipPanel, true);
+    toggle.addEventListener('click', flipPanel, true);
     sub.addEventListener('mouseenter', cancelLeave);
     sub.addEventListener('mouseleave', scheduleLeave);
     pop.addEventListener('mouseenter', cancelLeave);
     pop.addEventListener('mouseleave', scheduleLeave);
 
-    document.addEventListener('fullscreenchange', () => {
+    const raise = () => {
       // Re-enter the top layer after the full-screen element, so the overlay stays above it.
       if (topLayer && ui.root.matches(':popover-open')) ui.root.hidePopover();
       place();
+    };
+    document.addEventListener('fullscreenchange', () => {
+      raise();
+      // Some players switch to full screen in steps; make sure the overlay ends up on top.
+      setTimeout(raise, 150);
+      setTimeout(raise, 600);
+      ui.root.classList.toggle('sg-fs', Boolean(document.fullscreenElement));
     });
     window.addEventListener('resize', place);
     window.addEventListener('scroll', place, true);
@@ -762,6 +790,21 @@
     }
   }
 
+  // A short note that shows even while the overlay is hidden.
+  function flashNote(text) {
+    const note = document.createElement('div');
+    note.textContent = text;
+    note.setAttribute('style', 'all:initial;position:fixed;z-index:2147483647;top:16px;left:50%;transform:translateX(-50%);padding:8px 14px;border-radius:8px;background:rgba(16,17,22,.94);color:#f4f4f6;font:14px system-ui,sans-serif;pointer-events:none;');
+    if (typeof note.showPopover === 'function') note.setAttribute('popover', 'manual');
+    document.documentElement.append(note);
+    try {
+      if (note.showPopover) note.showPopover();
+    } catch (e) {
+      /* shown as a plain fixed element */
+    }
+    setTimeout(() => note.remove(), 2200);
+  }
+
   let toastTimer = null;
   function showToast(text) {
     if (!ui) return;
@@ -813,7 +856,8 @@
     let ready = 0;
     for (const k of t.keys) if (analyses.has(k)) ready++;
     const cov = coverage.get(t.id);
-    ui.panel.status.textContent = `${ready}/${t.cues.length} lines ready${inflight ? ' · working' : ''}${cov ? ` · ${cov.pct}% known` : ''}`;
+    ui.panel.status.textContent = `${ready}/${t.cues.length} lines ready${inflight ? ' · working' : ''}${cov ? ` · ${cov.pct}% known` : ''} · this episode ${episodeCost > 0 && episodeCost < 0.005 ? 'under $0.01' : '$' + episodeCost.toFixed(2)}`;
+    ui.panel.status.title = 'Estimated cost of Claude requests for this video so far, from list prices';
   }
 
   // ------------------------------------------------------------ subtitle box
@@ -1115,7 +1159,9 @@
     // Guides: one for the word itself (what it means, how it's built, where it fits and
     // where it doesn't), and one for each grammar form it carries.
     const wordForm = wordGuideForm(w, ctx.lang);
-    const guides = (isTrivial(w) && forms.length ? [] : [{ f: wordForm, word: true }]).concat(forms.map((f) => ({ f, word: false })));
+    // Names and places get their short meaning, not a whole guide.
+    const isName = SG.wordClass(w.pos) === 'name';
+    const guides = ((isTrivial(w) && forms.length) || isName ? [] : [{ f: wordForm, word: true }]).concat(forms.map((f) => ({ f, word: false })));
     const firstGuide = forms.length ? guides.find((g) => !g.word) : guides[0];
     if (guides.length) {
       const row = h('div', 'sg-pop-forms');
@@ -1227,7 +1273,7 @@
   }
 
   function paintDeep(target) {
-    if (target.guide) SG.renderGuide(target.el, target.text);
+    if (target.guide) SG.renderGuide(target.el, target.text, { known: known.ja, plain: !settings.furigana });
     else target.el.textContent = target.text;
   }
 
@@ -2611,6 +2657,7 @@
         track: t ? { label: t.label, lang: t.lang, source: t.source, lines: t.cues.length, ready } : null,
         tracks: tracks.size,
         error: lastError,
+        cost: episodeCost,
         episode: lastEpisode ? (SG.episode.confident(lastEpisode) ? SG.episode.describe(lastEpisode) : 'not detected') : '',
         subSearch: autoNote,
       },

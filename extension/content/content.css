@@ -595,3 +595,6 @@ langtitles-root button.sg-offset:hover { color: var(--sg-text); }
 langtitles-root .sg-title-row { display: flex; gap: 6px; }
 langtitles-root .sg-title-row .sg-in { flex: 1; min-width: 0; }
 langtitles-root .sg-shows { margin-bottom: 10px; }
+/* in full screen the panel button stays visible, since the pointer may be hidden by the player */
+langtitles-root.sg-fs .sg-toggle { opacity: 0.9; }
+langtitles-root .sg-pop-deep ruby rt, langtitles-root .sg-pguide-body ruby rt { color: var(--sg-read); font-size: 0.55em; }

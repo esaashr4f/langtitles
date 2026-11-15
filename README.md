@@ -4,7 +4,7 @@
 
 A Firefox extension that turns the subtitles on any streaming site into a word-by-word breakdown, written by Claude.
 
-Above every word you see what it means in this sentence, the pieces it is built from with what each piece does (`食べ eat + させ make someone do + られ passive + た past`), and its reading. Under each phrase, a coloured bar shows its job in the sentence (topic, object, predicate…). Hovering a word pauses the video and opens a note. A side panel shows the translation, a literal word-for-word rendering, the sentence structure, grammar notes and a clickable transcript.
+Above every word you see its best translation for this sentence, and its reading. Click (or rest on) a word for the rest: the pieces it is built from with what each piece does (`食べ eat + させ make/let (causative) + られ be done to (passive) + た past`), other meanings, notes and guides. The pieces can also be shown above the words (Show → Pieces). Under each phrase, a coloured bar shows its job in the sentence (topic, object, predicate…). Hovering a word pauses the video and opens a note. A side panel shows the translation, a literal word-for-word rendering, the sentence structure, grammar notes and a clickable transcript.
 
 ## Furigana and pinyin
 
@@ -82,7 +82,7 @@ Every word has a 📖 guide, opened from the **Guides** row of the hover popup (
 - **Where it doesn't fit, and what to use instead**: every word you might confuse it with, such as 母 vs お母さん, 母親, ママ, おふくろ, with when to use each and contrasting examples
 - **Nuance and register**, **common mistakes**, and **where you met it**
 
-Like grammar guides, each word guide is written once and saved, so the word opens instantly everywhere afterwards.
+Like grammar guides, each word guide is written once and saved, so the word opens instantly everywhere afterwards. Japanese guides have furigana over kanji, left off kanji you've marked known (and off entirely when furigana is switched off). Names of people and places get just their short meaning, not a guide.
 
 ![A word guide for 母](docs/word-guide.png)
 
@@ -123,7 +123,7 @@ You need Firefox 140 or newer and an Anthropic API key from [console.anthropic.c
 2. Langtitles picks them up and starts preparing them. The toolbar button shows how many lines are ready.
 3. Hover any word to pause and read more. Move the pointer away and the video resumes.
 
-**Choosing what's shown.** The side panel (**G**) and the toolbar popup both have a **Show** row: click Meaning, Pieces, Furigana, Pinyin, Tone colours, Hanja, Roles, Translation, New-word underline or Plain known words to switch each one on or off (crossed out means off). The choice is remembered. Below it, the **For** row picks which kinds of words get notes above them (Nouns, Verbs, Adjectives, Adverbs, Particles & endings, Other), for example only nouns and verbs. Hovering any word still shows everything. For Japanese, the **JLPT** row leaves the notes off easier words: **N4+** shows notes only above N4 words and harder, so N5 words stay plain. Levels come from [Jonathan Waller's JLPT lists](http://www.tanos.co.uk/jlpt/) (CC BY; there has been no official list since 2010), and each word's level shows in its hover popup. Words on no list keep their notes.
+**Choosing what's shown.** The side panel (**G**) and the toolbar popup both have a **Show** row: click Meaning, Pieces, Furigana, Pinyin, Tone colours, Hanja, Roles, Translation, New-word underline or Plain known words to switch each one on or off (crossed out means off). The choice is remembered. Below it, the **For** row picks which kinds of words get notes above them (Nouns, Names, Verbs, Adjectives, Adverbs, Particles & endings, Other), for example only nouns and verbs, or everything except names. Hovering any word still shows everything. For Japanese, the **JLPT** row leaves the notes off easier words: **N4+** shows notes only above N4 words and harder, so N5 words stay plain. Levels come from [Jonathan Waller's JLPT lists](http://www.tanos.co.uk/jlpt/) (CC BY; there has been no official list since 2010), and each word's level shows in its hover popup. Words on no list keep their notes.
 
 **Timing.** If the subtitles are slightly out of sync, press **[** to show them earlier or **]** to show them later, 0.25 s at a time (with **Shift**, 1 s); **\\** resets. The side panel has the same as **◀ Earlier** and **Later ▶** buttons. For downloaded subtitles, the shift is remembered for that episode.
 
@@ -148,6 +148,10 @@ donkey.to and similar sites play the video in an embedded player from another do
 
 Each line is analyzed once and saved; lines use the cheaper line-breakdown model. Grammar guides are longer (roughly 500 to 900 words) and written at medium effort or above, but only once per form. The default model is Claude Opus 5.5 with low thinking effort. Claude Haiku 5.5 is far cheaper, with simpler explanations. Claude Fable 5.2 is the most capable and the most expensive. The options page shows token usage and an estimated spend for each model. "Prepare ahead" (10 minutes by default) controls how far ahead Langtitles analyzes, so skipping through a video doesn't pay for lines you never watch.
 
+## Turning it off
+
+Press **Alt+Shift+L** to turn Langtitles off or on everywhere (it works in full screen too; change the keys in about:addons → ⚙ → Manage Extension Shortcuts), or right-click any page or the 🦊 button: **Turn Langtitles off**, or switch it off for just this site. While it's off, the 🦊 button shows "off".
+
 ## Phones and tablets
 
 Langtitles works in Firefox for Android. With no hover on touch screens, tap a word to open it (the video pauses) and tap × to close it and carry on. The panel fills the screen on narrow displays.
@@ -156,6 +160,7 @@ Langtitles works in Firefox for Android. With no hover on touch screens, tap a w
 
 - **Two models:** Options and the toolbar popup have one model for **line breakdowns** (every subtitle line goes through it, so it is almost all of the cost; Claude Haiku 5.5 by default, which is by far the cheapest) and one for **guides, questions and character entries** (Claude Opus 5.5 by default, where depth matters most).
 - **Short notes:** each word gets a hover note only when there is something the meaning and pieces don't already show.
+- **What this episode cost:** the side panel's header shows the running estimate for the video you're watching ("this episode $0.12"), and the toolbar popup shows it too.
 
 - **Prepare a whole season at half price:** side panel → Find subtitles → Prepare a whole season. Langtitles downloads subtitles for each episode and sends every line through Anthropic's batch API, which costs half as much and is usually done within an hour (at most a day). Those episodes then play with every line ready. Each episode uses one subtitle download.
 - **Spending cap:** set a monthly limit in Options. Once this month's estimated spend reaches it, Langtitles stops sending requests until you raise it. The toolbar popup shows this month's spend.

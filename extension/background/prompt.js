@@ -4,7 +4,7 @@
   const SG = (root.SG = root.SG || {});
 
   // Bump when the prompt or schema changes so cached analyses from the old version are not reused.
-  const PROMPT_VERSION = 7;
+  const PROMPT_VERSION = 8;
   // Grammar guides are cached by form, separately from line analyses.
   const GUIDE_VERSION = 1;
 
@@ -84,7 +84,7 @@
                   },
                   d: { type: 'string', description: 'Dictionary form.' },
                   pos: { type: 'string', description: 'Part of speech and form, e.g. "verb, causative-passive, negative past".' },
-                  m: { type: 'string', description: 'What the word means in this sentence.' },
+                  m: { type: 'string', description: 'The best translation of the word in this sentence, in one to three words.' },
                   p: {
                     type: 'array',
                     description: 'The pieces the word is built from, in order. Their t values concatenate to s.',
@@ -141,7 +141,7 @@ For each word:
 s: the word copied exactly from the line, so it can be found in the text. Cover the whole line; skip only punctuation and symbols.
 p: the pieces of the word, in order, whose t values concatenate to exactly s. For each piece, g says what it means or what it does, in at most four words, since it is drawn above the piece while the video plays. For a piece with a meaning of its own, give that meaning ("eat", "field", "school"). For a grammatical piece, give a short plain meaning and, where it helps, the name of the form in brackets, using the same label every time the same piece appears so the learner learns to recognise it: "make/let (causative)", "be done to (passive)", "can (potential)", "past", "not", "polite", "want to", "-ing (ongoing)", "topic marker", "object marker", "at/in", "plural". Never write a gloss that is awkward English. A word that does not decompose usefully gets a single piece: the whole word, with a gloss that says what it is.
 b: for a word made of a stem and two or more grammatical pieces (食べさせられた, 먹었어요 with several endings, a Chinese verb with a complement and 了), how the meaning builds, adding one piece at a time, starting from the dictionary form: 食べる "eat" → 食べさせる "make (someone) eat" → 食べさせられる "be made to eat" → 食べさせられた "was made to eat". Each step's t is the form at that step (an ordinary form a learner could look up or say) and m its meaning in a few words. Leave the list empty for every other word.
-m: what the word means here. Choose the sense that fits this sentence and this scene, not the first sense in a dictionary.
+m: the single best translation of the word in this sentence, in one to three words: the word you would choose if you were translating this exact line, fitted to this scene (not the first sense in a dictionary, and not a list of senses). It is shown above the word while the video plays, so keep it short; the other senses and details belong in the guides.
 r: the reading of the whole word: hiragana for a Japanese word containing kanji, pinyin with tone marks for a Chinese word. For every other word, including Japanese written only in kana and every language other than Japanese and Chinese, use an empty string. Never write romanization: no romaji, no Korean or other romanization.
 f: the word split into segments for ruby text drawn above the characters; the t values concatenate to exactly s.
   Japanese: each kanji is its own segment with its hiragana reading (食べる = 食/た + べる/""), and each run of kana is a segment with an empty reading. Keep kanji together in one segment only when the reading cannot be divided between them (今日 = 今日/きょう, 大人 = 大人/おとな). Katakana and kana-only words are one segment with an empty reading.
@@ -150,7 +150,7 @@ f: the word split into segments for ruby text drawn above the characters; the t 
   Every other language: an empty list.
 x: for a word built from Chinese characters (a kanji compound, a Chinese word, a Sino-Korean word), the same word in the other two of Japanese, Chinese and Korean when it exists there with the same characters and a related meaning, written the way that language writes it (Japanese 学校 がっこう, Chinese 学校 xuéxiào, Korean 학교 with the hanja 學校 noted in note). In note say how the meaning or use differs, or leave it empty when it is the same. Leave the list empty for every other word, and never invent a cognate that is not in real use.
 d: the dictionary form.
-pos: part of speech and the form it is in.
+pos: part of speech and the form it is in. For a proper noun, write "proper noun" and what it names in brackets: "proper noun (person)", "proper noun (place)", "proper noun (organisation)", "proper noun (title)".
 c and role: group the words into phrases. Words in the same phrase share a phrase number c, counted from 0 in order, and share the role that phrase plays in the sentence. A noun and the particle or case ending that marks it belong to one phrase.
 n: a hover note of one short sentence, only when there is something worth knowing that the meaning and pieces do not already show: why this form is used here, the nuance against a near-synonym, the register, a common confusion, the literal image behind an expression. Otherwise an empty string: most particles and plain everyday words need no note, and a note that repeats the gloss wastes the learner's attention.
 g: the grammar forms this word carries that a learner would want to study, most important first. These open a full guide to the form, so list forms, not vocabulary: conjugations and auxiliaries (causative-passive, ～ている, conditional ～ば), particles and endings with a grammatical job (topic は, connective -아서/어서, aspect 了), and, for a pattern spread over several words (把 sentences, ～ば～ほど, 是…的), the word that carries it. Each has:
@@ -230,7 +230,7 @@ The mistakes learners actually make with it, each with the correction.
 ## Where you met it
 Two or three sentences on what the form is doing in the line where the learner met it.
 
-Formatting: plain text only, apart from the "## " headings. Start a line with "- " for a list item. Put each example sentence on its own line, followed by " — " and its translation. Be thorough without padding; most guides need 500 to 900 words. Accuracy matters more than coverage: state only rules you are sure of, and say so when usage varies between speakers or regions.`;
+Formatting: plain text only, apart from the "## " headings. Start a line with "- " for a list item. Put each example sentence on its own line, followed by " — " and its translation. Write every Japanese word that contains kanji as {kanji part|reading}, for example {食|た}べさせられる, {母|はは}, {昨日|きのう}, so readings can be drawn over the kanji; do not also add a reading in brackets after it. Be thorough without padding; most guides need 500 to 900 words. Accuracy matters more than coverage: state only rules you are sure of, and say so when usage varies between speakers or regions.`;
   }
 
   function wordGuideSystemPrompt(nativeLang) {
@@ -259,7 +259,7 @@ The mistakes learners actually make with it, each with the correction.
 ## Where you met it
 Two or three sentences on what the word means and why this word was chosen in the line where the learner met it.
 
-Formatting: plain text only, apart from the "## " headings. Start a line with "- " for a list item. Put each example sentence on its own line, followed by " — " and its translation. Be thorough without padding; most guides need 500 to 900 words, a simple word fewer. Accuracy matters more than coverage: state only what you are sure of, and say so when usage varies between speakers or regions.`;
+Formatting: plain text only, apart from the "## " headings. Start a line with "- " for a list item. Put each example sentence on its own line, followed by " — " and its translation. Write every Japanese word that contains kanji as {kanji part|reading}, for example {食|た}べる, {母|はは}, {昨日|きのう}, so readings can be drawn over the kanji; do not also add a reading in brackets after it. Be thorough without padding; most guides need 500 to 900 words, a simple word fewer. Accuracy matters more than coverage: state only what you are sure of, and say so when usage varies between speakers or regions.`;
   }
 
   function wordGuideUserMessage(req) {

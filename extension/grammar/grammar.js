@@ -4,6 +4,10 @@
   const SG = globalThis.SG;
   const $ = (id) => document.getElementById(id);
   let guides = [];
+  let knownKanji = null;
+  browser.storage.local.get('known').then((r) => {
+    knownKanji = new Set(Array.from(((r.known || {}).ja) || ''));
+  }, () => {});
   let lang = '';
   let kind = '';
   let current = '';
@@ -98,7 +102,7 @@
     tools.append(del);
     const body = h('div', 'guide');
     if (g.lang) body.lang = g.lang;
-    SG.renderGuide(body, g.text);
+    SG.renderGuide(body, g.text, { known: knownKanji });
     view.append(head, tools, body);
     window.scrollTo(0, 0);
   }

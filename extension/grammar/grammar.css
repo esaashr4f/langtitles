@@ -48,6 +48,7 @@ main { padding: 32px 40px 80px; max-width: 860px; }
 .sg-g-li::before { content: ""; position: absolute; left: 4px; top: 0.7em; width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
 .sg-g-ex { font-weight: 500; }
 .sg-g-ext { color: var(--dim); }
+.guide ruby rt { color: var(--accent); font-size: 0.55em; }
 @media (max-width: 720px) {
   .layout { grid-template-columns: 1fr; }
   aside { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--line); }

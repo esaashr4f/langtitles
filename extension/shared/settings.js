@@ -26,7 +26,8 @@
     lookaheadMin: 10, // minutes of subtitles to prepare ahead of the playhead; 0 = whole video
     chunkSize: 8,
     concurrency: 3,
-    showParts: true,
+    showParts: false, // the pieces (x + y + z) above words; they are always in the hover popup
+    settingsVersion: 2,
     showMeaning: true,
     furigana: true, // hiragana over kanji you have not marked as known
     pinyin: true, // pinyin over Chinese characters
@@ -45,7 +46,7 @@
     pitchAccent: true, // Japanese pitch accent in the hover popup, word lists and review
     addGrammarToReview: true, // grammar forms you open guides for become review cards
     monthlyCap: 0, // stop Claude requests once this month's estimated spend reaches this many dollars; 0 = no cap
-    glossClasses: ['noun', 'verb', 'adjective', 'adverb', 'particle', 'other'], // kinds of words that get notes above them
+    glossClasses: ['noun', 'name', 'verb', 'adjective', 'adverb', 'particle', 'other'], // kinds of words that get notes above them
     jlptFrom: 5, // notes above Japanese words from this JLPT level up: 5 = every level, 4 = N4 and harder (N5 words plain), …
     hideKnownGlosses: true, // no meaning or pieces above words marked as known
     highlightNew: true, // mark words you haven't marked as known (once 20 are known in that language)
@@ -77,7 +78,8 @@
 
   // Kinds of words, for choosing which get their meaning and pieces drawn above them.
   SG.WORD_CLASSES = [
-    { key: 'noun', label: 'Nouns', title: 'Nouns, pronouns, names, numbers and counters' },
+    { key: 'noun', label: 'Nouns', title: 'Nouns, pronouns, numbers and counters' },
+    { key: 'name', label: 'Names', title: 'Names of people, places, organisations and titles' },
     { key: 'verb', label: 'Verbs', title: 'Verbs, in any form' },
     { key: 'adjective', label: 'Adjectives', title: 'Adjectives, including Japanese i- and na-adjectives' },
     { key: 'adverb', label: 'Adverbs', title: 'Adverbs' },
@@ -88,11 +90,12 @@
   // Sorts a word into one of those kinds from its part of speech ("verb, causative-passive, past",
   // "na-adjective", "noun + particle"): whichever kind is named first wins.
   const CLASS_PATTERNS = [
+    ['name', /\bproper\b|\b(personal|place|given|family|company|brand)\s+name\b|\bname\s+of\b|^name\b|人名|地名|固有名詞/i],
     ['particle', /\b(particle|auxiliary|copula|conjunction|postposition|classifier|measure word|suffix|ending)\b|助詞|助動詞/i],
     ['verb', /\bverbs?\b|動詞/i],
     ['adjective', /\badjectiv\w*|形容/i],
     ['adverb', /\badverb\w*|副詞/i],
-    ['noun', /\b(noun|pronoun|proper|name|numeral|number|counter)\w*|名詞|代名詞/i],
+    ['noun', /\b(noun|pronoun|numeral|number|counter)\w*|名詞|代名詞/i],
   ];
   SG.wordClass = function (pos) {
     const text = String(pos || '');
@@ -142,7 +145,14 @@
 
   SG.loadSettings = async function () {
     const stored = await browser.storage.local.get('settings');
-    return Object.assign({}, SG.DEFAULTS, stored.settings || {});
+    const s = Object.assign({}, SG.DEFAULTS, stored.settings || {});
+    // Version 2: the pieces moved from above the words to the hover popup by default.
+    if (stored.settings && (stored.settings.settingsVersion || 1) < 2) {
+      s.showParts = false;
+      s.settingsVersion = 2;
+      await browser.storage.local.set({ settings: s });
+    }
+    return s;
   };
 
   SG.saveSettings = async function (patch) {

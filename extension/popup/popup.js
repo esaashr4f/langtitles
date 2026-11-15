@@ -2,7 +2,12 @@
   'use strict';
   const SG = globalThis.SG;
   const $ = (id) => document.getElementById(id);
-  const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+  let tab = { id: -1, url: '' };
+  try {
+    tab = (await browser.tabs.query({ active: true, currentWindow: true }))[0] || tab;
+  } catch (e) {
+    /* still show the switches */
+  }
   let host = '';
   try {
     host = new URL(tab.url).hostname;
@@ -109,7 +114,7 @@
     window.close();
   });
   (async () => {
-    const items = await SG.cache.getAll('bank');
+    const items = await Promise.race([SG.cache.getAll('bank'), new Promise((r) => setTimeout(() => r([]), 1500))]);
     const log = (await browser.storage.local.get('reviewLog')).reviewLog || {};
     const newDone = log.day === SG.srs.dayKey(Date.now()) ? log.newDone || 0 : 0;
     const c = SG.srs.counts(items, Date.now(), (settings.newPerDay || 20) - newDone);
@@ -129,6 +134,14 @@
   });
 
   async function refresh() {
+    try {
+      await refreshInner();
+    } catch (e) {
+      $('state').textContent = 'Could not read this tab’s status. The switches above still work.';
+    }
+  }
+
+  async function refreshInner() {
     const s = await browser.runtime.sendMessage({ type: 'status', tabId: tab.id });
     $('keyWarning').hidden = s.hasKey;
     const st = s.state;
@@ -149,6 +162,7 @@
       li.title = t.url;
       ul.append(li);
     }
+    if (st && st.cost != null) $('state').textContent += ` This episode: about $${Number(st.cost).toFixed(2)}.`;
     if (st && (st.episode || st.subSearch)) {
       const line = [st.episode ? `Episode: ${st.episode}` : '', st.subSearch ? `Subtitle sites: ${st.subSearch}` : ''].filter(Boolean).join(' · ');
       $('state').textContent += ' ' + line;

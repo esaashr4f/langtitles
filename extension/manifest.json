@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Langtitles",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Langtitles: learn languages from what you watch. Word-by-word subtitle breakdowns with furigana and pinyin, grammar guides, a word bank, and subtitles fetched for the episode, on any streaming site. Powered by Claude with your own API key.",
   "icons": {
     "48": "icons/icon.svg",
@@ -27,7 +27,8 @@
     "webRequest",
     "webRequestBlocking",
     "storage",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "menus"
   ],
   "background": {
     "scripts": [
@@ -87,5 +88,13 @@
   "web_accessible_resources": [
     "icons/icon.svg",
     "data/jlpt.json"
-  ]
+  ],
+  "commands": {
+    "toggle-langtitles": {
+      "suggested_key": {
+        "default": "Alt+Shift+L"
+      },
+      "description": "Turn Langtitles off or on everywhere"
+    }
+  }
 }

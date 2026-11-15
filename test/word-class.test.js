@@ -7,7 +7,8 @@ const { wordClass } = globalThis.SG;
 
 test('word classes from parts of speech', () => {
   const cases = {
-    noun: 'noun', 'noun (time)': 'noun', pronoun: 'noun', 'proper noun': 'noun', 'noun + particle': 'noun', counter: 'noun',
+    noun: 'noun', 'noun (time)': 'noun', pronoun: 'noun', 'noun + particle': 'noun', counter: 'noun',
+    'proper noun (person)': 'name', 'proper noun (place)': 'name', 'place name': 'name', 'proper noun + particle': 'name',
     'verb, causative-passive, past': 'verb', 'verb, past polite': 'verb', 'suru verb': 'verb',
     'na-adjective': 'adjective', 'i-adjective, negative': 'adjective', adjective: 'adjective',
     adverb: 'adverb', 'adverb / noun': 'adverb',

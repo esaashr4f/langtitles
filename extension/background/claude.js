@@ -104,11 +104,22 @@
     }
   }
 
-  async function recordUsage(model, usage, batch) {
+  // Listeners told about each request's cost and which tab it was for (settings.costTag).
+  const costListeners = new Set();
+
+  async function recordUsage(model, usage, batch, tag) {
     if (!usage) return;
+    const cost = costOf(model, usage, batch);
+    for (const fn of costListeners) {
+      try {
+        fn(tag, cost);
+      } catch (e) {
+        /* a listener's problem is not this request's */
+      }
+    }
     const spend = (await browser.storage.local.get('spend')).spend || {};
     const mk = monthKey();
-    spend[mk] = (spend[mk] || 0) + costOf(model, usage, batch);
+    spend[mk] = (spend[mk] || 0) + cost;
     await browser.storage.local.set({ spend });
     const stored = (await browser.storage.local.get('usage')).usage || {};
     const u = stored[model] || { input: 0, output: 0, cacheRead: 0, requests: 0 };
@@ -154,7 +165,7 @@
     } catch (err) {
       throw describeError(err);
     }
-    recordUsage(message.model || settings.model, message.usage).catch(() => {});
+    recordUsage(message.model || settings.model, message.usage, false, settings.costTag).catch(() => {});
     if (message.stop_reason === 'refusal') {
       throw new LangtitlesError('refusal', 'Claude declined to annotate these lines.');
     }
@@ -179,7 +190,7 @@
       const stream = getClient(settings).beta.messages.stream(params);
       stream.on('text', (delta) => onText(delta));
       const message = await stream.finalMessage();
-      recordUsage(message.model || settings.model, message.usage).catch(() => {});
+      recordUsage(message.model || settings.model, message.usage, false, settings.costTag).catch(() => {});
       if (message.stop_reason === 'refusal') throw new LangtitlesError('refusal', 'Claude declined to explain this.');
       return textOf(message);
     } catch (err) {
@@ -221,7 +232,7 @@
     } catch (err) {
       throw describeError(err);
     }
-    recordUsage(message.model || settings.model, message.usage).catch(() => {});
+    recordUsage(message.model || settings.model, message.usage, false, settings.costTag).catch(() => {});
     if (message.stop_reason === 'refusal') throw new LangtitlesError('refusal', 'Claude declined to describe this character.');
     if (message.stop_reason === 'max_tokens') throw new LangtitlesError('truncated', 'The character entry was cut off.');
     try {
@@ -245,7 +256,7 @@
     } catch (err) {
       throw describeError(err);
     }
-    recordUsage(message.model || settings.model, message.usage).catch(() => {});
+    recordUsage(message.model || settings.model, message.usage, false, settings.costTag).catch(() => {});
     if (message.stop_reason === 'refusal') throw new LangtitlesError('refusal', 'Claude declined to list these words.');
     if (message.stop_reason === 'max_tokens') throw new LangtitlesError('truncated', 'The word list was cut off.');
     try {
@@ -266,7 +277,7 @@
       const stream = getClient(settings).beta.messages.stream(params);
       stream.on('text', (delta) => onText(delta));
       const message = await stream.finalMessage();
-      recordUsage(message.model || settings.model, message.usage).catch(() => {});
+      recordUsage(message.model || settings.model, message.usage, false, settings.costTag).catch(() => {});
       if (message.stop_reason === 'refusal') throw new LangtitlesError('refusal', 'Claude declined to answer that.');
       return textOf(message);
     } catch (err) {
@@ -289,7 +300,7 @@
     } catch (err) {
       throw describeError(err);
     }
-    recordUsage(message.model || settings.model, message.usage).catch(() => {});
+    recordUsage(message.model || settings.model, message.usage, false, settings.costTag).catch(() => {});
     if (message.stop_reason !== 'end_turn') throw new LangtitlesError('parse', 'Could not make a question for this form.');
     return JSON.parse(textOf(message));
   }
@@ -321,7 +332,7 @@
           continue;
         }
         const msg = r.result.message;
-        recordUsage(msg.model || settings.model, msg.usage, true).catch(() => {});
+        recordUsage(msg.model || settings.model, msg.usage, true, settings.costTag).catch(() => {});
         let out = null;
         try {
           if (msg.stop_reason === 'end_turn') out = readAnalysis(textOf(msg), counts[r.custom_id] || 0);
@@ -355,5 +366,5 @@
     }
   }
 
-  SG.claude = { lineModelOf, spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
+  SG.claude = { onCost: (fn) => costListeners.add(fn), lineModelOf, spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

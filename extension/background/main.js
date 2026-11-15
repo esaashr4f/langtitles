@@ -42,14 +42,19 @@
   }
 
   // Ask Claude for a batch; if the reply was cut off, split the batch and try the halves.
-  async function analyzeBatch(texts, context, langHint) {
+  // Settings for one request, tagged with the tab it is for, so its cost can be shown there.
+  function forTab(tabId) {
+    return Object.assign({}, settings, { costTag: tabId });
+  }
+
+  async function analyzeBatch(texts, context, langHint, s) {
     try {
-      return await withSlot(() => claude.analyzeLines(settings, texts, context, langHint));
+      return await withSlot(() => claude.analyzeLines(s || settings, texts, context, langHint));
     } catch (err) {
       if (err.code === 'truncated' && texts.length > 1) {
         const mid = Math.ceil(texts.length / 2);
-        const first = await analyzeBatch(texts.slice(0, mid), context, langHint);
-        const second = await analyzeBatch(texts.slice(mid), context.concat(texts.slice(0, mid)).slice(-3), langHint);
+        const first = await analyzeBatch(texts.slice(0, mid), context, langHint, s);
+        const second = await analyzeBatch(texts.slice(mid), context.concat(texts.slice(0, mid)).slice(-3), langHint, s);
         return first.concat(second);
       }
       throw err;
@@ -57,7 +62,7 @@
   }
 
   // lines: [{ key, text }]. Resolves to { results: { key: analysis }, error? }.
-  async function analyze(req) {
+  async function analyze(req, tabId) {
     await ready;
     const fp = fingerprint();
     const results = {};
@@ -73,7 +78,7 @@
     }
     let error = null;
     if (fresh.length) {
-      const batch = analyzeBatch(fresh.map((l) => l.text), req.context || [], req.lang);
+      const batch = analyzeBatch(fresh.map((l) => l.text), req.context || [], req.lang, forTab(tabId));
       fresh.forEach((line, i) => {
         const p = batch.then((out) => out[i], () => null);
         inflight.set(fullKey(line), p);
@@ -130,7 +135,7 @@
     };
     try {
       const writer = req.kind === 'wordguide' ? claude.explainWordGuide : claude.explainForm;
-      const text = await writer(settings, req, (delta) => each((w) => w.port.postMessage({ type: 'deepDelta', reqId: w.reqId, delta })));
+      const text = await writer(forTab(port.sender && port.sender.tab ? port.sender.tab.id : -1), req, (delta) => each((w) => w.port.postMessage({ type: 'deepDelta', reqId: w.reqId, delta })));
       const entry = {
         key, k: req.form.k, name: req.form.name || req.form.k, kind: req.kind === 'wordguide' ? 'word' : 'grammar', lang: req.lang || '', nativeLang: settings.nativeLang,
         text, sentence: req.sentence || '', word: req.word || '', model: settings.model, savedAt: Date.now(),
@@ -181,13 +186,13 @@
 
   const charsInflight = new Map();
 
-  async function charInfo(req) {
+  async function charInfo(req, tabId) {
     await ready;
     const key = charKey(req.ch, req.lang);
     const hit = (await cache.getMany('chars', [key])).get(key);
     if (hit) return hit.entry;
     if (!charsInflight.has(key)) {
-      const p = claude.charEntry(settings, req).then((entry) => {
+      const p = claude.charEntry(forTab(tabId), req).then((entry) => {
         cache.putMany('chars', [[key, { entry, savedAt: Date.now() }]]).catch(() => {});
         return entry;
       });
@@ -220,12 +225,12 @@
     return null;
   }
 
-  async function wordList(lines, sig) {
+  async function wordList(lines, sig, tabId) {
     await ready;
     const key = [prompt.WORDS_VERSION, claude.lineModelOf(settings), settings.nativeLang, 'words', sig].join('|');
     const hit = (await cache.getMany('deep', [key])).get(key);
     if (hit) return hit;
-    const words = await claude.episodeWords(settings, lines);
+    const words = await claude.episodeWords(forTab(tabId), lines);
     cache.putMany('deep', [[key, words]]).catch(() => {});
     return words;
   }
@@ -593,7 +598,7 @@
 
     port.onMessage.addListener((msg) => {
       if (msg.type === 'analyze') {
-        analyze(msg).then((res) => send(port, { type: 'analyzed', reqId: msg.reqId, results: res.results, error: res.error }));
+        analyze(msg, tabId).then((res) => send(port, { type: 'analyzed', reqId: msg.reqId, results: res.results, error: res.error }));
       } else if (msg.type === 'deep') {
         explain(msg, port);
       } else if (msg.type === 'state') {
@@ -604,7 +609,7 @@
       } else if (msg.type === 'saveSettings') {
         SG.saveSettings(msg.patch);
       } else if (msg.type === 'charInfo') {
-        charInfo(msg).then(
+        charInfo(msg, tabId).then(
           (entry) => send(port, { type: 'charInfo', reqId: msg.reqId, entry }),
           (err) => send(port, { type: 'charInfo', reqId: msg.reqId, error: err.message }),
         );
@@ -620,7 +625,7 @@
       } else if (msg.type === 'pitch') {
         pitchFor(msg.items || []).then((results) => send(port, { type: 'pitch', reqId: msg.reqId, results }));
       } else if (msg.type === 'ask') {
-        ready.then(() => claude.askLine(settings, msg, (delta) => send(port, { type: 'askDelta', reqId: msg.reqId, delta })))
+        ready.then(() => claude.askLine(forTab(tabId), msg, (delta) => send(port, { type: 'askDelta', reqId: msg.reqId, delta })))
           .then(
             (text) => send(port, { type: 'askDone', reqId: msg.reqId, text }),
             (err) => send(port, { type: 'askError', reqId: msg.reqId, message: err.message }),
@@ -640,7 +645,7 @@
       } else if (msg.type === 'stroke') {
         strokeData(msg.ch, msg.lang).then((data) => send(port, { type: 'stroke', reqId: msg.reqId, data }));
       } else if (msg.type === 'episodeWords') {
-        wordList(msg.lines, msg.sig).then(
+        wordList(msg.lines, msg.sig, tabId).then(
           (words) => send(port, { type: 'episodeWords', reqId: msg.reqId, words }),
           (err) => send(port, { type: 'episodeWords', reqId: msg.reqId, error: err.message }),
         );
@@ -694,6 +699,12 @@
         if (!set.size) ports.delete(tabId);
       }
     });
+  });
+
+  // Each request's cost goes to the tab it was for, where the side panel adds it to the episode's total.
+  claude.onCost((tabId, cost) => {
+    if (tabId == null || tabId < 0) return;
+    for (const port of ports.get(tabId) || []) send(port, { type: 'cost', cost });
   });
 
   sniffer.onTrack((tabId, track) => {
@@ -763,6 +774,66 @@
     }
     if (msg.type === 'resetUsage') return browser.storage.local.remove('usage').then(() => ({ ok: true }));
     return undefined;
+  });
+
+  // ---- turning Langtitles off: shortcut, right-click menu, badge -----------------
+
+  async function setEnabled(on) {
+    await SG.saveSettings({ enabled: on });
+  }
+
+  async function toggleSite(tab) {
+    let host = '';
+    try {
+      host = new URL(tab.url).hostname;
+    } catch (e) {
+      return;
+    }
+    const s = await SG.loadSettings();
+    const list = (s.disabledHosts || []).filter((x) => x !== host);
+    if (!(s.disabledHosts || []).includes(host)) list.push(host);
+    await SG.saveSettings({ disabledHosts: list });
+  }
+
+  function paintBadge() {
+    try {
+      browser.browserAction.setBadgeText({ text: settings.enabled ? '' : 'off' });
+      browser.browserAction.setBadgeBackgroundColor({ color: '#6b7080' });
+      browser.browserAction.setTitle({ title: settings.enabled ? 'Langtitles (Alt+Shift+L turns it off)' : 'Langtitles is off (Alt+Shift+L turns it on)' });
+    } catch (e) {
+      /* no toolbar button (Android) */
+    }
+  }
+
+  function buildMenus() {
+    if (!browser.menus) return;
+    browser.menus.removeAll().then(() => {
+      const contexts = ['page', 'video', 'frame', 'browser_action'];
+      browser.menus.create({ id: 'lt-toggle', title: settings.enabled ? 'Turn Langtitles off' : 'Turn Langtitles on', contexts });
+      browser.menus.create({ id: 'lt-site', title: 'Langtitles on this site: switch on or off', contexts });
+    });
+  }
+
+  if (browser.commands) {
+    browser.commands.onCommand.addListener((name) => {
+      if (name === 'toggle-langtitles') setEnabled(!settings.enabled);
+    });
+  }
+  if (browser.menus) {
+    browser.menus.onClicked.addListener((info, tab) => {
+      if (info.menuItemId === 'lt-toggle') setEnabled(!settings.enabled);
+      else if (info.menuItemId === 'lt-site' && tab) toggleSite(tab);
+    });
+  }
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.settings) {
+      paintBadge();
+      buildMenus();
+    }
+  });
+  ready.then(() => {
+    paintBadge();
+    buildMenus();
   });
 
   sniffer.start();
