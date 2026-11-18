@@ -109,8 +109,21 @@
 
   const guidesInflight = new Map(); // guide key -> Set(port, reqId) waiting for it
 
+  // Guides that ship with Langtitles (extension/data/grammar/<lang>.json): no request needed.
+  const builtinGuides = new Map();
+  async function builtinGuide(k) {
+    const lang = String(k).split('.')[0];
+    if (!/^[a-z]{2}$/.test(lang) || settings.nativeLang !== 'English') return null;
+    if (!builtinGuides.has(lang)) {
+      builtinGuides.set(lang, fetch(browser.runtime.getURL(`data/grammar/${lang}.json`)).then((r) => (r.ok ? r.json() : null)).catch(() => null));
+    }
+    const data = await builtinGuides.get(lang);
+    return data && data.forms && data.forms[k] ? data.forms[k] : null;
+  }
+
   async function explainGuide(req, port) {
     await ready;
+    if (req.kind !== 'wordguide') req.form = Object.assign({}, req.form, { k: SG.canonicalForm(req.form.k) });
     const key = guideKey(req.form.k);
     const hit = (await cache.getMany('guides', [key])).get(key);
     if (hit) {
@@ -120,6 +133,19 @@
     // The same form can be hovered in several places at once; write its guide only once.
     if (guidesInflight.has(key)) {
       guidesInflight.get(key).push({ port, reqId: req.reqId });
+      return;
+    }
+    const built = req.kind === 'wordguide' ? null : await builtinGuide(req.form.k);
+    if (built) {
+      // Keep a copy with the guides you've met, so it shows in the Library.
+      cache.putMany('guides', [[key, {
+        key, k: req.form.k, name: built.name, kind: 'grammar', lang: req.lang || '', nativeLang: settings.nativeLang,
+        text: built.text, sentence: req.sentence || '', word: req.word || '', model: 'built-in', savedAt: Date.now(),
+      }]]).catch(() => {});
+      if (settings.addGrammarToReview) {
+        bankSave({ kind: 'grammar', lang: req.lang || '', text: req.form.k, name: built.name, context: req.sentence ? { sentence: req.sentence, savedAt: Date.now() } : null }).catch(() => {});
+      }
+      port.postMessage({ type: 'deepDone', reqId: req.reqId, text: built.text });
       return;
     }
     const waiters = [{ port, reqId: req.reqId }];

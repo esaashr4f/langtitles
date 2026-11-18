@@ -1,6 +1,6 @@
 {
   "name": "langtitles",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "description": "Firefox extension: interlinear word-by-word subtitle breakdowns for any streaming site, powered by Claude.",
   "scripts": {

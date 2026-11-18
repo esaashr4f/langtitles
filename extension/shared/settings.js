@@ -35,6 +35,15 @@
     showRoles: true,
     showTranslation: true,
     fontScale: 1,
+    // How the subtitles look: font (sans | rounded | serif), colour, background (none | shadow | box),
+    // height above the bottom of the video (%), and an optional band covering burned-in subtitles.
+    subFont: 'sans',
+    subColor: '#ffffff',
+    subBg: 'none',
+    subBottom: 8,
+    coverHardsubs: false,
+    coverBottom: 3,
+    coverHeight: 14,
     autoFind: true, // load subtitles from subtitle sites when the site has none in your language
     osApiKey: '',
     osUser: '',
@@ -110,6 +119,15 @@
     }
     return best;
   };
+
+  SG.SUB_COLOURS = [
+    ['#ffffff', 'White'],
+    ['#fff4c2', 'Warm cream'],
+    ['#ffe14d', 'Yellow'],
+    ['#a8f0d0', 'Mint'],
+    ['#b9dcff', 'Sky'],
+    ['#ffc4dd', 'Rose'],
+  ];
 
   SG.JLPT_CHOICES = [
     { value: 5, label: 'All', title: 'Notes above Japanese words at every JLPT level' },

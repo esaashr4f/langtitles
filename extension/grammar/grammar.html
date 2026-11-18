@@ -11,9 +11,10 @@
     <aside>
       <h1>Library</h1>
       <p class="sub" id="count"></p>
-      <input id="search" type="search" placeholder="Search forms and guides" autocomplete="off">
-      <div id="kinds" class="langs"></div>
+      <div id="kinds" class="seg"></div>
+      <input id="search" type="search" placeholder="Search guides" autocomplete="off">
       <div id="langs" class="langs"></div>
+      <div id="sort" class="sort"><button data-sort="group" class="on">Grouped</button><button data-sort="az">A–Z</button><button data-sort="recent">Recent</button></div>
       <nav id="list"></nav>
     </aside>
     <main id="view">
@@ -25,6 +26,7 @@
   </div>
   <script src="../shared/settings.js"></script>
   <script src="../shared/lang.js"></script>
+  <script src="../shared/grammar-ids.js"></script>
   <script src="../shared/guide.js"></script>
   <script src="../background/cache.js"></script>
   <script src="grammar.js"></script>

@@ -155,6 +155,8 @@ c and role: group the words into phrases. Words in the same phrase share a phras
 n: a hover note of one short sentence, only when there is something worth knowing that the meaning and pieces do not already show: why this form is used here, the nuance against a near-synonym, the register, a common confusion, the literal image behind an expression. Otherwise an empty string: most particles and plain everyday words need no note, and a note that repeats the gloss wastes the learner's attention.
 g: the grammar forms this word carries that a learner would want to study, most important first. These open a full guide to the form, so list forms, not vocabulary: conjugations and auxiliaries (causative-passive, ～ている, conditional ～ば), particles and endings with a grammatical job (topic は, connective -아서/어서, aspect 了), and, for a pattern spread over several words (把 sentences, ～ば～ほど, 是…的), the word that carries it. Each has:
   k: a stable identifier made of the language code, a dot and an English snake_case name for the form, written the same way every time the form appears, in any word and any line (ja.causative_passive, ja.te_iru, ja.particle_wa, ko.connective_aseo, zh.ba_construction, de.konjunktiv_2). One identifier per form, not per use: the guide for a form covers all of its uses.
+  For Japanese, Korean and Chinese, use the identifier from this list whenever the form is on it, exactly as written; make a new one only for a form that is not:
+  ${listIds()}
   name: a short label in ${nativeLang} that includes the form itself, for example "causative-passive させられる".
 Leave g empty for words with nothing to study beyond their meaning, such as most nouns and plain dictionary-form words. Skip forms so basic they need no explanation for this word, such as a plain past tense when a rarer form in the same word is the point.
 
@@ -166,6 +168,11 @@ Chinese: segment into words; the pieces of a compound are its characters when th
 Other languages: words are the written words. Show prefixes, stems and endings as pieces when that explains the form (German gemacht = ge + mach + t, Spanish hablábamos = habl + ába + mos), and split clitics and contractions.
 
 Subtitle lines are fragments of spoken dialogue. A sentence may run across several lines, subjects are often dropped, and names, slang and song lyrics appear. The context lines before the numbered lines are there so you can resolve who is speaking about what; do not annotate them. If a line contains no language to explain (music symbols, sound descriptions) or is already in ${nativeLang}, return it with an empty w list and an empty translation.`;
+  }
+
+  function listIds() {
+    const ids = SG.GRAMMAR_IDS || {};
+    return Object.keys(ids).map((lang) => ids[lang].map((id) => lang + '.' + id).join(' ')).join('\n  ');
   }
 
   function userMessage(lines, context, langHint) {

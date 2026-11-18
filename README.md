@@ -96,7 +96,7 @@ Every word is tagged with the grammar forms it carries (causative-passive させ
 - **When it seems to fit but doesn't**: the situations where you'd reach for it but need a different form, which form, and why, with contrasting examples
 - **Nuance and register**, **common mistakes**, and **where you met it**
 
-A guide is written once per form and saved, so the next time that form appears in any word it opens instantly at no cost. The side panel lists the forms in the current line (✓ marks ones you already have). Every guide, for words and grammar, is collected in the **Library** (toolbar button → Library), which you can search and filter by kind and language. Clearing saved breakdowns in the options keeps your guides.
+A guide is written once per form and saved, so the next time that form appears in any word it opens instantly at no cost. The most common Japanese forms (the te-form, ～ている, ～てしまう, the conditionals, passive, causative, potential, the main particles and endings, and about twenty more) come with Langtitles, so they open instantly and never cost anything; every form also gets a fixed name, so the same form isn't written twice under different names. Click **⤢** next to a guide to read it full screen (Esc closes it). The side panel lists the forms in the current line (✓ marks ones you already have). Every guide, for words and grammar, is collected in the **Library** (toolbar button → Library), which has separate **Grammar** and **Words** sections: grammar is grouped into particles, verb and adjective forms, helper verbs after て, connecting clauses, sentence endings, and patterns; Japanese words are grouped by JLPT level. Search, filter by language, or sort A–Z or by most recent. Clearing saved breakdowns in the options keeps your guides.
 
 Subtitles are sent to Claude in batches, ahead of the playhead, so most lines are already analyzed when they appear. Results are saved in Firefox, so rewatching costs nothing.
 
@@ -144,6 +144,19 @@ Subtitles that are burned into the video picture cannot be read.
 
 donkey.to and similar sites play the video in an embedded player from another domain. Langtitles runs inside embedded players and captures their subtitle requests, so turning subtitles on in that player should be enough. If no subtitles show up, use **Pick on page** or **Load file**. The popup lists every subtitle file it has captured on the tab, which helps when reporting a site that doesn't work.
 
+## How the subtitles look
+
+The side panel's **Display** tab sets how Langtitles' subtitles look:
+
+- **Font:** Sleek (a clean sans-serif, like streaming services), Rounded (M PLUS Rounded 1c, built in) or Mincho (a book-style serif).
+- **Colour**, **Size**, and **Background:** None (outlined text, as if it were part of the video), Shadow (a soft glow) or Box.
+- **Height above the bottom:** or drag the ⋮⋮ grip above the subtitles.
+- **Cover burned-in subtitles:** when the video has English (or any) subtitles drawn into the picture, **Cover them** blurs and darkens a band over them, and your subtitles sit on top. Set the band's height and position with the two sliders.
+
+The panel itself is in tabs: **Line** (the current line, its guides and Ask), **Transcript**, **Words** (episode words), **Subtitles** (track, timing, finding and loading subtitles) and **Display**. Close it with ✕ or **G**.
+
+If you turn Langtitles on partway through an episode, it starts preparing lines from where you are, not from the beginning.
+
 ## Cost
 
 Each line is analyzed once and saved; lines use the cheaper line-breakdown model. Grammar guides are longer (roughly 500 to 900 words) and written at medium effort or above, but only once per form. The default model is Claude Opus 5.5 with low thinking effort. Claude Haiku 5.5 is far cheaper, with simpler explanations. Claude Fable 5.2 is the most capable and the most expensive. The options page shows token usage and an estimated spend for each model. "Prepare ahead" (10 minutes by default) controls how far ahead Langtitles analyzes, so skipping through a video doesn't pay for lines you never watch.
@@ -164,6 +177,10 @@ Langtitles works in Firefox for Android. With no hover on touch screens, tap a w
 
 - **Prepare a whole season at half price:** side panel → Find subtitles → Prepare a whole season. Langtitles downloads subtitles for each episode and sends every line through Anthropic's batch API, which costs half as much and is usually done within an hour (at most a day). Those episodes then play with every line ready. Each episode uses one subtitle download.
 - **Spending cap:** set a monthly limit in Options. Once this month's estimated spend reaches it, Langtitles stops sending requests until you raise it. The toolbar popup shows this month's spend.
+
+## Built-in data
+
+The rounded subtitle font is [M PLUS Rounded 1c](https://fonts.google.com/specimen/M+PLUS+Rounded+1c) (SIL Open Font License, extension/fonts/rounded/OFL.txt). The built-in grammar guides are written for Langtitles (scripts/grammar/, built with `node scripts/build-grammar.mjs`).
 
 ## Privacy
 

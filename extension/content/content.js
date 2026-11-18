@@ -65,6 +65,7 @@
   let picking = false;
   let lastSrc = '';
   const topLayer = typeof HTMLElement !== 'undefined' && 'showPopover' in HTMLElement.prototype;
+  let lastRaiseCheck = 0;
 
   // Subtitle sites
   let tabUrl = '';
@@ -161,6 +162,8 @@
           if (!popFor) autoPaused = false;
         });
         video.addEventListener('seeking', () => pump());
+        video.addEventListener('seeked', () => pump());
+        video.addEventListener('playing', () => pump());
       }
     }
     if (!video) return;
@@ -433,6 +436,9 @@
   function pump() {
     const t = active();
     if (!video || !shouldAnalyze(t) || Date.now() < pauseUntil) return;
+    // Sites that resume an episode at 8:00 often report 0:00 for a moment first. Wait until the
+    // video is really at its position, so lines before it are not prepared.
+    if (video.seeking || video.readyState < 2 || (video.currentTime < 0.5 && (video.paused || !video.played.length))) return;
     const now = video.currentTime - t.offset;
     const horizon = settings.lookaheadMin > 0 ? now + settings.lookaheadMin * 60 : Infinity;
     // First line that has not finished yet.
@@ -520,10 +526,34 @@
     if (topLayer) root.setAttribute('popover', 'manual');
     if (typeof matchMedia === 'function' && matchMedia('(hover: none)').matches) root.classList.add('sg-touch');
     root.setAttribute('translate', 'no');
+    const cover = h('div', 'sg-cover');
     const sub = h('div', 'sg-sub');
+    const grip = h('div', 'sg-grip', '⋮⋮');
+    grip.title = 'Drag to move the subtitles up or down';
     const line = h('div', 'sg-line');
     const tr = h('div', 'sg-tr');
-    sub.append(line, tr);
+    sub.append(grip, line, tr);
+    // Drag the subtitles up or down; the height is saved as a share of the video's height.
+    grip.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      grip.setPointerCapture(e.pointerId);
+      const startY = e.clientY;
+      const start = settings.subBottom == null ? SG.DEFAULTS.subBottom : settings.subBottom;
+      const vh = video ? video.getBoundingClientRect().height : 600;
+      const move = (ev) => {
+        settings.subBottom = Math.max(0, Math.min(80, Math.round(start + ((startY - ev.clientY) / vh) * 100)));
+        applyLook();
+      };
+      const up = () => {
+        grip.removeEventListener('pointermove', move);
+        grip.removeEventListener('pointerup', up);
+        post({ type: 'saveSettings', patch: { subBottom: settings.subBottom } });
+        applySettings();
+      };
+      grip.addEventListener('pointermove', move);
+      grip.addEventListener('pointerup', up);
+    });
     const pop = h('div', 'sg-pop');
     const toggle = h('button', 'sg-toggle');
     const fox = h('img', 'sg-fox');
@@ -533,8 +563,8 @@
     toggle.title = 'Langtitles panel (G)';
     const toast = h('div', 'sg-toast');
     const panel = buildPanel();
-    root.append(sub, pop, toggle, toast, panel.el);
-    ui = { root, sub, line, tr, pop, toggle, toast, panel };
+    root.append(cover, sub, pop, toggle, toast, panel.el);
+    ui = { root, cover, sub, line, tr, pop, toggle, toast, panel };
 
     const stop = (e) => e.stopPropagation();
     for (const el of [sub, pop, toggle, panel.el]) {
@@ -582,21 +612,85 @@
 
   function buildPanel() {
     const el = h('div', 'sg-panel');
+
+    // ---- header: fox, name, status, quick actions
     const head = h('div', 'sg-panel-head');
+    const logo = h('img', 'sg-panel-logo');
+    logo.src = browser.runtime.getURL('icons/icon.svg');
+    logo.alt = '';
+    const titles = h('div', 'sg-panel-titles');
     const title = h('span', 'sg-panel-title', 'Langtitles');
     const status = h('span', 'sg-panel-status');
-    const close = h('button', 'sg-btn sg-close', '×');
-    close.title = 'Close panel';
-    close.addEventListener('click', () => setPanel(false));
-    const readBtn = h('button', 'sg-btn', 'Readings');
-    readBtn.title = 'Show or hide furigana / pinyin (R)';
+    titles.append(title, status);
+    const readBtn = h('button', 'sg-icon-btn', 'あ');
+    readBtn.title = 'Furigana / pinyin / hanja on or off (R)';
     readBtn.addEventListener('click', () => toggleReadings());
-    const bankBtn = h('button', 'sg-btn', 'Word bank');
-    bankBtn.title = 'Your saved words and characters';
+    const bankBtn = h('button', 'sg-icon-btn', '★');
+    bankBtn.title = 'Word bank';
     bankBtn.addEventListener('click', () => post({ type: 'openBank' }));
-    head.append(title, status, readBtn, bankBtn, close);
+    const close = h('button', 'sg-icon-btn sg-close', '✕');
+    close.title = 'Close panel (G)';
+    close.addEventListener('click', () => setPanel(false));
+    head.append(logo, titles, readBtn, bankBtn, close);
 
-    const tools = h('div', 'sg-panel-tools');
+    // ---- tabs
+    const TABS = [['line', 'Line'], ['transcript', 'Transcript'], ['words', 'Words'], ['subs', 'Subtitles'], ['display', 'Display']];
+    const tabBar = h('div', 'sg-tabs');
+    const tabButtons = new Map();
+    const tabBodies = new Map();
+    const setTab = (id) => {
+      for (const [k, b] of tabButtons) b.classList.toggle('sg-on', k === id);
+      for (const [k, body] of tabBodies) body.classList.toggle('sg-on', k === id);
+      el.dataset.tab = id;
+      if (id === 'transcript') highlightRow(shownIndex);
+    };
+    for (const [id, label] of TABS) {
+      const b = h('button', 'sg-tab', label);
+      b.addEventListener('click', () => {
+        setTab(id);
+        if (id === 'words' && !wordsBody.childElementCount) openEpisodeWords();
+        if (id === 'subs' && !findBody.childElementCount) openFind();
+      });
+      tabButtons.set(id, b);
+      tabBar.append(b);
+      tabBodies.set(id, h('div', 'sg-tabbody sg-tab-' + id));
+    }
+
+    // ---- Line: what is on screen now, and guides opened from it
+    const hint = h('div', 'sg-hint');
+    const guide = h('div', 'sg-pguide');
+    const guideHead = h('div', 'sg-pguide-head');
+    const guideBack = h('button', 'sg-icon-btn', '‹');
+    guideBack.title = 'Back to the line';
+    guideBack.addEventListener('click', () => guide.classList.remove('sg-show'));
+    const guideTitle = h('span', 'sg-pguide-title');
+    const guideLib = h('button', 'sg-btn sg-ghost', 'Library');
+    guideLib.title = 'All the guides you have collected';
+    guideLib.addEventListener('click', () => post({ type: 'openLibrary', k: guide.dataset.k || '' }));
+    const guideFull = h('button', 'sg-icon-btn', '⤢');
+    guideFull.title = 'Read this guide full screen';
+    guideFull.addEventListener('click', () => {
+      const g = panelGuide;
+      if (g) openReader(g.form, g.ctx, g.w, g.isWord, () => openPanelGuide(g.form, g.ctx, g.w, g.isWord));
+    });
+    guideHead.append(guideBack, guideTitle, guideLib, guideFull);
+    const guideBody = h('div', 'sg-pguide-body');
+    guide.append(guideHead, guideBody);
+    const detail = h('div', 'sg-detail');
+    tabBodies.get('line').append(hint, guide, detail);
+
+    // ---- Transcript
+    const list = h('div', 'sg-list');
+    tabBodies.get('transcript').append(list);
+
+    // ---- Words: the episode's vocabulary
+    const words = h('div', 'sg-pane');
+    const wordsBody = h('div', 'sg-pane-body');
+    words.append(wordsBody);
+    tabBodies.get('words').append(words);
+
+    // ---- Subtitles: track, timing, finding and loading subtitles
+    const subsTab = tabBodies.get('subs');
     const select = h('select', 'sg-select');
     select.title = 'Subtitle track';
     select.addEventListener('change', () => {
@@ -614,79 +708,63 @@
     file.accept = '.srt,.vtt,.ass,.ssa,.ttml,.dfxp,.xml,.txt';
     file.style.display = 'none';
     file.addEventListener('change', () => file.files[0] && loadFile(file.files[0]));
-    const fileBtn = h('button', 'sg-btn', 'Load file');
+    const fileBtn = h('button', 'sg-btn sg-ghost', 'Load a file');
     fileBtn.title = 'Use a subtitle file from your computer';
     fileBtn.addEventListener('click', () => file.click());
-    const pickBtn = h('button', 'sg-btn', 'Pick on page');
+    const pickBtn = h('button', 'sg-btn sg-ghost', 'Read from page');
     pickBtn.title = 'Click the subtitles on the video to read them from the page';
     pickBtn.addEventListener('click', () => {
       picking = true;
       showToast('Click the subtitle text on the video. Press Escape to cancel.');
     });
-    const early = h('button', 'sg-btn', '◀ Earlier');
+    const timing = h('div', 'sg-timing');
+    const early = h('button', 'sg-btn sg-ghost', '◀ Earlier');
     early.title = 'Show subtitles 0.25 s earlier (key [ · Shift for 1 s)';
-    const late = h('button', 'sg-btn', 'Later ▶');
+    const late = h('button', 'sg-btn sg-ghost', 'Later ▶');
     late.title = 'Show subtitles 0.25 s later (key ] · Shift for 1 s)';
     const offset = h('button', 'sg-offset', '+0.00s');
     offset.title = 'Subtitle timing shift; click to reset (key \\)';
     offset.addEventListener('click', () => nudgeOffset(null));
     early.addEventListener('click', (e) => nudgeOffset(e.shiftKey ? -1 : -0.25));
     late.addEventListener('click', (e) => nudgeOffset(e.shiftKey ? 1 : 0.25));
-    const findBtn = h('button', 'sg-btn', 'Find subtitles');
-    findBtn.title = 'Search OpenSubtitles, SubDL and Jimaku for this episode';
-    findBtn.addEventListener('click', () => openFind());
-    const wordsBtn = h('button', 'sg-btn', 'Episode words');
-    wordsBtn.title = "The episode's words you don't know yet, most frequent first";
-    wordsBtn.addEventListener('click', () => openEpisodeWords());
-    tools.append(select, findBtn, wordsBtn, fileBtn, pickBtn, early, offset, late, file);
+    timing.append(early, offset, late);
+    const sources = h('div', 'sg-row-btns');
+    sources.append(fileBtn, pickBtn, file);
+    const find = h('div', 'sg-pane');
+    const findBody = h('div', 'sg-pane-body');
+    find.append(findBody);
+    subsTab.append(
+      h('div', 'sg-section', 'Track'), select,
+      h('div', 'sg-section', 'Timing'), timing,
+      h('div', 'sg-section', 'Other sources'), sources,
+      h('div', 'sg-section', 'Find subtitles for this episode'), find,
+    );
 
-    const hint = h('div', 'sg-hint');
-    const guide = h('div', 'sg-pguide');
-    const guideHead = h('div', 'sg-pguide-head');
-    const guideTitle = h('span', 'sg-pguide-title');
-    const guideLib = h('button', 'sg-btn', 'Library');
-    guideLib.title = 'All the guides you have collected';
-    guideLib.addEventListener('click', () => post({ type: 'openLibrary', k: guide.dataset.k || '' }));
-    const guideBack = h('button', 'sg-btn', 'Back');
-    guideBack.addEventListener('click', () => guide.classList.remove('sg-show'));
-    guideHead.append(guideTitle, guideLib, guideBack);
-    const guideBody = h('div', 'sg-pguide-body');
-    guide.append(guideHead, guideBody);
-    const detail = h('div', 'sg-detail');
-    const listTitle = h('div', 'sg-section', 'Transcript');
-    const list = h('div', 'sg-list');
-    const find = h('div', 'sg-pguide sg-find');
-    const findHead = h('div', 'sg-pguide-head');
-    const findBack = h('button', 'sg-btn', 'Back');
-    findBack.addEventListener('click', () => find.classList.remove('sg-show'));
-    findHead.append(h('span', 'sg-pguide-title', 'Find subtitles'), findBack);
-    const findBody = h('div', 'sg-pguide-body');
-    find.append(findHead, findBody);
-    const words = h('div', 'sg-pguide sg-find');
-    const wordsHead = h('div', 'sg-pguide-head');
-    const wordsBack = h('button', 'sg-btn', 'Back');
-    wordsBack.addEventListener('click', () => words.classList.remove('sg-show'));
-    wordsHead.append(h('span', 'sg-pguide-title', 'Episode words'), wordsBack);
-    const wordsBody = h('div', 'sg-pguide-body');
-    words.append(wordsHead, wordsBody);
-    // Quick switches for each annotation, so they can be changed mid-episode.
-    const showRow = h('div', 'sg-show-row');
-    showRow.append(h('span', 'sg-show-label', 'Show'));
+    // ---- Display: what is shown, and how the subtitles look
+    const disp = tabBodies.get('display');
+    const chipRow = (label) => {
+      const row = h('div', 'sg-show-row');
+      row.append(h('div', 'sg-section', label));
+      const chips = h('div', 'sg-chiprow');
+      row.append(chips);
+      disp.append(row);
+      return chips;
+    };
+    const saveNow = (patch) => {
+      Object.assign(settings, patch);
+      post({ type: 'saveSettings', patch });
+      applySettings();
+    };
+    const showRow = chipRow('Show');
     const showChips = new Map();
     for (const a of SG.ANNOTATIONS) {
       const chip = h('button', 'sg-show-chip', a.label);
       chip.title = a.title;
-      chip.addEventListener('click', () => {
-        const patch = { [a.key]: !settings[a.key] };
-        Object.assign(settings, patch);
-        post({ type: 'saveSettings', patch });
-        applySettings();
-      });
+      chip.addEventListener('click', () => saveNow({ [a.key]: !settings[a.key] }));
       showChips.set(a.key, chip);
       showRow.append(chip);
     }
-    const forRow = h('div', 'sg-show-row');
-    forRow.append(h('span', 'sg-show-label', 'For'));
+    const forRow = chipRow('Notes above words, for');
     const classChips = new Map();
     for (const k of SG.WORD_CLASSES) {
       const chip = h('button', 'sg-show-chip', k.label);
@@ -695,31 +773,94 @@
         const on = new Set(settings.glossClasses || []);
         if (on.has(k.key)) on.delete(k.key);
         else on.add(k.key);
-        const patch = { glossClasses: SG.WORD_CLASSES.map((x) => x.key).filter((x) => on.has(x)) };
-        Object.assign(settings, patch);
-        post({ type: 'saveSettings', patch });
-        applySettings();
+        saveNow({ glossClasses: SG.WORD_CLASSES.map((x) => x.key).filter((x) => on.has(x)) });
       });
       classChips.set(k.key, chip);
       forRow.append(chip);
     }
-    const jlptRow = h('div', 'sg-show-row');
-    jlptRow.append(h('span', 'sg-show-label', 'JLPT'));
+    const jlptRow = chipRow('Japanese: notes from JLPT level');
     const jlptChips = new Map();
     for (const c of SG.JLPT_CHOICES) {
       const chip = h('button', 'sg-show-chip sg-radio', c.label);
       chip.title = c.title;
-      chip.addEventListener('click', () => {
-        const patch = { jlptFrom: c.value };
-        Object.assign(settings, patch);
-        post({ type: 'saveSettings', patch });
-        applySettings();
-      });
+      chip.addEventListener('click', () => saveNow({ jlptFrom: c.value }));
       jlptChips.set(c.value, chip);
       jlptRow.append(chip);
     }
-    el.append(head, tools, showRow, forRow, jlptRow, hint, find, words, guide, detail, listTitle, list);
-    return { el, status, select, offset, hint, showChips, classChips, jlptChips, find, findBody, words, wordsBody, guide, guideTitle, guideBody, detail, list, rows: new Map() };
+
+    // Look: font, size, colour, background, position, covering burned-in subtitles
+    const look = {};
+    const segmented = (label, key, options) => {
+      const row = chipRow(label);
+      const btns = new Map();
+      for (const [value, text, tip] of options) {
+        const b = h('button', 'sg-show-chip sg-radio', text);
+        if (tip) b.title = tip;
+        b.addEventListener('click', () => saveNow({ [key]: value }));
+        btns.set(value, b);
+        row.append(b);
+      }
+      look[key] = btns;
+    };
+    segmented('Font', 'subFont', [
+      ['sans', 'Sleek', 'A clean sans-serif, like streaming services use'],
+      ['rounded', 'Rounded', 'Soft rounded letters (M PLUS Rounded 1c, built in)'],
+      ['serif', 'Mincho', 'Classic serif / mincho, like printed books'],
+    ]);
+    const colours = chipRow('Colour');
+    look.subColor = new Map();
+    for (const [value, name] of SG.SUB_COLOURS) {
+      const sw = h('button', 'sg-swatch');
+      sw.style.setProperty('--sw', value);
+      sw.title = name;
+      sw.addEventListener('click', () => saveNow({ subColor: value }));
+      look.subColor.set(value, sw);
+      colours.append(sw);
+    }
+    segmented('Background', 'subBg', [
+      ['none', 'None', 'Outlined text only, as if part of the video'],
+      ['shadow', 'Shadow', 'A soft dark glow behind the text'],
+      ['box', 'Box', 'A dark rounded box behind the text'],
+    ]);
+    const slider = (label, key, min, max, step, fmt) => {
+      const row = h('label', 'sg-slider');
+      const top = h('div', 'sg-slider-top');
+      const value = h('span', 'sg-slider-v');
+      top.append(h('span', 'sg-section', label), value);
+      const input = h('input');
+      input.type = 'range';
+      input.min = String(min);
+      input.max = String(max);
+      input.step = String(step);
+      input.addEventListener('input', () => {
+        settings[key] = Number(input.value);
+        value.textContent = fmt(settings[key]);
+        applyLook();
+      });
+      input.addEventListener('change', () => saveNow({ [key]: Number(input.value) }));
+      for (const ev of ['keydown', 'keyup', 'keypress']) input.addEventListener(ev, (e) => e.stopPropagation());
+      row.append(top, input);
+      disp.append(row);
+      look[key] = { input, value, fmt };
+    };
+    slider('Size', 'fontScale', 0.6, 1.8, 0.05, (v) => Math.round(v * 100) + '%');
+    slider('Height above the bottom', 'subBottom', 0, 70, 1, (v) => v + '%');
+    const coverRow = chipRow('Burned-in subtitles in the video');
+    const coverBtn = h('button', 'sg-show-chip', 'Cover them');
+    coverBtn.title = 'Blur and darken a band over subtitles that are part of the video picture, such as English, and show yours on top';
+    coverBtn.addEventListener('click', () => saveNow({ coverHardsubs: !settings.coverHardsubs, subBottom: !settings.coverHardsubs ? Math.max(0, settings.coverBottom + settings.coverHeight / 2 - 4) : settings.subBottom }));
+    coverRow.append(coverBtn);
+    look.coverBtn = coverBtn;
+    slider('Cover: height', 'coverHeight', 4, 40, 1, (v) => v + '%');
+    slider('Cover: height above the bottom', 'coverBottom', 0, 60, 1, (v) => v + '%');
+    disp.append(h('div', 'sg-note', 'Tip: drag the subtitles up or down by the ⋮⋮ grip that appears when you point at them.'));
+
+    el.append(head, tabBar, ...tabBodies.values());
+    setTab('line');
+    return {
+      el, status, select, offset, hint, showChips, classChips, jlptChips, look, setTab,
+      find, findBody, words, wordsBody, guide, guideTitle, guideBody, detail, list, rows: new Map(),
+    };
   }
 
   // Keep the overlay glued to the video, including in fullscreen.
@@ -740,6 +881,19 @@
       const parent = fs && fs !== video && fs.contains(video) ? fs : document.documentElement;
       if (ui.root.parentNode !== parent) parent.appendChild(ui.root);
     }
+    if (topLayer && fs && Date.now() - lastRaiseCheck > 1000) {
+      lastRaiseCheck = Date.now();
+      const tb = ui.toggle.getBoundingClientRect();
+      const hit = tb.width ? document.elementFromPoint(tb.left + tb.width / 2, tb.top + tb.height / 2) : null;
+      if (hit && !ui.root.contains(hit) && ui.root.matches(':popover-open')) {
+        ui.root.hidePopover();
+        try {
+          ui.root.showPopover();
+        } catch (e) {
+          /* shown again on the next tick */
+        }
+      }
+    }
     const r = video.getBoundingClientRect();
     const visible = r.width >= 200 && r.height >= 110 && video.isConnected;
     const s = ui.root.style;
@@ -749,7 +903,7 @@
     s.top = r.top + 'px';
     s.width = r.width + 'px';
     s.height = r.height + 'px';
-    const size = Math.max(13, Math.min(34, r.height / 27)) * (settings.fontScale || 1);
+    const size = Math.max(14, Math.min(38, r.height / 24)) * (settings.fontScale || 1);
     s.fontSize = size.toFixed(1) + 'px';
   }
 
@@ -762,6 +916,7 @@
     c.toggle('sg-no-roles', !settings.showRoles);
     c.toggle('sg-no-tr', !settings.showTranslation);
     c.toggle('sg-hidden', overlayHidden);
+    applyLook();
     for (const [key, chip] of ui.panel.showChips) chip.classList.toggle('sg-on', Boolean(settings[key]));
     for (const [key, chip] of ui.panel.classChips) chip.classList.toggle('sg-on', (settings.glossClasses || []).includes(key));
     for (const [value, chip] of ui.panel.jlptChips) chip.classList.toggle('sg-on', (settings.jlptFrom || 5) === value);
@@ -771,6 +926,32 @@
     shownKey = null;
     tick();
     pump();
+  }
+
+  // Font, colour, background, position and the burned-in subtitle cover, from settings.
+  function applyLook() {
+    if (!ui) return;
+    const r = ui.root;
+    for (const f of ['sans', 'rounded', 'serif']) r.classList.toggle('lt-font-' + f, (settings.subFont || 'sans') === f);
+    for (const b of ['none', 'shadow', 'box']) r.classList.toggle('lt-bg-' + b, (settings.subBg || 'none') === b);
+    r.style.setProperty('--lt-sub-color', settings.subColor || '#ffffff');
+    r.style.setProperty('--lt-sub-bottom', (settings.subBottom == null ? 8 : settings.subBottom) + '%');
+    r.style.setProperty('--lt-cover-bottom', (settings.coverBottom == null ? 4 : settings.coverBottom) + '%');
+    r.style.setProperty('--lt-cover-height', (settings.coverHeight == null ? 16 : settings.coverHeight) + '%');
+    r.classList.toggle('lt-cover', Boolean(settings.coverHardsubs));
+    const L = ui.panel.look;
+    for (const key of ['subFont', 'subBg', 'subColor']) {
+      for (const [value, b] of L[key]) b.classList.toggle('sg-on', (settings[key] || SG.DEFAULTS[key]) === value);
+    }
+    for (const key of ['fontScale', 'subBottom', 'coverHeight', 'coverBottom']) {
+      const c = L[key];
+      const v = settings[key] == null ? SG.DEFAULTS[key] : settings[key];
+      if (document.activeElement !== c.input) c.input.value = String(v);
+      c.value.textContent = c.fmt(Number(v));
+    }
+    L.coverBtn.classList.toggle('sg-on', Boolean(settings.coverHardsubs));
+    L.coverBtn.textContent = settings.coverHardsubs ? 'Covered' : 'Cover them';
+    place();
   }
 
   function applyHideNative() {
@@ -1163,6 +1344,7 @@
     const isName = SG.wordClass(w.pos) === 'name';
     const guides = ((isTrivial(w) && forms.length) || isName ? [] : [{ f: wordForm, word: true }]).concat(forms.map((f) => ({ f, word: false })));
     const firstGuide = forms.length ? guides.find((g) => !g.word) : guides[0];
+    let currentGuide = firstGuide;
     if (guides.length) {
       const row = h('div', 'sg-pop-forms');
       row.append(h('span', 'sg-pop-forms-label', 'Guides'));
@@ -1174,6 +1356,7 @@
           clearTimeout(deepTimer);
           for (const c of pop.querySelectorAll('.sg-form, .sg-char')) c.classList.toggle('sg-on', c === chip);
           pop.classList.add('sg-wide');
+          currentGuide = g;
           if (g.word) showWordGuide(deep, w, ctx);
           else showGuide(deep, g.f, ctx, w);
           placePop(tok);
@@ -1186,7 +1369,18 @@
         const on = row.querySelector('.sg-form.sg-on');
         post({ type: 'openLibrary', k: on ? on.dataset.k : '' });
       });
-      row.append(lib);
+      const full = h('button', 'sg-btn sg-lib sg-expand', '⤢');
+      full.title = 'Read this guide full screen';
+      full.addEventListener('click', () => {
+        const g = currentGuide || firstGuide;
+        openReader(g.f, ctx, w, g.word, () => {
+          if (deep.isConnected && deep.classList.contains('sg-show') && currentGuide === g) {
+            if (g.word) showWordGuide(deep, w, ctx);
+            else showGuide(deep, g.f, ctx, w);
+          }
+        });
+      });
+      row.append(lib, full);
       pop.append(row);
     }
     if (Array.isArray(w.x) && w.x.length) {
@@ -1265,7 +1459,10 @@
 
   function formsOf(w) {
     const seen = new Set();
-    return (Array.isArray(w.g) ? w.g : []).filter((f) => f && f.k && !seen.has(f.k) && seen.add(f.k));
+    return (Array.isArray(w.g) ? w.g : [])
+      .filter((f) => f && f.k)
+      .map((f) => Object.assign({}, f, { k: SG.canonicalForm(f.k) }))
+      .filter((f) => !seen.has(f.k) && seen.add(f.k));
   }
 
   function guideCacheKey(form) {
@@ -1449,10 +1646,52 @@
     }
   }
 
+  let panelGuide = null;
+
+  // A guide in a large, comfortable reading view over the whole video.
+  let reader = null;
+  function closeReader() {
+    if (!reader) return;
+    const { el, onClose } = reader;
+    reader = null;
+    el.remove();
+    if (onClose) onClose();
+  }
+  function openReader(form, ctx, w, isWord, onClose) {
+    closeReader();
+    const el = h('div', 'sg-reader');
+    const card = h('div', 'sg-reader-card');
+    const head = h('div', 'sg-reader-head');
+    const kind = h('span', 'sg-reader-kind', isWord ? 'Word guide' : 'Grammar guide');
+    const title = h('span', 'sg-reader-title', isWord ? form.name || form.k : form.name || form.k);
+    title.lang = ctx.lang || '';
+    const titles = h('div', 'sg-reader-titles');
+    titles.append(kind, title);
+    const lib = h('button', 'sg-btn sg-ghost', 'Library');
+    lib.addEventListener('click', () => post({ type: 'openLibrary', k: form.k }));
+    const close = h('button', 'sg-icon-btn sg-close', '✕');
+    close.title = 'Close (Esc)';
+    close.addEventListener('click', closeReader);
+    head.append(titles, lib, close);
+    const body = h('div', 'sg-reader-body');
+    body.lang = ctx.lang || '';
+    card.append(head, body);
+    el.append(card);
+    el.addEventListener('pointerdown', (e) => {
+      if (e.target === el) closeReader();
+    });
+    el.addEventListener('wheel', (e) => e.stopPropagation(), { passive: true });
+    ui.root.append(el);
+    reader = { el, onClose };
+    hidePop();
+    if (isWord) showWordGuide(body, w, ctx);
+    else showGuide(body, form, ctx, w);
+  }
+
   function openPanelGuide(form, ctx, w, isWord) {
+    panelGuide = { form, ctx, w, isWord };
     const p = ui.panel;
-    p.find.classList.remove('sg-show');
-    p.words.classList.remove('sg-show');
+    p.setTab('line');
     p.guide.dataset.k = form.k;
     p.guideTitle.textContent = isWord ? '📖 ' + (form.name || form.k) : form.name || form.k;
     p.guide.classList.add('sg-show');
@@ -1527,6 +1766,12 @@
   }
 
   function onKey(e) {
+    if (reader && e.key === 'Escape') {
+      closeReader();
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     if (picking && e.key === 'Escape') {
       picking = false;
       return;
@@ -1822,9 +2067,7 @@
 
   async function openEpisodeWords() {
     const p = ui.panel;
-    p.find.classList.remove('sg-show');
-    p.guide.classList.remove('sg-show');
-    p.words.classList.add('sg-show');
+    p.setTab('words');
     const body = p.wordsBody;
     body.textContent = '';
     const t = active();
@@ -2415,9 +2658,7 @@
 
   async function openFind() {
     const p = ui.panel;
-    p.guide.classList.remove('sg-show');
-    p.words.classList.remove('sg-show');
-    p.find.classList.add('sg-show');
+    p.setTab('subs');
     const body = p.findBody;
     body.textContent = '';
     if (!(settings.subProviders || []).length) {
