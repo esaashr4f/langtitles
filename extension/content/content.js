@@ -169,6 +169,9 @@
     if (!video) return;
     const src = video.currentSrc || video.src || '';
     if (src !== lastSrc) {
+      hardsubSeen = [];
+      hardsubLift = null;
+      hardsubBroken = false;
       // A new video in the same page: subtitles captured well before it belong to the old one.
       if (lastSrc) {
         const cutoff = Date.now() - 15000;
@@ -207,10 +210,53 @@
     }
   }
 
+  // Settings as this site uses them: the site's own layout, if it has one, over the general settings.
+  let rawSettings = Object.assign({}, SG.DEFAULTS);
+  function adoptSettings(raw) {
+    rawSettings = Object.assign({}, SG.DEFAULTS, raw);
+    const s = Object.assign({}, rawSettings);
+    const site = (s.siteLooks || {})[tabHost];
+    return site ? Object.assign(s, site, { siteLook: true }) : Object.assign(s, { siteLook: false });
+  }
+  function siteLook() {
+    return (settings.siteLooks || {})[tabHost] || null;
+  }
+  // Saves a change; layout changes go to this site's own layout when it has one.
+  function savePatch(patch) {
+    Object.assign(settings, patch);
+    const site = siteLook();
+    if (site && tabHost) {
+      const general = {};
+      const own = Object.assign({}, site);
+      for (const [k, v] of Object.entries(patch)) {
+        if (SG.LOOK_KEYS.includes(k)) own[k] = v;
+        else general[k] = v;
+      }
+      general.siteLooks = Object.assign({}, rawSettings.siteLooks, { [tabHost]: own });
+      settings.siteLooks = general.siteLooks;
+      Object.assign(rawSettings, general);
+      post({ type: 'saveSettings', patch: general });
+    } else {
+      Object.assign(rawSettings, patch);
+      post({ type: 'saveSettings', patch });
+    }
+  }
+  function setSiteLook(look) {
+    const siteLooks = Object.assign({}, rawSettings.siteLooks);
+    if (look) siteLooks[tabHost] = look;
+    else delete siteLooks[tabHost];
+    post({ type: 'saveSettings', patch: { siteLooks } });
+    // Everything as it is now, except the layout settings, which go back to their general values.
+    const base = Object.assign({}, settings, { siteLooks });
+    for (const k of SG.LOOK_KEYS) base[k] = rawSettings[k];
+    settings = adoptSettings(base);
+    applySettings();
+  }
+
   function onMessage(msg) {
     if (msg.type === 'init') {
-      settings = Object.assign({}, SG.DEFAULTS, msg.settings);
       if (msg.tabHost) tabHost = msg.tabHost;
+      settings = adoptSettings(msg.settings);
       tabUrl = msg.tabUrl || tabUrl;
       tabTitle = msg.tabTitle || tabTitle;
       if (msg.seekTo != null) pendingSeek = msg.seekTo;
@@ -218,7 +264,7 @@
       applySettings();
     } else if (msg.type === 'settings') {
       const was = enabled();
-      settings = Object.assign({}, SG.DEFAULTS, msg.settings);
+      settings = adoptSettings(msg.settings);
       applySettings();
       if (ui && was !== enabled()) {
         // The overlay itself is hidden when off, so say it in a page-level note.
@@ -548,7 +594,7 @@
       const up = () => {
         grip.removeEventListener('pointermove', move);
         grip.removeEventListener('pointerup', up);
-        post({ type: 'saveSettings', patch: { subBottom: settings.subBottom } });
+        savePatch({ subBottom: settings.subBottom });
         applySettings();
       };
       grip.addEventListener('pointermove', move);
@@ -760,6 +806,8 @@
 
     // ---- Display: what is shown, and how the subtitles look
     const disp = tabBodies.get('display');
+    const siteBox = h('div', 'sg-site');
+    disp.append(siteBox);
     const chipRow = (label) => {
       const row = h('div', 'sg-show-row');
       row.append(h('div', 'sg-section', label));
@@ -769,8 +817,7 @@
       return chips;
     };
     const saveNow = (patch) => {
-      Object.assign(settings, patch);
-      post({ type: 'saveSettings', patch });
+      savePatch(patch);
       applySettings();
     };
     const showRow = chipRow('Show');
@@ -888,7 +935,7 @@
     el.append(head, tabBar, ...tabBodies.values());
     setTab('line');
     return {
-      el, status, select, offset, hint, showChips, hideBtn, loopBtn, classChips, jlptChips, look, setTab,
+      el, status, select, offset, hint, showChips, hideBtn, loopBtn, siteBox, classChips, jlptChips, look, setTab,
       find, findBody, words, wordsBody, guide, guideTitle, guideBody, detail, list, rows: new Map(),
     };
   }
@@ -967,10 +1014,18 @@
     for (const f of ['sans', 'rounded', 'serif']) r.classList.toggle('lt-font-' + f, (settings.subFont || 'sans') === f);
     for (const b of ['none', 'shadow', 'box']) r.classList.toggle('lt-bg-' + b, (settings.subBg || 'none') === b);
     r.style.setProperty('--lt-sub-color', settings.subColor || '#ffffff');
-    r.style.setProperty('--lt-sub-bottom', (settings.subBottom == null ? 8 : settings.subBottom) + '%');
+    const following = settings.followHardsubs && hardsubLift != null;
+    r.style.setProperty('--lt-sub-bottom', (following ? hardsubLift : settings.subBottom == null ? 8 : settings.subBottom) + '%');
+    r.classList.toggle('lt-following', Boolean(settings.followHardsubs));
     r.style.setProperty('--lt-cover-bottom', (settings.coverBottom == null ? SG.DEFAULTS.coverBottom : settings.coverBottom) + '%');
     r.style.setProperty('--lt-cover-height', (settings.coverHeight == null ? SG.DEFAULTS.coverHeight : settings.coverHeight) + '%');
-    r.classList.toggle('lt-cover', Boolean(settings.coverHardsubs));
+    const peek = Boolean(settings.followHardsubs && settings.peekHardsubs && hardsubBand);
+    if (peek) {
+      r.style.setProperty('--lt-cover-bottom', hardsubBand[0] + '%');
+      r.style.setProperty('--lt-cover-height', hardsubBand[1] + '%');
+    }
+    r.classList.toggle('lt-cover', Boolean(settings.coverHardsubs) || peek);
+    r.classList.toggle('lt-peek', peek);
     const L = ui.panel.look;
     for (const key of ['subFont', 'subBg', 'subColor']) {
       for (const [value, b] of L[key]) b.classList.toggle('sg-on', (settings[key] || SG.DEFAULTS[key]) === value);
@@ -981,9 +1036,130 @@
       if (document.activeElement !== c.input) c.input.value = String(v);
       c.value.textContent = c.fmt(Number(v));
     }
+    renderSiteBox();
     L.coverBtn.classList.toggle('sg-on', Boolean(settings.coverHardsubs));
     L.coverBtn.textContent = settings.coverHardsubs ? 'Covered' : 'Cover them';
     place();
+  }
+
+  // The Display tab's card for sites whose videos have subtitles burned into the picture.
+  let siteBoxState = '';
+  function renderSiteBox() {
+    const box = ui.panel.siteBox;
+    const site = siteLook();
+    const state = [tabHost, Boolean(site), settings.followHardsubs, settings.peekHardsubs, hardsubBroken, hardsubLift != null].join('|');
+    if (state === siteBoxState) return;
+    siteBoxState = state;
+    box.textContent = '';
+    const host = tabHost || 'this site';
+    if (!site) {
+      box.classList.remove('sg-on');
+      box.append(h('div', 'sg-site-t', 'Video has English subtitles burned in?'));
+      box.append(h('div', 'sg-site-d', `Show the Japanese right above them, as one pair of subtitles. Langtitles finds the burned-in lines and moves with them, and ${host} gets its own layout (your other sites stay as they are).`));
+      const go = h('button', 'sg-btn sg-go', 'Show above burned-in subtitles');
+      go.addEventListener('click', () => {
+        setSiteLook({ followHardsubs: true, showTranslation: false, subColor: '#ffe14d', subBg: 'none', coverHardsubs: false, subBottom: 23 });
+        showToast(`Langtitles will sit above the burned-in subtitles on ${host}.`);
+      });
+      box.append(go);
+      return;
+    }
+    box.classList.add('sg-on');
+    box.append(h('div', 'sg-site-t', `Own layout for ${host}`));
+    let how;
+    if (!settings.followHardsubs) how = 'Changes on the Display tab apply to this site only.';
+    else if (hardsubBroken) how = "This site's video picture can't be read, so the position is fixed: drag the ⋮⋮ grip to just above the burned-in subtitles.";
+    else if (hardsubLift != null) how = 'Following the burned-in subtitles: yours sit just above them.';
+    else how = 'Looking for burned-in subtitles… (while none are found, yours sit at the height set below)';
+    box.append(h('div', 'sg-site-d', how));
+    const row = h('div', 'sg-row-btns');
+    const follow = h('button', 'sg-show-chip' + (settings.followHardsubs ? ' sg-on' : ''), 'Follow burned-in subtitles');
+    follow.title = 'Find the subtitles in the picture and keep yours just above them';
+    follow.addEventListener('click', () => {
+      savePatch({ followHardsubs: !settings.followHardsubs });
+      hardsubSeen = [];
+      hardsubLift = null;
+      applySettings();
+    });
+    const reset = h('button', 'sg-btn sg-ghost', 'Back to my normal layout');
+    reset.addEventListener('click', () => {
+      hardsubSeen = [];
+      hardsubLift = null;
+      setSiteLook(null);
+    });
+    const peek = h('button', 'sg-show-chip' + (settings.peekHardsubs ? ' sg-on' : ''), 'Blur English until I point at it');
+    peek.title = 'Read the Japanese first; point at the blurred band to see the English';
+    peek.addEventListener('click', () => {
+      savePatch({ peekHardsubs: !settings.peekHardsubs, followHardsubs: true });
+      applySettings();
+    });
+    if (settings.followHardsubs && !hardsubBroken) row.append(peek);
+    row.append(follow, reset);
+    box.append(row);
+  }
+
+  // ---- following subtitles burned into the picture
+  let hardsubLift = null; // where Langtitles' subtitles sit, in % of the video box from the bottom
+  let hardsubSeen = []; // recent detections: { at, top } (top in % of the box)
+  let hardsubAt = 0;
+  let hardsubBroken = false;
+  let hardsubCanvas = null;
+  let hardsubBand = null;
+  let hardsubBandKey = '';
+  function followHardsubs() {
+    if (!settings.followHardsubs || !video || hardsubBroken || !enabled()) return;
+    const now = Date.now();
+    if (now - hardsubAt < 400 || (video.paused && hardsubLift != null)) return;
+    hardsubAt = now;
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    if (!vw || !vh || video.readyState < 2) return;
+    const w = 384;
+    const hgt = Math.max(1, Math.round((w * vh) / vw));
+    if (!hardsubCanvas) hardsubCanvas = document.createElement('canvas');
+    if (hardsubCanvas.width !== w || hardsubCanvas.height !== hgt) {
+      hardsubCanvas.width = w;
+      hardsubCanvas.height = hgt;
+    }
+    let data;
+    try {
+      const ctx = hardsubCanvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(video, 0, 0, w, hgt);
+      data = ctx.getImageData(0, 0, w, hgt).data;
+    } catch (e) {
+      // The video comes from another site without permission to read it, or is copy-protected.
+      hardsubBroken = true;
+      applySettings();
+      return;
+    }
+    const hit = SG.hardsubs.find(data, w, hgt);
+    const box = video.getBoundingClientRect();
+    if (hit && box.height) {
+      const pic = SG.hardsubs.pictureBox(box.width, box.height, vw, vh);
+      hardsubSeen.push({ at: now, top: ((pic.top + hit.top * pic.height) / box.height) * 100, bottom: ((pic.top + hit.bottom * pic.height) / box.height) * 100 });
+    }
+    hardsubSeen = hardsubSeen.filter((x) => now - x.at < 30000);
+    // The highest position seen recently that was seen at least twice: two-line subtitles set the
+    // height, so yours don't jump up and down with every line, and one stray detection is ignored.
+    const tops = hardsubSeen.map((x) => x.top).sort((a, b) => b - a);
+    let lift = null;
+    for (const t of tops) {
+      if (tops.filter((u) => Math.abs(u - t) < 2).length >= 2) {
+        lift = Math.min(60, Math.round((t + 1.5) * 2) / 2);
+        break;
+      }
+    }
+    if (lift == null && hardsubLift != null && hardsubSeen.length) lift = hardsubLift;
+    // The band that hides the English until you point at it covers everything seen recently.
+    const low = hardsubSeen.length ? Math.max(0, Math.min(...hardsubSeen.map((x) => x.bottom)) - 1) : null;
+    const band = lift != null && low != null ? [low, lift - 0.5 - low] : null;
+    const bandKey = band ? band.map((n) => n.toFixed(1)).join() : '';
+    if (lift !== hardsubLift || bandKey !== hardsubBandKey) {
+      hardsubLift = lift;
+      hardsubBand = band;
+      hardsubBandKey = bandKey;
+      applyLook();
+    }
   }
 
   function applyHideNative() {
@@ -1235,6 +1411,7 @@
   function tick() {
     if (!ui || !video) return;
     readDomCaption();
+    followHardsubs();
     const t = active();
     if (!t || !enabled() || overlayHidden) {
       if (shownKey !== null) clearLine();

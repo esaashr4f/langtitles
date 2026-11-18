@@ -44,6 +44,12 @@
     coverHardsubs: false,
     coverBottom: 5,
     coverHeight: 20,
+    // Sit just above subtitles burned into the picture, following them as they move.
+    followHardsubs: false,
+    // While following them, blur the burned-in subtitles until you point at them.
+    peekHardsubs: false,
+    // Per-site layouts ({ host: { subBottom, subColor, … } }), for sites with burned-in subtitles.
+    siteLooks: {},
     autoFind: true, // load subtitles from subtitle sites when the site has none in your language
     osApiKey: '',
     osUser: '',
@@ -119,6 +125,9 @@
     }
     return best;
   };
+
+  // Settings a site can have its own value for.
+  SG.LOOK_KEYS = ['subFont', 'subColor', 'subBg', 'fontScale', 'subBottom', 'coverHardsubs', 'coverBottom', 'coverHeight', 'showTranslation', 'followHardsubs', 'peekHardsubs'];
 
   SG.SUB_COLOURS = [
     ['#ffffff', 'White'],

@@ -1020,3 +1020,24 @@ langtitles-root .sg-ctl-k, langtitles-root .sg-key {
 langtitles-root .sg-keys { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; align-items: center; }
 langtitles-root .sg-key { justify-self: start; font-size: 11px; color: var(--sg-text); }
 langtitles-root .sg-key-what { color: var(--sg-soft); font-size: 12.5px; }
+
+/* following burned-in subtitles: glide rather than jump */
+langtitles-root.lt-following .sg-sub { transition: bottom 0.35s ease; }
+
+/* Display tab: the per-site card */
+langtitles-root .sg-site { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--sg-fill); border: 1px solid var(--sg-line); }
+langtitles-root .sg-site.sg-on { background: rgba(255, 210, 122, 0.07); border-color: rgba(255, 210, 122, 0.3); }
+langtitles-root .sg-site-t { color: #fff; font-size: 13.5px; font-weight: 700; }
+langtitles-root .sg-site-d { color: var(--sg-soft); font-size: 12.5px; line-height: 1.5; }
+langtitles-root .sg-site .sg-go { align-self: flex-start; }
+
+/* "Blur English until I point at it": the band follows the burned-in lines and clears on hover */
+langtitles-root.lt-peek .sg-cover {
+  pointer-events: auto;
+  cursor: help;
+  transition: opacity 0.2s, bottom 0.35s ease, height 0.35s ease;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 88%, transparent 100%);
+}
+langtitles-root.lt-peek .sg-cover:hover { opacity: 0; }
+langtitles-root.lt-peek .sg-cover { left: 12%; right: 12%; border-radius: 1em; }
