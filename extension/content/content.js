@@ -625,13 +625,16 @@
     const readBtn = h('button', 'sg-icon-btn', 'あ');
     readBtn.title = 'Furigana / pinyin / hanja on or off (R)';
     readBtn.addEventListener('click', () => toggleReadings());
+    const hideBtn = h('button', 'sg-icon-btn', '◐');
+    hideBtn.title = 'Hide or show the subtitles (H)';
+    hideBtn.addEventListener('click', () => toggleSubtitles());
     const bankBtn = h('button', 'sg-icon-btn', '★');
     bankBtn.title = 'Word bank';
     bankBtn.addEventListener('click', () => post({ type: 'openBank' }));
     const close = h('button', 'sg-icon-btn sg-close', '✕');
     close.title = 'Close panel (G)';
     close.addEventListener('click', () => setPanel(false));
-    head.append(logo, titles, readBtn, bankBtn, close);
+    head.append(logo, titles, hideBtn, readBtn, bankBtn, close);
 
     // ---- tabs
     const TABS = [['line', 'Line'], ['transcript', 'Transcript'], ['words', 'Words'], ['subs', 'Subtitles'], ['display', 'Display']];
@@ -858,7 +861,7 @@
     el.append(head, tabBar, ...tabBodies.values());
     setTab('line');
     return {
-      el, status, select, offset, hint, showChips, classChips, jlptChips, look, setTab,
+      el, status, select, offset, hint, showChips, hideBtn, classChips, jlptChips, look, setTab,
       find, findBody, words, wordsBody, guide, guideTitle, guideBody, detail, list, rows: new Map(),
     };
   }
@@ -916,6 +919,8 @@
     c.toggle('sg-no-roles', !settings.showRoles);
     c.toggle('sg-no-tr', !settings.showTranslation);
     c.toggle('sg-hidden', overlayHidden);
+    ui.panel.hideBtn.classList.toggle('sg-on', overlayHidden);
+    ui.panel.hideBtn.textContent = overlayHidden ? '◑' : '◐';
     applyLook();
     for (const [key, chip] of ui.panel.showChips) chip.classList.toggle('sg-on', Boolean(settings[key]));
     for (const [key, chip] of ui.panel.classChips) chip.classList.toggle('sg-on', (settings.glossClasses || []).includes(key));
@@ -1765,6 +1770,13 @@
     if (target) video.currentTime = target.start + t.offset + 0.01;
   }
 
+  // Hides all of Langtitles' subtitles (the site's own captions come back), or shows them again.
+  function toggleSubtitles() {
+    overlayHidden = !overlayHidden;
+    applySettings();
+    showToast(overlayHidden ? 'Subtitles hidden. Press H to show them again.' : 'Subtitles shown.');
+  }
+
   function onKey(e) {
     if (reader && e.key === 'Escape') {
       closeReader();
@@ -1794,8 +1806,7 @@
     else if (key === 'g') setPanel(!settings.panelOpen);
     else if (key === 'r') toggleReadings();
     else if (key === 'h') {
-      overlayHidden = !overlayHidden;
-      applySettings();
+      toggleSubtitles();
     } else return;
     e.preventDefault();
     e.stopPropagation();

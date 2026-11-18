@@ -956,3 +956,4 @@ langtitles-root .sg-reader-body .sg-g-h:first-child { margin-top: 0; }
 langtitles-root .sg-reader-body.sg-loading { color: var(--sg-dim); animation: sg-pulse 1.2s infinite; }
 langtitles-root .sg-reader-body ruby rt { color: var(--sg-read); font-size: 0.55em; }
 langtitles-root .sg-expand { margin-left: 0 !important; padding: 0.2em 0.55em; }
+langtitles-root .sg-icon-btn.sg-on { background: rgba(255, 210, 122, 0.18); color: var(--sg-gloss); }

@@ -153,7 +153,7 @@ The side panel's **Display** tab sets how Langtitles' subtitles look:
 - **Height above the bottom:** or drag the ⋮⋮ grip above the subtitles.
 - **Cover burned-in subtitles:** when the video has English (or any) subtitles drawn into the picture, **Cover them** blurs and darkens a band over them, and your subtitles sit on top. Set the band's height and position with the two sliders.
 
-The panel itself is in tabs: **Line** (the current line, its guides and Ask), **Transcript**, **Words** (episode words), **Subtitles** (track, timing, finding and loading subtitles) and **Display**. Close it with ✕ or **G**.
+The panel itself is in tabs: **Line** (the current line, its guides and Ask), **Transcript**, **Words** (episode words), **Subtitles** (track, timing, finding and loading subtitles) and **Display**. Close it with ✕ or **G**. The ◐ button in its header (or **H**) hides all of Langtitles' subtitles and brings back the site's own; press it again to show them.
 
 If you turn Langtitles on partway through an episode, it starts preparing lines from where you are, not from the beginning.
 

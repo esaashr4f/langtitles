@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Langtitles",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Langtitles: learn languages from what you watch. Word-by-word subtitle breakdowns with furigana and pinyin, grammar guides, a word bank, and subtitles fetched for the episode, on any streaming site. Powered by Claude with your own API key.",
   "icons": {
     "48": "icons/icon.svg",
