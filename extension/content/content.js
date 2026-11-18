@@ -235,7 +235,7 @@
       renderStatus();
     } else if (msg.type === 'askDelta' || msg.type === 'askDone' || msg.type === 'askError') {
       onAsk(msg);
-    } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs'].includes(msg.type)) {
+    } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs', 'showChoice'].includes(msg.type)) {
       const cb = subReqs.get(msg.reqId);
       subReqs.delete(msg.reqId);
       if (cb) cb(msg);
@@ -625,8 +625,9 @@
     const readBtn = h('button', 'sg-icon-btn', 'あ');
     readBtn.title = 'Furigana / pinyin / hanja on or off (R)';
     readBtn.addEventListener('click', () => toggleReadings());
-    const hideBtn = h('button', 'sg-icon-btn', '◐');
-    hideBtn.title = 'Hide or show the subtitles (H)';
+    const hideBtn = h('button', 'sg-switch');
+    hideBtn.title = 'Turn Langtitles subtitles on or off (H)';
+    hideBtn.append(h('span', 'sg-switch-label', 'Subtitles'), h('span', 'sg-switch-track'));
     hideBtn.addEventListener('click', () => toggleSubtitles());
     const bankBtn = h('button', 'sg-icon-btn', '★');
     bankBtn.title = 'Word bank';
@@ -680,7 +681,21 @@
     const guideBody = h('div', 'sg-pguide-body');
     guide.append(guideHead, guideBody);
     const detail = h('div', 'sg-detail');
-    tabBodies.get('line').append(hint, guide, detail);
+    // Line controls: everything the keyboard shortcuts do, as buttons.
+    const controls = h('div', 'sg-controls');
+    const ctl = (icon, label, key, fn) => {
+      const b = h('button', 'sg-ctl');
+      b.title = `${label} (${key})`;
+      b.append(h('span', 'sg-ctl-i', icon), h('span', 'sg-ctl-l', label), h('kbd', 'sg-ctl-k', key));
+      b.addEventListener('click', fn);
+      controls.append(b);
+      return b;
+    };
+    ctl('⏮', 'Previous', 'A', () => seekToCue(-1));
+    ctl('↺', 'Replay slow', 'S', () => replayLine(false));
+    const loopBtn = ctl('🔁', 'Loop', 'L', () => replayLine(true));
+    ctl('⏭', 'Next', 'D', () => seekToCue(1));
+    tabBodies.get('line').append(controls, hint, guide, detail);
 
     // ---- Transcript
     const list = h('div', 'sg-list');
@@ -851,17 +866,29 @@
     const coverRow = chipRow('Burned-in subtitles in the video');
     const coverBtn = h('button', 'sg-show-chip', 'Cover them');
     coverBtn.title = 'Blur and darken a band over subtitles that are part of the video picture, such as English, and show yours on top';
-    coverBtn.addEventListener('click', () => saveNow({ coverHardsubs: !settings.coverHardsubs, subBottom: !settings.coverHardsubs ? Math.max(0, settings.coverBottom + settings.coverHeight / 2 - 4) : settings.subBottom }));
+    coverBtn.addEventListener('click', () => saveNow({ coverHardsubs: !settings.coverHardsubs, subBottom: !settings.coverHardsubs ? Math.max(0, (settings.coverBottom == null ? SG.DEFAULTS.coverBottom : settings.coverBottom) + 1) : settings.subBottom }));
     coverRow.append(coverBtn);
     look.coverBtn = coverBtn;
     slider('Cover: height', 'coverHeight', 4, 40, 1, (v) => v + '%');
     slider('Cover: height above the bottom', 'coverBottom', 0, 60, 1, (v) => v + '%');
     disp.append(h('div', 'sg-note', 'Tip: drag the subtitles up or down by the ⋮⋮ grip that appears when you point at them.'));
+    // Every keyboard shortcut, for reference.
+    disp.append(h('div', 'sg-section', 'Keyboard shortcuts'));
+    const keys = h('div', 'sg-keys');
+    for (const [k, what] of [
+      ['G', 'Open or close this panel'], ['H', 'Subtitles on or off'], ['R', 'Furigana / pinyin on or off'],
+      ['A / D', 'Previous / next line'], ['S', 'Replay the line slowed down'], ['L', 'Loop the line (again to stop)'],
+      ['[ / ]', 'Subtitles 0.25 s earlier / later (Shift: 1 s)'], ['\\', 'Reset the timing'], ['Esc', 'Close a full-screen guide'],
+      ['Alt+Shift+L', 'Turn Langtitles off everywhere, or on again'],
+    ]) {
+      keys.append(h('kbd', 'sg-key', k), h('span', 'sg-key-what', what));
+    }
+    disp.append(keys);
 
     el.append(head, tabBar, ...tabBodies.values());
     setTab('line');
     return {
-      el, status, select, offset, hint, showChips, hideBtn, classChips, jlptChips, look, setTab,
+      el, status, select, offset, hint, showChips, hideBtn, loopBtn, classChips, jlptChips, look, setTab,
       find, findBody, words, wordsBody, guide, guideTitle, guideBody, detail, list, rows: new Map(),
     };
   }
@@ -919,8 +946,8 @@
     c.toggle('sg-no-roles', !settings.showRoles);
     c.toggle('sg-no-tr', !settings.showTranslation);
     c.toggle('sg-hidden', overlayHidden);
-    ui.panel.hideBtn.classList.toggle('sg-on', overlayHidden);
-    ui.panel.hideBtn.textContent = overlayHidden ? '◑' : '◐';
+    ui.panel.hideBtn.classList.toggle('sg-on', !overlayHidden);
+    ui.panel.hideBtn.setAttribute('aria-pressed', String(!overlayHidden));
     applyLook();
     for (const [key, chip] of ui.panel.showChips) chip.classList.toggle('sg-on', Boolean(settings[key]));
     for (const [key, chip] of ui.panel.classChips) chip.classList.toggle('sg-on', (settings.glossClasses || []).includes(key));
@@ -941,8 +968,8 @@
     for (const b of ['none', 'shadow', 'box']) r.classList.toggle('lt-bg-' + b, (settings.subBg || 'none') === b);
     r.style.setProperty('--lt-sub-color', settings.subColor || '#ffffff');
     r.style.setProperty('--lt-sub-bottom', (settings.subBottom == null ? 8 : settings.subBottom) + '%');
-    r.style.setProperty('--lt-cover-bottom', (settings.coverBottom == null ? 4 : settings.coverBottom) + '%');
-    r.style.setProperty('--lt-cover-height', (settings.coverHeight == null ? 16 : settings.coverHeight) + '%');
+    r.style.setProperty('--lt-cover-bottom', (settings.coverBottom == null ? SG.DEFAULTS.coverBottom : settings.coverBottom) + '%');
+    r.style.setProperty('--lt-cover-height', (settings.coverHeight == null ? SG.DEFAULTS.coverHeight : settings.coverHeight) + '%');
     r.classList.toggle('lt-cover', Boolean(settings.coverHardsubs));
     const L = ui.panel.look;
     for (const key of ['subFont', 'subBg', 'subColor']) {
@@ -1956,7 +1983,8 @@
     }
     if (loop && replay && replay.loop) {
       stopReplay();
-      showToast('Loop off (L).');
+      if (ui) ui.panel.loopBtn.classList.remove('sg-on');
+      showToast('Loop off.');
       return;
     }
     const cue = t.cues[idx];
@@ -1969,13 +1997,15 @@
     video.currentTime = cue.start + t.offset + 0.01;
     const p = video.play();
     if (p && p.catch) p.catch(() => {});
-    if (loop) showToast(`Looping this line${settings.slowReplay ? ' slowed down' : ''}. Press L to stop.`);
+    if (loop) showToast(`Looping this line${settings.slowReplay ? ' slowed down' : ''}. Press L or Loop again to stop.`);
+    if (ui) ui.panel.loopBtn.classList.toggle('sg-on', Boolean(loop));
   }
 
   function stopReplay() {
     if (!replay) return;
     if (video) video.playbackRate = replay.rate || 1;
     replay = null;
+    if (ui) ui.panel.loopBtn.classList.remove('sg-on');
   }
 
   // Runs every tick: ends or repeats a replay, and pauses after a line with exactly one new word.
@@ -2604,7 +2634,7 @@
 
   function useLoaded(loaded, ep, how) {
     const track = Object.assign({}, loaded.track, { episode: ep });
-    if (loaded.reused && loaded.offset != null) {
+    if ((loaded.reused || loaded.usual) && loaded.offset != null) {
       track.offset = loaded.offset;
       track.userOffset = true;
     }
@@ -2621,6 +2651,7 @@
     const parts = [`${how === 'auto' ? 'Loaded' : 'Using'} ${langName(t.lang)} subtitles from ${sourceName(t.provider)}`];
     if (synced) parts.push(`timing matched to the site (${t.offset >= 0 ? '+' : ''}${t.offset.toFixed(2)} s)`);
     else if (loaded.reused && t.userOffset) parts.push('with the timing you set last time');
+    if (loaded.usual) parts.push(`from this show's usual ${loaded.usual}`);
     let msg = parts.join(', ') + '.';
     if (how === 'auto') msg += ' Wrong file? Press G → Find subtitles.';
     if (loaded.note) msg += ' ' + loaded.note + '.';
@@ -2761,7 +2792,26 @@
     const status = h('div', 'sg-find-status');
     status.textContent = SG.episode.confident(ep) ? `Detected ${SG.episode.describe(ep)}.` : 'Check the title, season and episode, then search.';
     const results = h('div', 'sg-results');
-    body.append(form, go, status, shows, results);
+    const usual = h('div', 'sg-usual');
+    body.append(usual, form, go, status, shows, results);
+    request({ type: 'showChoice', episode: ep, langs: wantedLangs() }).then((res) => {
+      const c = res && res.choice;
+      if (!c) {
+        usual.append(h('span', '', 'Pick a result below and it becomes this show\'s usual subtitles: later episodes load from the same site and group by themselves.'));
+        return;
+      }
+      usual.classList.add('sg-on');
+      usual.append(h('span', 'sg-usual-k', 'Usual subtitles for this show'), h('span', 'sg-usual-v', c.label));
+      const forget = h('button', 'sg-btn sg-ghost', 'Forget');
+      forget.title = 'Stop preferring these; the best search result is used again';
+      forget.addEventListener('click', () => {
+        post({ type: 'forgetShowChoice', episode: ep, langs: wantedLangs() });
+        usual.textContent = '';
+        usual.classList.remove('sg-on');
+        usual.append(h('span', '', 'Forgotten. Pick a result below to set new usual subtitles.'));
+      });
+      usual.append(forget);
+    });
     const toggleSeason = () => {
       const tv = type.value === 'tv';
       season.parentNode.style.display = tv ? '' : 'none';

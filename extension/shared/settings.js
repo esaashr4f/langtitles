@@ -42,8 +42,8 @@
     subBg: 'none',
     subBottom: 8,
     coverHardsubs: false,
-    coverBottom: 3,
-    coverHeight: 14,
+    coverBottom: 5,
+    coverHeight: 20,
     autoFind: true, // load subtitles from subtitle sites when the site has none in your language
     osApiKey: '',
     osUser: '',

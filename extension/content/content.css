@@ -26,8 +26,8 @@ langtitles-root {
   --lt-sub-font: var(--lt-sans);
   --lt-sub-color: #ffffff;
   --lt-sub-bottom: 8%;
-  --lt-cover-bottom: 3%;
-  --lt-cover-height: 14%;
+  --lt-cover-bottom: 5%;
+  --lt-cover-height: 20%;
 
   /* glass surfaces */
   --sg-glass: rgba(20, 21, 28, 0.78);
@@ -102,9 +102,9 @@ langtitles-root .sg-cover {
   height: var(--lt-cover-height);
   display: none;
   pointer-events: none;
-  background: rgba(8, 8, 12, 0.42);
-  backdrop-filter: blur(16px) saturate(0.8) brightness(0.62);
-  -webkit-backdrop-filter: blur(16px) saturate(0.8) brightness(0.62);
+  background: rgba(8, 8, 12, 0.5);
+  backdrop-filter: blur(22px) saturate(0.7) brightness(0.5);
+  -webkit-backdrop-filter: blur(22px) saturate(0.7) brightness(0.5);
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22%, #000 78%, transparent 100%);
   mask-image: linear-gradient(to bottom, transparent 0, #000 22%, #000 78%, transparent 100%);
 }
@@ -956,4 +956,67 @@ langtitles-root .sg-reader-body .sg-g-h:first-child { margin-top: 0; }
 langtitles-root .sg-reader-body.sg-loading { color: var(--sg-dim); animation: sg-pulse 1.2s infinite; }
 langtitles-root .sg-reader-body ruby rt { color: var(--sg-read); font-size: 0.55em; }
 langtitles-root .sg-expand { margin-left: 0 !important; padding: 0.2em 0.55em; }
-langtitles-root .sg-icon-btn.sg-on { background: rgba(255, 210, 122, 0.18); color: var(--sg-gloss); }
+
+/* Subtitles on/off switch in the panel header */
+langtitles-root .sg-switch {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 6px 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--sg-line-strong);
+  color: var(--sg-dim);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+langtitles-root .sg-switch:hover { border-color: rgba(255, 255, 255, 0.3); color: var(--sg-text); }
+langtitles-root .sg-switch:focus-visible { outline: 2px solid var(--sg-gloss); outline-offset: 2px; }
+langtitles-root .sg-switch-track { position: relative; width: 28px; height: 16px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); transition: background 0.15s; }
+langtitles-root .sg-switch-track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: transform 0.15s; }
+langtitles-root .sg-switch.sg-on { color: var(--sg-text); }
+langtitles-root .sg-switch.sg-on .sg-switch-track { background: linear-gradient(90deg, #ffb35c, #ff8a3d); }
+langtitles-root .sg-switch.sg-on .sg-switch-track::after { transform: translateX(12px); }
+
+/* this show's usual subtitles */
+langtitles-root .sg-usual { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-bottom: 12px; color: var(--sg-dim); font-size: 12px; }
+langtitles-root .sg-usual.sg-on { padding: 8px 8px 8px 12px; border-radius: 11px; background: rgba(127, 224, 181, 0.08); border: 1px solid rgba(127, 224, 181, 0.3); }
+langtitles-root .sg-usual-k { flex: 1 1 100%; color: var(--sg-good); font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+langtitles-root .sg-usual-v { flex: 1; color: var(--sg-text); font-size: 13px; font-weight: 600; }
+
+/* line controls (the A / S / L / D keys as buttons) */
+langtitles-root .sg-controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; }
+langtitles-root .sg-ctl {
+  all: unset;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px 6px;
+  border-radius: 11px;
+  border: 1px solid var(--sg-line);
+  background: var(--sg-fill);
+  color: var(--sg-soft);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+langtitles-root .sg-ctl:hover { background: var(--sg-fill-hover); border-color: var(--sg-line-strong); color: #fff; }
+langtitles-root .sg-ctl:focus-visible { outline: 2px solid var(--sg-gloss); outline-offset: 2px; }
+langtitles-root .sg-ctl.sg-on { border-color: rgba(255, 210, 122, 0.6); background: rgba(255, 210, 122, 0.14); color: #fff; }
+langtitles-root .sg-ctl-i { font-size: 16px; line-height: 1.2; }
+langtitles-root .sg-ctl-l { font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+langtitles-root .sg-ctl-k, langtitles-root .sg-key {
+  padding: 0 5px;
+  border-radius: 5px;
+  border: 1px solid var(--sg-line-strong);
+  border-bottom-width: 2px;
+  color: var(--sg-dim);
+  font-family: var(--lt-ui);
+  font-size: 10px;
+  line-height: 1.5;
+}
+langtitles-root .sg-keys { display: grid; grid-template-columns: max-content 1fr; gap: 6px 12px; align-items: center; }
+langtitles-root .sg-key { justify-self: start; font-size: 11px; color: var(--sg-text); }
+langtitles-root .sg-key-what { color: var(--sg-soft); font-size: 12.5px; }

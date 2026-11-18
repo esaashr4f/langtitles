@@ -169,5 +169,22 @@
     return name;
   }
 
-  SG.episode = { detect, fromUrl, fromTitle, confident, key, describe };
+  // The whole show (or movie), not one episode: subtitle choices are remembered per show.
+  function showKey(ep, lang) {
+    const id = ep.tmdbId ? 'tmdb' + ep.tmdbId : ep.imdbId ? ep.imdbId : ep.jimakuId ? 'jimaku' + ep.jimakuId : 't:' + String(ep.title || '').toLowerCase().trim();
+    return ['show', ep.type || '?', id, lang || ''].join('|');
+  }
+
+  // The fansub group or release a subtitle file comes from, so the next episode can come from the same one:
+  // "[Kamigami] Monster - 05 [1080p].ass" -> "kamigami"; "Monster.S01E05.720p.WEB-DL-NTb.srt" -> "ntb".
+  function releaseGroup(name) {
+    const text = String(name || '').replace(/\.(srt|ass|ssa|vtt|zip|sub|txt)$/i, '');
+    const tag = /^\s*[\[(【]([^\])】]{2,40})[\])】]/.exec(text);
+    if (tag) return tag[1].trim().toLowerCase();
+    const dash = /-([A-Za-z0-9]{2,20})$/.exec(text);
+    if (dash && !/^(\d+|e\d+|ep\d+|\d+p)$/i.test(dash[1])) return dash[1].toLowerCase();
+    return '';
+  }
+
+  SG.episode = { detect, fromUrl, fromTitle, confident, key, showKey, releaseGroup, describe };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

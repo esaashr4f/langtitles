@@ -274,6 +274,7 @@
         if (!/\.(srt|ass|ssa|vtt|zip)$/i.test(f.name)) continue;
         out.push({
           provider: 'jimaku',
+          entry: entry.id,
           id: f.url,
           lang: 'ja',
           name: f.name,

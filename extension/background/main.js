@@ -534,8 +534,40 @@
     if (ep) {
       const pick = { result, savedAt: Date.now() };
       cache.putMany('picks', [[SG.episode.key(ep, result.lang), pick]]).catch(() => {});
+      rememberShowChoice(ep, result).catch(() => {});
     }
     return { track: trackFrom(result, sub), note };
+  }
+
+  // The show's usual subtitles: the site and fansub group last used for it, so every episode comes from them.
+  async function showChoice(ep, lang) {
+    const k = SG.episode.showKey(ep, lang);
+    return (await cache.getMany('picks', [k])).get(k) || null;
+  }
+  async function rememberShowChoice(ep, result, offset) {
+    const k = SG.episode.showKey(ep, result.lang);
+    const old = await showChoice(ep, result.lang);
+    const group = SG.episode.releaseGroup(result.name);
+    const same = old && old.provider === result.provider && old.group === group;
+    const choice = {
+      provider: result.provider, group, entry: result.entry || null, name: result.name, title: result.title || ep.title || '',
+      offset: offset != null ? offset : same ? old.offset : null, savedAt: Date.now(),
+    };
+    await cache.putMany('picks', [[k, choice]]);
+  }
+  function choiceLabel(c) {
+    const site = { opensubtitles: 'OpenSubtitles', subdl: 'SubDL', jimaku: 'Jimaku' }[c.provider] || c.provider;
+    return c.group ? `${site} · ${c.group}` : site;
+  }
+
+  // How well a search result matches the show's usual subtitles.
+  function choiceScore(r, choice) {
+    if (!choice) return 0;
+    let n = 0;
+    if (r.provider === choice.provider) n += 2;
+    if (choice.entry && r.entry === choice.entry) n += 3;
+    if (choice.group && SG.episode.releaseGroup(r.name) === choice.group) n += 4;
+    return n;
   }
 
   // Automatic loading: a file chosen before for this episode, otherwise the best search result.
@@ -555,11 +587,20 @@
     const errors = Object.entries(found.report).filter(([, r]) => !r.ok).map(([, r]) => r.message);
     // Only take a result that is clearly this episode (or this movie).
     const fits = (r) => ep.type !== 'tv' || r.episode == null || Number(r.episode) === Number(ep.episode);
-    const usable = found.results.filter((r) => !r.pack && fits(r)).concat(found.results.filter((r) => r.pack && fits(r)));
+    let usable = found.results.filter((r) => !r.pack && fits(r)).concat(found.results.filter((r) => r.pack && fits(r)));
+    // Results from the show's usual site and group first (a stable sort keeps the rest in order).
+    const choices = new Map();
+    for (const lang of langs) choices.set(lang, await showChoice(ep, lang));
+    usable = usable.map((r, i) => ({ r, i, s: choiceScore(r, choices.get(r.lang)) })).sort((a, b) => b.s - a.s || a.i - b.i).map((x) => x.r);
     for (const result of usable.slice(0, 3)) {
       try {
         const loaded = await loadSubtitle(result, ep);
-        return Object.assign(loaded, { reused: false, alternatives: found.results.length - 1 });
+        const choice = choices.get(result.lang);
+        const usual = choiceScore(result, choice) >= 4 || (choice && !choice.group && choiceScore(result, choice) >= 2);
+        return Object.assign(loaded, {
+          reused: false, alternatives: found.results.length - 1, usual: usual ? choiceLabel(choice) : null,
+          offset: usual && choice.offset != null ? choice.offset : undefined,
+        });
       } catch (e) {
         errors.push(e.message);
       }
@@ -713,8 +754,19 @@
         const k = SG.episode.key(msg.episode, msg.lang);
         cache.getMany('picks', [k]).then((m) => {
           const pick = m.get(k);
-          if (pick) cache.putMany('picks', [[k, Object.assign({}, pick, { offset: msg.offset, scale: msg.scale })]]);
+          if (pick) {
+            cache.putMany('picks', [[k, Object.assign({}, pick, { offset: msg.offset, scale: msg.scale })]]);
+            // The same group's releases usually share timing, so the next episode starts from this shift.
+            rememberShowChoice(msg.episode, pick.result, msg.offset).catch(() => {});
+          }
         });
+      } else if (msg.type === 'showChoice' && msg.episode) {
+        Promise.all((msg.langs || []).map((l) => showChoice(msg.episode, l))).then((list) => {
+          const c = list.find(Boolean);
+          send(port, { type: 'showChoice', reqId: msg.reqId, choice: c ? Object.assign({ label: choiceLabel(c) }, c) : null });
+        });
+      } else if (msg.type === 'forgetShowChoice' && msg.episode) {
+        Promise.all((msg.langs || []).map((l) => cache.remove('picks', SG.episode.showKey(msg.episode, l)))).catch(() => {});
       }
     });
 

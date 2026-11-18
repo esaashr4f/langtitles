@@ -25,3 +25,15 @@ test('built-in guides use fixed identifiers and the guide headings', () => {
     assert.ok(/## When it seems to fit but doesn't/.test(text), k);
   }
 });
+
+test('release groups are read from subtitle file names', () => {
+  require('../extension/shared/episode.js');
+  const g = globalThis.SG.episode.releaseGroup;
+  assert.strictEqual(g('[Kamigami] Monster - 05 [1080p].ass'), 'kamigami');
+  assert.strictEqual(g('【DMG】Monster 05.srt'), 'dmg');
+  assert.strictEqual(g('Monster.S01E05.720p.WEB-DL-NTb.srt'), 'ntb');
+  assert.strictEqual(g('Monster - 05.ass'), '');
+  assert.strictEqual(g('Monster.S01E05-720p.srt'), '');
+  const k = globalThis.SG.episode.showKey;
+  assert.strictEqual(k({ type: 'tv', tmdbId: 30981, season: 1, episode: 5 }, 'ja'), k({ type: 'tv', tmdbId: 30981, season: 1, episode: 6 }, 'ja'));
+});

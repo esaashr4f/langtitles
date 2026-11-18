@@ -63,6 +63,10 @@ Every kanji and hanzi entry shows its stroke order, animated and numbered. For J
 
 ## Subtitles from subtitle sites
 
+**Usual subtitles per show.** When you pick a subtitle file for an episode, Langtitles remembers the site and the fansub group or release it came from (for example Jimaku · kamigami) as that show's usual subtitles. Later episodes of the show load from the same site and group automatically, starting from the timing shift you last set for it. Subtitles → Find subtitles shows the show's usual subtitles, with **Forget** to drop them.
+
+**Burned-in subtitles.** When the video already has subtitles drawn into the picture (English on many anime sites), turn on Display → **Cover them**. It blurs and darkens a band over them, sized for two lines by default, and moves your subtitles onto it. If they don't quite line up, adjust the two Cover sliders until the band just covers them.
+
 Streaming sites often have no subtitles in the language you are learning. Langtitles can fetch them from **OpenSubtitles**, **SubDL** and **Jimaku** (Japanese anime subtitles) through their official APIs. Each needs a free account; add the keys under **Options → Subtitle sites**.
 
 - **Automatic:** after a few seconds of playback, if the site has no subtitles in your languages, Langtitles works out which episode is playing, picks the best match and loads it. Embedded players such as the ones donkey.to uses put the show's TMDB id, season and episode in their own address, so the episode is exact. On other sites it falls back to the page title, and only fills in the search form.
@@ -153,7 +157,7 @@ The side panel's **Display** tab sets how Langtitles' subtitles look:
 - **Height above the bottom:** or drag the ⋮⋮ grip above the subtitles.
 - **Cover burned-in subtitles:** when the video has English (or any) subtitles drawn into the picture, **Cover them** blurs and darkens a band over them, and your subtitles sit on top. Set the band's height and position with the two sliders.
 
-The panel itself is in tabs: **Line** (the current line, its guides and Ask), **Transcript**, **Words** (episode words), **Subtitles** (track, timing, finding and loading subtitles) and **Display**. Close it with ✕ or **G**. The ◐ button in its header (or **H**) hides all of Langtitles' subtitles and brings back the site's own; press it again to show them.
+The panel itself is in tabs: **Line** (the current line, its guides and Ask), **Transcript**, **Words** (episode words), **Subtitles** (track, timing, finding and loading subtitles) and **Display**. Close it with ✕ or **G**. The **Subtitles** switch in its header (or **H**) turns all of Langtitles' subtitles off and brings back the site's own; switch it on again to show them. The Line tab has buttons for **Previous**, **Replay slow**, **Loop** and **Next** line, and the Display tab lists every keyboard shortcut.
 
 If you turn Langtitles on partway through an episode, it starts preparing lines from where you are, not from the beginning.
 
