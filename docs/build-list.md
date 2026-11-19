@@ -430,14 +430,14 @@ general guides in advance for almost everything you'll meet, so the API only han
 
 Goal: standalone, paid (subscription) apps that do what Language Reactor does on desktop, which nothing offers
 on phones today: the streaming services the user already subscribes to, their own websites, and songs.
-- [ ] **The app is a learning-focused browser** (like Brave) with the Langtitles overlay built in: the user opens
-  Netflix, Disney+ and other services (logged into their own subscriptions) or any site, and the overlay runs on
-  top. On iPhone every browser uses Apple's WebKit, and Brave on iPhone plays Netflix, so the same should
-  work in our app's web view; prove it with a prototype first (iOS, then Android, where Widevine in the web view
-  needs testing).
-- [ ] **App Store / Play Store positioning:** listed as a browser for language learning ("works with the
-  streaming sites you already subscribe to"), without other services' names or logos in the listing; check
-  Apple's and Google's current review rules for browsers and for apps built on other services before submitting.
+- [ ] **A learning app, not just a browser:** the user opens the streaming services they subscribe to (Netflix,
+  Disney+ and others) or their own sites in the app's built-in WebKit view (the same as any third-party browser
+  on the App Store), with the Langtitles subtitles and panel on top; plus everything the Library offers: lessons,
+  word and grammar guides, song guides, word bank, review, progress. Prototype playback first (iOS, then Android,
+  where the web view's DRM needs testing).
+- [ ] **Store listing:** a language-learning app; not presented as a tool for any one streaming service.
+- [ ] **No scene frames in the app** (copyright). Option for later: frames kept only on the user's own phone,
+  like their own screenshots, never uploaded or shared.
 - [ ] **Songs:** the Spotify iOS / Android SDK (the user logs into their own Spotify; the app gets the track and
   playback position from the Spotify app) feeding our own lyrics screen (LRCLIB, Listen mode, song guides), and
   Apple Music via MusicKit. Smoother than wrapping Spotify's website, and within their terms.
