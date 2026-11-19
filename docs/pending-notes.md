@@ -45,3 +45,13 @@ noun" use; add one.
 
 - 店を出す (みせをだす): "open a shop / start a business", a set phrase. Vocab, in the "Set phrases
   and expressions" group. Met as 店を出した.
+- 歯切れが悪い (はぎれがわるい): idiom, "evasive, vague, not speaking plainly" (literally "the cut of the
+  teeth is bad"). Met as 歯切れが悪いようだね in the interrogation scene: "You seem rather evasive." Explain
+  the image, the opposite 歯切れがいい, and that ようだね softens it into an observation with a needle in it.
+- に関して (にかんして): compound particle, "regarding, concerning". Phrase guide, saved as the phrase, not
+  as 関する; contrast について, に対して, に関する + noun.
+- なり (grammar, rewrite): one core idea, "within X's own limits / as befits X". Lead with the line:
+  君なりの正当性 = "your own (so-called) justification", the detective keeping his distance from it. なりの +
+  noun vs なりに + verb/adjective; X は X なりに; attaches to nouns and to plain adjectives and verbs in this
+  sense (安いなりに, 分からないなりに); look-alikes: 独自の, らしい, 自分の; separate words: Verb なり "as soon as",
+  なり…なり "whether… or". No contradictions; replaces the current guide.

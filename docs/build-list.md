@@ -81,6 +81,21 @@ docs/pending-notes.md and get loaded in as part of item 5.
   from each part and the look-alikes. Built-in guides for では, には and じゃない.
 - [ ] **Option: Sonnet for line breakdowns** (better at whole-sentence reasoning, about 3x Haiku's cost).
 
+## 4b. Phrases as real units (high priority)
+
+- [ ] **Phrases are first-class, not their head word.** Japanese meaning often lives in multi-word units:
+  compound particles (に関して "regarding", について, によって, として, にとって, に対して), set phrases and idioms
+  (歯切れが悪い "evasive, not straight-talking", 店を出す, 気になる, 手を出す), noun + する/とする/にする phrases
+  (必要とする), and split patterns (いかに…のか). Each gets:
+  - its own identity (e.g. phrase.ja.に関して), separate from the verb 関する, which means something else alone;
+  - one meaning shown over the whole span on screen, with the parts still clickable;
+  - its own 📖 guide chip in the word card, a phrase guide, and saving / Known? / review **as the phrase**
+    (saving に関して saves に関して, not 関する); the word bank shows phrases in their own group;
+  - detection by the analysis (phrase spans returned with the line) and checked locally against the
+    dictionary's expression entries (JMdict marks these), longest match first.
+- [ ] **Phrases already saved as their head verb** (e.g. に関して stored as 関する) are found and offered to be
+  converted when the dictionary is in.
+
 ## 5. Guides
 
 - [ ] **Model label on every guide** (Library header line, word card, panel, full-screen reader:
@@ -113,6 +128,15 @@ docs/pending-notes.md and get loaded in as part of item 5.
   guide chip appears. A built-in guide for it (plain forms before a noun, が not は inside the clause, no
   "that/which", tense inside the clause). Every built-in verb-form guide (past, negative, ～ている, potential,
   passive, causative, ～たい…) gets a "Before a noun" use with an example; written guides are asked to cover it too.
+- [ ] **Guides shaped by what the item is** (the なり guide problem): classify each item as a content word, a
+  function word / suffix / particle, or a phrase, and use a matching template. Function words like なり get
+  the grammar template (core idea, how it attaches, uses, look-alikes), not the word template ("How it's
+  built: nothing to break down"). Every guide leads with the line where you met it and the core idea in
+  one sentence; length scales with how much there is to say; senses that are really one meaning are
+  presented as one with nuances, not as separate senses.
+- [ ] **Consistency check on new guides:** a cheap pass that flags contradictions inside a guide (the なり guide
+  says it attaches to adjectives and verbs, then lists that as a mistake) and claims it can't support, and
+  fixes them before saving.
 - [ ] **Dictionary-grounded guides:** pass the dictionary's readings and meanings into guide prompts.
 
 ## 6. Grammar as important as vocab
