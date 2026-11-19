@@ -425,3 +425,24 @@ general guides in advance for almost everything you'll meet, so the API only han
   your question notes) always override the built-in ones.
 - [ ] **After this the API only writes:** the short per-line "In this line" note (Haiku), answers to your
   questions, and guides for words outside the library (which can be added to it as they come up).
+
+## 16. Phones: iOS and Android (after Chrome and Firefox are finished and polished; not built yet)
+
+Goal: Language Reactor-style learning on the phone, which nothing offers today: streaming services the user
+already subscribes to, their own websites, and songs (Spotify, Apple Music) with Listen mode.
+- [ ] **Android, first and cheapest:** Firefox for Android runs add-ons, so this extension can work there with
+  a touch / small-screen pass (the overlay already has a touch mode).
+- [ ] **iOS: Safari Web Extension:** the same code wrapped in a small iOS app (Xcode); works on sites that play
+  in mobile Safari (YouTube, anime / streaming sites, the user's own sites).
+- [ ] **iOS app with its own browser** for the user's sites, with the overlay injected.
+- [ ] **Netflix, Disney+ and other big services inside the app: check before building around it.**
+  Unknowns: whether their DRM video plays inside another app's web view, whether their mobile websites play on
+  phones at all, their terms of service, and App Store review rules for apps that wrap other companies'
+  services (risk of rejection). Prototype and read the current rules first; look at how others do it
+  (e.g. Lingopie licenses its own shows).
+- [ ] **Songs:** rather than wrapping Spotify's website, use the **Spotify iOS / Android SDK** (the user logs into
+  their own Spotify; the app gets what's playing and the playback position from the Spotify app) and draw our
+  own lyrics screen synced to it (LRCLIB lyrics, Listen mode, song guides). Same for **Apple Music via MusicKit**.
+  Smoother, and within their terms.
+- [ ] Shared core: the line breakdowns, guides, word bank, review and backups move into a shared module the
+  extension and the apps both use; sync between devices then becomes needed (sections on sync / accounts).
