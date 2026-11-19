@@ -329,6 +329,32 @@ subtitles) is in docs/music-mode.md. Build in this order:
   example of this exact situation, and never an answer that ends up saying "the guide already covers it":
   that should be "no difference", shown as nothing. Keep it short and assume the reader is smart.
 
+### Guides are written for one line, then reused everywhere (the root cause, seen in Korean)
+Found in the code: both guide prompts (grammar forms and words) contain the rule "Open the first section with
+the core idea in one sentence, **tied to the line where the learner met it**", the word guide also says "Say
+which sense is used where the learner met the word" in its first section, and phrases are told to "explain
+the line through the phrase". So the general part of every guide is written around the first line it met. A
+guide is saved once per form (all 을/를 lines share the 을/를 guide), so the next line shows a guide that
+opens with a different line (the 을/를 guide opening with 뭐라도 나를 나를 구해줘 while you're on
+내 웃음을 돌려놔줘). This affects every language, not just Korean.
+- [ ] Rewrite the guide rules: every section except one is about the form or word **in general**, written so it
+  reads right in any line. Nothing from the first line in What it is / How to make it / When to use it /
+  examples (examples are fresh sentences, never the line itself).
+- [ ] The line-specific part lives **outside the saved guide**: the "In this line" box, written per line (short
+  and cheap: Haiku or the line breakdown's own note) and stored per line, so each encounter gets its own
+  explanation and the guide itself never changes with the line. The "Where you met it" section becomes the
+  list of every line you've met it in, each with its own one-line note, not text written into the guide.
+- [ ] "In this line" for a grammar form explains **what the form is doing in this line** (을 marks 웃음 as the
+  thing being given back), not the word's gloss ("웃음을: smile", as it shows now).
+- [ ] **Guide labels are line-specific too:** the line breakdown names each form "including the form itself", so
+  the chip reads "object marker 을 웃음을" (with the word). Use the guide's own general name for the chip
+  ("object marker 을/를"), not the per-line label, and tell the breakdown to name the form, never the word.
+- [ ] **Fix the guides already saved:** Check my guides finds guides whose general sections quote or describe
+  the line they were written for, and rewrites just those sections to be general (cheap: only the affected
+  sections, Sonnet), keeping their line as an encounter. Your own question notes stay.
+- [ ] Same rule for song guides' and lessons' links: clicking a word opens the general guide, with "In this
+  line" for the line in the lesson.
+
 ### Phrases: only real phrases
 - [ ] A phrase is marked (bracket, phrase card, saved as a phrase) only when it's a **set phrase** or when the
   words **mean something different together** than apart. A word plus a verb that simply means the sum of its
