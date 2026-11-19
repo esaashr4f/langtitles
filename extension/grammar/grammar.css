@@ -77,3 +77,8 @@ nav a small { display: inline; flex: 0 0 auto; }
 .fix-note { margin: 0 0 12px; padding: 8px 10px; border-radius: 8px; background: var(--soft); font-size: 13px; } .fix-note button { margin-left: 6px; }
 .encounters { margin: 10px 0; font-size: 13px; color: var(--dim); } .encounters ul { margin: 6px 0; padding-left: 18px; } .encounters q { color: var(--text); } .encounters .why { margin-top: 2px; }
 .checkup-btn { margin: 0 0 10px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; } .checkup { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; } .checkup-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); } .checkup-row .sub { margin: 2px 0 0; }
+.song-head { display: flex; gap: 20px; align-items: center; }
+.song-art { width: 120px; height: 120px; border-radius: 10px; object-fit: cover; flex: 0 0 auto; }
+.song-names h2 { margin: 0 0 4px; }
+.song-names .meta + .meta { margin-top: 6px; }
+#kinds button { font-size: 13px; padding-left: 6px; padding-right: 6px; }

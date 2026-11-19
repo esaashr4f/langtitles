@@ -60,3 +60,5 @@ table, .stat, .num, .n { font-variant-numeric: tabular-nums; }
 /* Icons sit on the text line inside buttons and chips. */
 .say, .chip, .icon-btn { display: inline-flex; align-items: center; gap: 0.35em; }
 svg { flex: 0 0 auto; }
+a { color: var(--accent); text-underline-offset: 3px; }
+.seg button { white-space: nowrap; }

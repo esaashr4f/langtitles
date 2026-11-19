@@ -47,7 +47,7 @@
     return 'Words';
   }
   const WORD_ORDER = ['Set phrases and expressions', 'JLPT N5', 'JLPT N4', 'JLPT N3', 'JLPT N2', 'JLPT N1', 'Beyond the JLPT lists', 'Words', 'Names'];
-  const kindOf = (g) => (g.kind === 'name' || g.group === 'phrase' || String(g.k).startsWith('phrase.') ? 'word' : g.kind || (String(g.k).startsWith('word.') ? 'word' : 'grammar'));
+  const kindOf = (g) => (g.kind === 'song' ? 'song' : g.kind === 'name' || g.group === 'phrase' || String(g.k).startsWith('phrase.') ? 'word' : g.kind || (String(g.k).startsWith('word.') ? 'word' : 'grammar'));
 
   function h(tag, cls, text) {
     const e = document.createElement(tag);
@@ -58,6 +58,14 @@
 
   async function load() {
     guides = (await SG.cache.getAll('guides')).sort((a, b) => b.savedAt - a.savedAt);
+    // Songs listened to in Listen mode that have no guide yet still appear under Music.
+    const played = Object.values((await browser.storage.local.get('songs')).songs || {});
+    const withGuide = new Set(guides.filter((g) => g.kind === 'song').map((g) => g.k));
+    for (const x of played) {
+      const k = 'song.' + x.key;
+      if (withGuide.has(k)) continue;
+      guides.push({ key: k, k, kind: 'song', noGuide: true, name: `${x.track}${x.artist ? ' — ' + x.artist : ''}`, lang: x.lang || '', text: '', savedAt: x.last || 0, song: x });
+    }
     // A one-off note when Langtitles has corrected saved guides.
     const note = (await browser.storage.local.get('libraryFixNote')).libraryFixNote;
     const fixBox = $('fixNote');
@@ -74,10 +82,14 @@
       fixBox.append(' ', ok);
     }
     const nWords = guides.filter((g) => kindOf(g) === 'word').length;
-    $('count').textContent = `${nWords} word${nWords === 1 ? '' : 's'} · ${guides.length - nWords} grammar form${guides.length - nWords === 1 ? '' : 's'}`;
+    const nSongs = guides.filter((g) => kindOf(g) === 'song').length;
+    const nGrammar = guides.length - nWords - nSongs;
+    $('count').textContent = `${nWords} word${nWords === 1 ? '' : 's'} · ${nGrammar} grammar form${nGrammar === 1 ? '' : 's'}` + (nSongs ? ` · ${nSongs} song${nSongs === 1 ? '' : 's'}` : '');
     const kinds = $('kinds');
     kinds.textContent = '';
-    for (const [code, name] of [['grammar', `Grammar · ${guides.length - nWords}`], ['word', `Words · ${nWords}`]]) {
+    const kindTabs = [['grammar', `Grammar · ${nGrammar}`], ['word', `Words · ${nWords}`]];
+    if (nSongs) kindTabs.push(['song', `Music · ${nSongs}`]);
+    for (const [code, name] of kindTabs) {
       const b = h('button', code === kind ? 'on' : '', name);
       b.addEventListener('click', () => {
         kind = code;
@@ -128,10 +140,10 @@
     if (sort === 'recent') groups = [['Most recent first', items]];
     else if (sort === 'az') groups = [['A to Z', items.slice().sort(byName)]];
     else {
-      const order = kind === 'word' ? WORD_ORDER : GROUP_ORDER;
+      const order = kind === 'word' ? WORD_ORDER : kind === 'song' ? [] : GROUP_ORDER;
       const map = new Map();
       for (const g of items) {
-        const name = kind === 'word' ? wordGroup(g) : grammarGroup(g);
+        const name = kind === 'word' ? wordGroup(g) : kind === 'song' ? (g.song && g.song.artist) || 'Unknown artist' : grammarGroup(g);
         if (!map.has(name)) map.set(name, []);
         map.get(name).push(g);
       }
@@ -174,12 +186,56 @@
     });
   }
 
+  // A song: artwork, where to play it again, and its guide (or how to get one).
+  function showSong(g, view) {
+    const x = g.song || {};
+    const head = h('div', 'head song-head');
+    if (x.art) {
+      const img = h('img', 'song-art');
+      img.src = x.art;
+      img.alt = '';
+      img.referrerPolicy = 'no-referrer';
+      head.append(img);
+    }
+    const names = h('div', 'song-names');
+    names.append(h('h2', '', x.track || g.name), h('div', 'meta', [x.artist, x.album].filter(Boolean).join(' · ')));
+    const meta = h('div', 'meta');
+    if (x.url) {
+      const a = h('a', '', 'Play it again');
+      a.href = x.url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      meta.append(a);
+    }
+    if (g.model) meta.append(document.createTextNode((x.url ? ' · ' : '') + SG.modelLabel(g.model) + ' · ' + new Date(g.savedAt).toLocaleDateString()));
+    names.append(meta);
+    head.append(names);
+    view.append(head);
+    const body = h('article', 'guide');
+    if (g.noGuide) body.append(h('p', 'none', 'No guide for this song yet. Play it, open the panel (G) → Song → Write the song guide.'));
+    else SG.renderGuide(body, g.text, { known: new Set(), plain: false });
+    view.append(body);
+    if (!g.noGuide) {
+      const tools = h('div', 'tools');
+      const del = h('button', '', 'Delete this guide');
+      del.addEventListener('click', async () => {
+        await SG.cache.remove('guides', g.key);
+        current = '';
+        history.replaceState(null, '', location.pathname);
+        load();
+      });
+      tools.append(del);
+      view.append(tools);
+    }
+  }
+
   function show(g) {
     current = g.k;
     for (const a of $('list').children) a.classList.toggle('on', a.getAttribute('href') === '#' + encodeURIComponent(g.k));
     const view = $('view');
     view.textContent = '';
     const head = h('div', 'head');
+    if (kindOf(g) === 'song') return showSong(g, view);
     head.append(h('div', 'eyebrow', kindOf(g) === 'word' ? 'Word guide · ' + wordGroup(g) : 'Grammar · ' + grammarGroup(g)));
     head.append(h('h2', '', g.name || g.k));
     const meta = h('div', 'meta');
@@ -243,7 +299,7 @@
       const isWord = parts[0] === 'word';
       const d = parts.slice(2).join('.');
       const text = g.text || '';
-      if (g.kind === 'name') continue;
+      if (g.kind === 'name' || g.kind === 'song') continue;
       if (isWord && SG.canonicalForm(`${parts[1]}.fn_${d}`) !== `${parts[1]}.fn_${d}`) why.push('Grammar written up as a word: it should be a grammar guide.');
       if (isWord && /(set phrase|fixed expression|idiom|compound particle|part of the (?:pattern|phrase|expression))/i.test(SG.guideText.section(text, 'What it means').slice(0, 600))) why.push('Probably filed under one word of a phrase: check whether the phrase has its own guide.');
       if (SG.guideText.hasRomaji(text)) why.push('Contains romaji.');
