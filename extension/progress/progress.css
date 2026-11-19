@@ -39,3 +39,10 @@ details table { border-collapse: collapse; margin-top: 6px; font-variant-numeric
 details td, details th { padding: 2px 12px 2px 0; text-align: left; }
 .tip { position: fixed; z-index: 10; pointer-events: none; padding: 6px 10px; border-radius: 6px; background: var(--text); color: var(--bg); font-size: 13px; opacity: 0; transition: opacity 0.1s; }
 .tip.show { opacity: 1; }
+.spend-grid { margin-top: 16px; }
+.bars { display: flex; flex-direction: column; gap: 6px; }
+.bar-row { display: grid; grid-template-columns: minmax(90px, 40%) 1fr auto; align-items: center; gap: 8px; font-size: 13px; }
+.bar-label { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-track { height: 10px; border-radius: 3px; background: var(--grid); overflow: hidden; }
+.bar-fill { display: block; height: 100%; background: var(--series); border-radius: 3px; }
+.bar-value { font-variant-numeric: tabular-nums; color: var(--text); }

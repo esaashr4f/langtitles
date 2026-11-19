@@ -89,3 +89,10 @@ test('align refuses unrelated subtitles', () => {
   const b = cuesAt(Array.from({ length: 200 }, (_, i) => i * 4.1 + Math.sin(i) * 3 + 1));
   assert.equal(align(a, b).ok, false);
 });
+
+test('show names from file-style frame titles (animepahe / kwik)', () => {
+  const E = globalThis.SG.episode;
+  assert.deepStrictEqual(E.fromTitle('AnimePahe_Monster_-_62_BD_1080p_Kitsune.mp4', 'https://kwik.cx/e/abc'), { episode: 62, type: 'tv', title: 'Monster' });
+  assert.deepStrictEqual(E.fromTitle('[Kitsune] Monster - 62 (BD 1080p).mkv', ''), { episode: 62, type: 'tv', title: 'Monster' });
+  assert.strictEqual(E.fromTitle('Monster Ep. 62 :: animepahe', 'https://animepahe.pw/play/x').title, 'Monster');
+});

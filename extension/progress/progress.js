@@ -198,4 +198,55 @@
       chart(cell, series, { kind: 'line', height: 160, label: `${SG.lang.langName(lang)} words known`, format: (v) => `${v} words` });
     }
   }
+
+  // ---- spending: per day (one series), and this month's split by feature and show as bar lists
+  {
+    const log = (await browser.runtime.sendMessage({ type: 'spendLog' }).catch(() => null)) || { days: {}, shows: {}, top: [] };
+    const money = (v) => (v < 0.01 ? '<$0.01' : '$' + v.toFixed(2));
+    const perDay = days.map((d) => {
+      const f = log.days[d.key];
+      return f ? Object.values(f).reduce((a, b) => a + b, 0) : 0;
+    });
+    if (perDay.some((v) => v > 0)) chart($('spendDays'), perDay, { label: 'Spent', format: money });
+    else $('spendDays').append(h('div', 'empty', 'Nothing recorded yet. Spending is logged from this version on.'));
+    const month = new Date();
+    const inMonth = (key) => {
+      const [y, m] = key.split('-').map(Number);
+      return y === month.getFullYear() && m === month.getMonth() + 1;
+    };
+    const byFeature = {};
+    for (const [k, f] of Object.entries(log.days)) if (inMonth(k)) for (const [name, v] of Object.entries(f)) byFeature[name] = (byFeature[name] || 0) + v;
+    const bars = (el, obj) => {
+      const rows = Object.entries(obj).sort((a, b) => b[1] - a[1]);
+      if (!rows.length) {
+        el.append(h('div', 'empty', 'Nothing yet.'));
+        return;
+      }
+      const max = rows[0][1] || 1;
+      for (const [name, v] of rows.slice(0, 12)) {
+        const row = h('div', 'bar-row');
+        const label = h('span', 'bar-label', name);
+        const track = h('span', 'bar-track');
+        const fill = h('span', 'bar-fill');
+        fill.style.width = Math.max(2, (v / max) * 100) + '%';
+        track.append(fill);
+        row.append(label, track, h('span', 'bar-value', money(v)));
+        el.append(row);
+      }
+    };
+    bars($('spendFeature'), byFeature);
+    const byShow = {};
+    for (const [show, f] of Object.entries(log.shows)) byShow[show] = Object.values(f).reduce((a, b) => a + b, 0);
+    bars($('spendShow'), byShow);
+    const top = $('spendTop');
+    const head = h('tr');
+    head.append(h('th', '', 'When'), h('th', '', 'What'), h('th', '', 'Model'), h('th', '', 'Show'), h('th', '', 'Cost'));
+    top.append(head);
+    for (const x of log.top) {
+      const tr = h('tr');
+      const m = SG.MODELS.find((mm) => mm.id === x.model);
+      tr.append(h('td', '', new Date(x.at).toLocaleString()), h('td', '', x.feature), h('td', '', m ? m.name.replace(/^Claude /, '') : x.model), h('td', '', x.show || ''), h('td', '', money(x.cost)));
+      top.append(tr);
+    }
+  }
 })();

@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Langtitles",
-  "version": "0.1.11",
+  "version": "0.2.0",
   "description": "Langtitles: learn languages from what you watch. Word-by-word subtitle breakdowns with furigana and pinyin, grammar guides, a word bank, and subtitles fetched for the episode, on any streaming site. Powered by Claude with your own API key.",
   "icons": {
     "48": "icons/icon.svg",
@@ -28,7 +28,8 @@
     "webRequestBlocking",
     "storage",
     "unlimitedStorage",
-    "menus"
+    "menus",
+    "downloads"
   ],
   "background": {
     "scripts": [
@@ -47,6 +48,10 @@
       "shared/strokes.js",
       "shared/srs.js",
       "shared/pitch.js",
+      "shared/backup.js",
+      "background/autobackup.js",
+      "shared/guidetext.js",
+      "background/libraryfixes.js",
       "background/main.js"
     ]
   },
@@ -56,11 +61,22 @@
         "<all_urls>"
       ],
       "all_frames": true,
+      "run_at": "document_start",
+      "js": [
+        "content/early.js"
+      ],
+      "match_about_blank": true
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "all_frames": true,
       "match_about_blank": true,
       "run_at": "document_idle",
       "css": [
         "fonts/rounded/rounded.css",
-        "content/content.css"
+        "content/page.css"
       ],
       "js": [
         "shared/settings.js",
@@ -90,6 +106,7 @@
     "open_in_tab": true
   },
   "web_accessible_resources": [
+    "content/content.css",
     "data/grammar/*",
     "data/jlpt.json",
     "fonts/rounded/*",

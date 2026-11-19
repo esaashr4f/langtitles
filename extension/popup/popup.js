@@ -133,6 +133,12 @@
     window.close();
   });
 
+  $('openQuestions').addEventListener('click', (e) => {
+    e.preventDefault();
+    browser.tabs.create({ url: browser.runtime.getURL('questions/questions.html') });
+    window.close();
+  });
+
   async function refresh() {
     try {
       await refreshInner();

@@ -55,6 +55,7 @@
   let leaveTimer = null;
   let deepTimer = null;
   let deepReq = 0;
+  const deepModels = new Map(); // cache key -> the model that wrote it
   const deepTexts = new Map(); // cache key -> finished text (word explanations and grammar guides)
   const deepByReq = new Map(); // reqId -> { el, cacheKey, text, guide }
   const deepByKey = new Map(); // cache key -> the same object, while its text is still streaming
@@ -101,6 +102,21 @@
     const el = document.createElement(tag);
     if (cls) el.className = cls;
     if (text != null) el.textContent = text;
+    // Presses, clicks and typing on Langtitles' own elements are delivered by early.js, ahead of the
+    // page (players that grab every click can't block them); other events go the normal way.
+    const ue = SG.uiEvents;
+    if (ue) {
+      const add = el.addEventListener;
+      const remove = el.removeEventListener;
+      el.addEventListener = function (type, fn, opts) {
+        if (ue.TYPES.includes(type)) ue.on(el, type, fn, opts);
+        else add.call(el, type, fn, opts);
+      };
+      el.removeEventListener = function (type, fn, opts) {
+        if (ue.TYPES.includes(type)) ue.off(el, type, fn);
+        else remove.call(el, type, fn, opts);
+      };
+    }
     return el;
   }
 
@@ -120,7 +136,13 @@
     return hh ? `${hh}:${pad(m % 60)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
   }
 
+  // Whether an element is part of Langtitles' overlay (the host or anything in its shadow root).
+  function isOurs(el) {
+    return Boolean(ui && el && (el === ui.host || ui.host.contains(el) || ui.root.contains(el)));
+  }
+
   function isEditable(el) {
+    if (el && el.shadowRoot && el.shadowRoot.activeElement) el = el.shadowRoot.activeElement;
     return el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
   }
 
@@ -281,7 +303,7 @@
       renderStatus();
     } else if (msg.type === 'askDelta' || msg.type === 'askDone' || msg.type === 'askError') {
       onAsk(msg);
-    } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs', 'showChoice'].includes(msg.type)) {
+    } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs', 'showChoice', 'qaList'].includes(msg.type)) {
       const cb = subReqs.get(msg.reqId);
       subReqs.delete(msg.reqId);
       if (cb) cb(msg);
@@ -414,7 +436,7 @@
       } catch (e) {
         continue;
       }
-      if (el && (!ui || !ui.root.contains(el))) {
+      if (el && !isOurs(el)) {
         domEl = el;
         return;
       }
@@ -568,10 +590,26 @@
 
   function buildUI() {
     if (ui) return;
-    const root = h('langtitles-root');
-    if (topLayer) root.setAttribute('popover', 'manual');
+    // The overlay lives in its own shadow root, so the page's styles can't reach it.
+    const host = document.createElement('langtitles-root');
+    if (topLayer) host.setAttribute('popover', 'manual');
+    host.setAttribute('translate', 'no');
+    const shadow = host.attachShadow({ mode: 'open' });
+    const sheet = document.createElement('link');
+    sheet.rel = 'stylesheet';
+    sheet.href = browser.runtime.getURL('content/content.css');
+    // If the page's security policy blocks the stylesheet, fall back to the same rules inline.
+    sheet.addEventListener('error', () => {
+      fetch(sheet.href).then((r) => r.text()).then((css) => {
+        const st = document.createElement('style');
+        st.textContent = css;
+        shadow.prepend(st);
+      }).catch(() => {});
+    });
+    const root = h('div', 'lt-root');
+    shadow.append(sheet, root);
     if (typeof matchMedia === 'function' && matchMedia('(hover: none)').matches) root.classList.add('sg-touch');
-    root.setAttribute('translate', 'no');
+    if (SG.uiEvents) SG.uiEvents.setRoot(root);
     const cover = h('div', 'sg-cover');
     const sub = h('div', 'sg-sub');
     const grip = h('div', 'sg-grip', '⋮⋮');
@@ -610,7 +648,7 @@
     const toast = h('div', 'sg-toast');
     const panel = buildPanel();
     root.append(cover, sub, pop, toggle, toast, panel.el);
-    ui = { root, cover, sub, line, tr, pop, toggle, toast, panel };
+    ui = { host, root, cover, sub, line, tr, pop, toggle, toast, panel };
 
     const stop = (e) => e.stopPropagation();
     for (const el of [sub, pop, toggle, panel.el]) {
@@ -636,7 +674,7 @@
 
     const raise = () => {
       // Re-enter the top layer after the full-screen element, so the overlay stays above it.
-      if (topLayer && ui.root.matches(':popover-open')) ui.root.hidePopover();
+      if (topLayer && ui.host.matches(':popover-open')) ui.host.hidePopover();
       place();
     };
     document.addEventListener('fullscreenchange', () => {
@@ -694,8 +732,11 @@
       el.dataset.tab = id;
       if (id === 'transcript') highlightRow(shownIndex);
     };
+    const SHORT = { transcript: 'Script', subs: 'Subs', display: 'Look' };
     for (const [id, label] of TABS) {
-      const b = h('button', 'sg-tab', label);
+      const b = h('button', 'sg-tab');
+      b.title = label;
+      b.append(h('span', 'sg-tab-long', label), h('span', 'sg-tab-short', SHORT[id] || label));
       b.addEventListener('click', () => {
         setTab(id);
         if (id === 'words' && !wordsBody.childElementCount) openEpisodeWords();
@@ -946,26 +987,26 @@
     const fs = document.fullscreenElement;
     if (topLayer) {
       // In the browser's top layer the page cannot cover the overlay, whatever it stacks on top.
-      if (ui.root.parentNode !== document.documentElement) document.documentElement.appendChild(ui.root);
-      if (!ui.root.matches(':popover-open')) {
+      if (ui.host.parentNode !== document.documentElement) document.documentElement.appendChild(ui.host);
+      if (!ui.host.matches(':popover-open')) {
         try {
-          ui.root.showPopover();
+          ui.host.showPopover();
         } catch (e) {
           /* not connected yet */
         }
       }
     } else {
       const parent = fs && fs !== video && fs.contains(video) ? fs : document.documentElement;
-      if (ui.root.parentNode !== parent) parent.appendChild(ui.root);
+      if (ui.host.parentNode !== parent) parent.appendChild(ui.host);
     }
     if (topLayer && fs && Date.now() - lastRaiseCheck > 1000) {
       lastRaiseCheck = Date.now();
       const tb = ui.toggle.getBoundingClientRect();
       const hit = tb.width ? document.elementFromPoint(tb.left + tb.width / 2, tb.top + tb.height / 2) : null;
-      if (hit && !ui.root.contains(hit) && ui.root.matches(':popover-open')) {
-        ui.root.hidePopover();
+      if (hit && hit !== ui.host && !ui.host.contains(hit) && ui.host.matches(':popover-open')) {
+        ui.host.hidePopover();
         try {
-          ui.root.showPopover();
+          ui.host.showPopover();
         } catch (e) {
           /* shown again on the next tick */
         }
@@ -973,7 +1014,7 @@
     }
     const r = video.getBoundingClientRect();
     const visible = r.width >= 200 && r.height >= 110 && video.isConnected;
-    const s = ui.root.style;
+    const s = ui.host.style;
     s.display = visible && enabled() ? 'block' : 'none';
     if (!visible) return;
     s.left = r.left + 'px';
@@ -1681,6 +1722,8 @@
   function paintDeep(target) {
     if (target.guide) SG.renderGuide(target.el, target.text, { known: known.ja, plain: !settings.furigana });
     else target.el.textContent = target.text;
+    const model = target.cacheKey ? deepModels.get(target.cacheKey) : target.model;
+    if (target.guide && model) target.el.append(h('div', 'sg-guide-by', SG.modelLabel(model)));
   }
 
   // Shows cached text at once, attaches to a request already streaming, or starts a new one.
@@ -1689,7 +1732,7 @@
     el.classList.toggle('sg-guide', guide);
     if (deepTexts.has(cacheKey)) {
       el.classList.remove('sg-loading');
-      paintDeep({ el, text: deepTexts.get(cacheKey), guide });
+      paintDeep({ el, text: deepTexts.get(cacheKey), guide, cacheKey });
       return;
     }
     const running = deepByKey.get(cacheKey);
@@ -1742,6 +1785,7 @@
     deepByKey.delete(target.cacheKey);
     if (msg.type === 'deepDone') {
       deepTexts.set(target.cacheKey, msg.text);
+      if (msg.model) deepModels.set(target.cacheKey, msg.model);
       target.text = msg.text;
       paintDeep(target);
     } else {
@@ -2024,13 +2068,13 @@
 
   function onPickClick(e) {
     if (!picking) return;
-    if (ui && ui.root.contains(e.target)) return;
+    if (isOurs(e.target)) return;
     picking = false;
     e.preventDefault();
     e.stopPropagation();
     const hits = document.elementsFromPoint(e.clientX, e.clientY);
     const el = hits.find((x) => {
-      if (x === video || (ui && ui.root.contains(x))) return false;
+      if (x === video || isOurs(x)) return false;
       const text = (x.innerText || '').trim();
       return text.length > 0 && text.length < 400;
     });
@@ -2583,6 +2627,17 @@
       return ans;
     };
     turns.forEach(addTurn);
+    // Questions asked about this line before (in earlier sessions) come back under it.
+    if (!askThreads.has(key)) {
+      request({ type: 'qaForLine', sentence: cue.text }).then((res) => {
+        const saved = (res && res.list) || [];
+        if (!saved.length || askThreads.has(key)) return;
+        const list = saved.map((x) => ({ q: x.q, a: x.a, saved: true }));
+        askThreads.set(key, list);
+        thread.textContent = '';
+        list.forEach(addTurn);
+      });
+    }
     const form = h('div', 'sg-ask-form');
     const input = h('textarea', 'sg-in sg-ask-in');
     input.rows = 2;
@@ -2610,6 +2665,10 @@
         before: t ? t.cues.slice(Math.max(0, idx - 3), idx).map((c) => c.text) : [],
         after: t ? t.cues.slice(idx + 1, idx + 3).map((c) => c.text) : [],
         show: tabTitle || '',
+        episode: t && t.episode ? t.episode : null,
+        lang: a.lang || '',
+        url: tabUrl || location.href,
+        time: video ? Math.round(video.currentTime * 10) / 10 : null,
       });
     };
     go.addEventListener('click', send);
@@ -2695,13 +2754,18 @@
       tabUrl = res.info.url || tabUrl;
       tabTitle = res.info.title || tabTitle;
     }
-    const sources = [{ url: location.href, title: document.title }];
+    // In a player frame, the page around it names the show better than the frame's own title
+    // (often a file name), so the tab comes first.
+    const inFrame = window !== window.top;
+    const sources = [];
+    if (inFrame && tabUrl) sources.push({ url: tabUrl, title: tabTitle });
+    sources.push({ url: location.href, title: document.title });
     if (document.referrer) sources.push({ url: document.referrer, title: '' });
     // Players are often frames inside frames; the episode can be in any of their addresses.
     for (const f of (res.info && res.info.frames) || []) {
       if (f !== location.href && f !== tabUrl) sources.push({ url: f, title: '' });
     }
-    if (tabUrl && tabUrl !== location.href) sources.push({ url: tabUrl, title: tabTitle });
+    if (!inFrame && tabUrl && tabUrl !== location.href) sources.push({ url: tabUrl, title: tabTitle });
     const og = document.querySelector('meta[property="og:title"]');
     if (og && og.content) sources.push({ url: '', title: og.content });
     const ep = SG.episode.detect(sources);
@@ -2950,6 +3014,7 @@
           title.value = s.title || s.original;
           type.value = s.type;
           id.value = s.tmdbId || s.imdbId || '';
+          idTitle = id.value ? title.value.trim().toLowerCase() : null;
           toggleSeason();
           if (s.type === 'tv' && !season.value) season.value = '1';
           shows.textContent = '';
@@ -2960,8 +3025,18 @@
         shows.append(row);
       }
     });
+    // The id belongs to the title it came with; typing a different title drops a stale id,
+    // which would otherwise override the title (the "nothing comes up until I clear the id" problem).
+    let idTitle = id.value ? title.value.trim().toLowerCase() : null;
     title.addEventListener('input', () => {
       picked = null;
+      if (idTitle !== null && title.value.trim().toLowerCase() !== idTitle) {
+        id.value = '';
+        idTitle = null;
+      }
+    });
+    id.addEventListener('input', () => {
+      idTitle = id.value.trim() ? title.value.trim().toLowerCase() : null;
     });
     const titleRow = h('div', 'sg-title-row');
     titleRow.append(title, findShow);
@@ -3017,7 +3092,17 @@
       status.textContent = 'Searching…';
       results.textContent = '';
       go.disabled = true;
-      const res = await request({ type: 'findSubs', episode: query, langs: wanted });
+      let res = await request({ type: 'findSubs', episode: query, langs: wanted });
+      let viaTitle = false;
+      // An id that finds nothing (wrong or stale) shouldn't hide results the title would find.
+      if (!res.error && !res.found.results.length && (query.tmdbId || query.imdbId) && query.title) {
+        const byTitle = Object.assign({}, query, { tmdbId: null, imdbId: null });
+        const again = await request({ type: 'findSubs', episode: byTitle, langs: wanted });
+        if (!again.error && again.found.results.length) {
+          res = again;
+          viaTitle = true;
+        }
+      }
       go.disabled = false;
       if (res.error) {
         status.textContent = res.error;
@@ -3028,7 +3113,7 @@
         if (r.ok) return `${sourceName(pid)}: ${r.count}`;
         return r.message.startsWith(sourceName(pid)) ? r.message : `${sourceName(pid)}: ${r.message}`;
       });
-      status.textContent = (found.results.length ? `${found.results.length} found, best first. ` : 'Nothing found. Try the English title, or check the season and episode. ') + notes.join(' · ');
+      status.textContent = (viaTitle ? 'Nothing for that ID, so searched by title. ' : '') + (found.results.length ? `${found.results.length} found, best first. ` : 'Nothing found. Try the English title, or check the season and episode. ') + notes.join(' · ');
       for (const r of found.results) {
         const row = h('button', 'sg-result');
         const top = h('div', 'sg-result-top');

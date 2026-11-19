@@ -28,6 +28,16 @@
       <p class="sub">By language, last 30 days.</p>
       <div id="known"></div>
     </section>
+    <section class="chart-card" id="spending">
+      <h2>Spending</h2>
+      <p class="sub">Estimated from list prices, per day. Below: where it went this month, by feature and by show, and the most expensive single requests.</p>
+      <div class="chart" id="spendDays"></div>
+      <div class="small spend-grid">
+        <div><h3>This month, by feature</h3><div id="spendFeature" class="bars"></div></div>
+        <div><h3>This month, by show</h3><div id="spendShow" class="bars"></div></div>
+      </div>
+      <details><summary>Most expensive requests</summary><table id="spendTop"></table></details>
+    </section>
   </main>
   <div class="tip" id="tip" role="status"></div>
   <script src="../shared/settings.js"></script>

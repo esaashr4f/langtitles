@@ -208,6 +208,38 @@
     </section>
 
     <section>
+      <h2>Backups</h2>
+      <label class="check"><input id="autoBackup" type="checkbox"> Back up automatically to Downloads/Langtitles backups</label>
+      <label>Back up every
+        <select id="backupEveryHours"><option value="6">6 hours</option><option value="12">12 hours</option><option value="24">day</option><option value="72">3 days</option><option value="168">week</option></select>
+      </label>
+      <small>Checked when Firefox starts and every hour while it's open, so a long break is covered the moment you open Firefox again. Each backup is a small file with what changed; once a week a full snapshot is written and older files are cleaned up (the last <select id="backupKeep"><option value="2">2</option><option value="4">4</option><option value="8">8</option></select> snapshots are kept). Tip: add that folder to the Google Drive desktop app (or any cloud folder) to keep a copy online.</small>
+      <label class="check"><input id="backupCaches" type="checkbox"> Include saved line breakdowns (bigger files; they'd otherwise cost a little to recreate)</label>
+      <label>Passphrase (optional)
+        <input id="backupPassphrase" type="password" autocomplete="new-password" placeholder="Encrypts backups; you'll need it to restore">
+      </label>
+      <label class="check"><input id="backupKeys" type="checkbox"> Include API keys (only with a passphrase)</label>
+      <div class="row">
+        <button id="backupNow" type="button">Back up now</button>
+        <button id="downloadBackup" type="button">Download a full backup</button>
+        <span id="backupResult" class="note"></span>
+      </div>
+      <h3>Restore</h3>
+      <small>Pick a <code>.langtitles</code> file: a single backup, or a full snapshot together with the change files after it (select them all at once).</small>
+      <div class="row">
+        <input id="restoreFiles" type="file" accept=".langtitles,application/json" multiple>
+      </div>
+      <div id="restoreBox" class="restore" hidden>
+        <div id="restoreSummary"></div>
+        <label id="restorePassRow" hidden>Passphrase <input id="restorePass" type="password"></label>
+        <div class="row">
+          <button id="restoreMerge" type="button">Merge into what's here</button>
+          <button id="restoreReplace" type="button">Replace everything with the backup</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
       <h2>Usage and cache</h2>
       <div id="usage" class="usage"></div>
       <div class="row">
@@ -236,6 +268,8 @@
   </main>
   <script src="../shared/settings.js"></script>
   <script src="../shared/lang.js"></script>
+  <script src="../background/cache.js"></script>
+  <script src="../shared/backup.js"></script>
   <script src="options.js"></script>
 </body>
 </html>

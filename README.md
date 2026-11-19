@@ -150,6 +150,12 @@ Subtitles that are burned into the video picture cannot be read.
 
 donkey.to and similar sites play the video in an embedded player from another domain. Langtitles runs inside embedded players and captures their subtitle requests, so turning subtitles on in that player should be enough. If no subtitles show up, use **Pick on page** or **Load file**. The popup lists every subtitle file it has captured on the tab, which helps when reporting a site that doesn't work.
 
+## Your data: questions, backups, spending
+
+- **Questions are kept.** Everything you ask about a line, with the answer, is saved and shown again under that line when you come back to it. Toolbar popup → **Questions** lists them all by show and episode, searchable.
+- **Backups.** Options → Backups: Langtitles backs up automatically to `Downloads/Langtitles backups/` (checked when Firefox starts and every hour; once a day by default). Each backup is a small file with what changed; a full snapshot is written weekly and old files are cleaned up. **Download a full backup** gives you one `.langtitles` file at any time. **Restore** takes a single file, or a snapshot plus the change files after it, and shows what's in it before anything changes: merge into what's here, or replace everything. A passphrase encrypts backups (and lets them include your API keys). Put that folder in the Google Drive desktop app to keep a copy online.
+- **Spending.** The Progress page shows what you've spent per day, this month's split by feature (line breakdowns, word guides, grammar guides, kanji, Ask…) and by show, and the most expensive single requests. Every guide shows which model wrote it.
+
 ## How the subtitles look
 
 The side panel's **Display** tab sets how Langtitles' subtitles look:

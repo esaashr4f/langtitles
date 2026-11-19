@@ -89,9 +89,36 @@
   }
 
   // "Show Name S01E02", "Show 1x02", "Show Season 1 Episode 2", "Show - Episode 3", "第3話", "3화"
+  // Release / file names ("AnimePahe_Monster_-_62_BD_1080p_Kitsune.mp4", "[Kitsune] Monster - 62 (BD 1080p).mkv")
+  // become an ordinary title ("Monster - 62"). Players inside frames often have one as their page title.
+  const QUALITY = /\b(BD|BDRip|Blu-?Ray|WEB(-?DL|-?Rip)?|HDTV|DVD(Rip)?|\d{3,4}p|[xh]\.?26[45]|HEVC|AVC|AAC|FLAC|Opus|10-?bit|8-?bit|Dual[- ]Audio|Multi[- ]?Subs?|Eng(lish)?[- ]?Subs?|Uncensored)\b/gi;
+  function cleanReleaseName(t, site) {
+    const looksLikeFile = /\.(mp4|mkv|avi|webm|m4v|ts)$/i.test(t) || (/_/.test(t) && !/\s/.test(t)) || /^\[[^\]]+\]/.test(t);
+    if (!looksLikeFile) return t;
+    let x = t.replace(/\.(mp4|mkv|avi|webm|m4v|ts)$/i, '');
+    if (!/\s/.test(x)) x = x.replace(/[_.]+/g, ' ');
+    x = x.replace(/^\s*\[[^\]]*\]\s*/, '').replace(/[[(][^\])]*[\])]/g, ' ');
+    const words = x.split(/\s+/).filter(Boolean);
+    // Drop the site's own name and everything from the first quality tag on (group names follow it).
+    const siteWord = (site || '').toLowerCase();
+    const known = /^(animepahe|kwik|gogoanime|9anime|zoro|hianime|aniwatch|animekai|crunchyroll)$/i;
+    const kept = [];
+    for (const w of words) {
+      if (QUALITY.test(w)) {
+        QUALITY.lastIndex = 0;
+        break;
+      }
+      QUALITY.lastIndex = 0;
+      if (known.test(w) || (siteWord && w.toLowerCase() === siteWord)) continue;
+      kept.push(w);
+    }
+    return kept.join(' ').trim() || t;
+  }
+
   function fromTitle(title, url) {
-    const t = String(title || '').trim();
+    let t = String(title || '').trim();
     if (!t) return null;
+    t = cleanReleaseName(t, url ? siteLabel(url) : '');
     const site = url ? siteLabel(url) : '';
     const out = {};
     let m;
@@ -104,7 +131,7 @@
       out.season = num(m[1]);
       out.episode = num(m[2]);
       markerAt = m.index;
-    } else if ((m = /\bEp(?:isode)?\.?\s*(\d{1,4})\b/i.exec(t)) || (m = /第\s*(\d{1,4})\s*[話话集]/.exec(t)) || (m = /(\d{1,4})\s*화/.exec(t))) {
+    } else if ((m = /\bEp(?:isode)?\.?\s*(\d{1,4})\b/i.exec(t)) || (m = /第\s*(\d{1,4})\s*[話话集]/.exec(t)) || (m = /(\d{1,4})\s*화/.exec(t)) || (m = /\s[-–]\s(\d{1,4})(?:v\d)?(?=\s|$)/.exec(t))) {
       out.episode = num(m[1]);
       markerAt = m.index;
     }

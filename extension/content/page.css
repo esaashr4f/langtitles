@@ -1,0 +1,25 @@
+/* Hide the site's own captions while Langtitles draws its own. Opacity, not visibility,
+   so captions read from the page can still be read. */
+.langtitles-hide-native video::cue { color: transparent !important; background: transparent !important; text-shadow: none !important; }
+.langtitles-hide-native .langtitles-native-caption,
+.langtitles-hide-native .jw-captions, .langtitles-hide-native .vjs-text-track-display,
+.langtitles-hide-native .plyr__captions, .langtitles-hide-native .shaka-text-container,
+.langtitles-hide-native .player-timedtext, .langtitles-hide-native .ytp-caption-window-container,
+.langtitles-hide-native .vds-captions, .langtitles-hide-native media-captions,
+.langtitles-hide-native .art-subtitle, .langtitles-hide-native .bmpui-ui-subtitle-overlay,
+.langtitles-hide-native .dplayer-subtitle, .langtitles-hide-native .mejs__captions-text,
+.langtitles-hide-native .fp-captions, .langtitles-hide-native .theoplayer-texttracks { opacity: 0 !important; }
+
+/* The overlay's host element. Everything inside it is in its own shadow root (content.css). */
+langtitles-root {
+  all: initial;
+  position: fixed !important;
+  z-index: 2147483646 !important;
+  display: none;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  overflow: visible !important;
+}

@@ -37,6 +37,8 @@
   }
   const GROUP_ORDER = ['Particles', 'Verb and adjective forms', 'Helper verbs after て', 'Connecting clauses', 'Sentence endings', 'Patterns and expressions'];
   function wordGroup(g) {
+    if (g.group === 'phrase' || String(g.k).startsWith('phrase.')) return 'Set phrases and expressions';
+    if (g.kind === 'name') return 'Names';
     if (langOf(g) === 'ja' && jlpt) {
       const d = String(g.k || '').split('.').slice(2).join('.');
       const level = SG.jlptLevel(jlpt, { d, s: g.word || d });
@@ -44,8 +46,8 @@
     }
     return 'Words';
   }
-  const WORD_ORDER = ['JLPT N5', 'JLPT N4', 'JLPT N3', 'JLPT N2', 'JLPT N1', 'Beyond the JLPT lists', 'Words'];
-  const kindOf = (g) => g.kind || (String(g.k).startsWith('word.') ? 'word' : 'grammar');
+  const WORD_ORDER = ['Set phrases and expressions', 'JLPT N5', 'JLPT N4', 'JLPT N3', 'JLPT N2', 'JLPT N1', 'Beyond the JLPT lists', 'Words', 'Names'];
+  const kindOf = (g) => (g.kind === 'name' || g.group === 'phrase' || String(g.k).startsWith('phrase.') ? 'word' : g.kind || (String(g.k).startsWith('word.') ? 'word' : 'grammar'));
 
   function h(tag, cls, text) {
     const e = document.createElement(tag);
@@ -56,6 +58,21 @@
 
   async function load() {
     guides = (await SG.cache.getAll('guides')).sort((a, b) => b.savedAt - a.savedAt);
+    // A one-off note when Langtitles has corrected saved guides.
+    const note = (await browser.storage.local.get('libraryFixNote')).libraryFixNote;
+    const fixBox = $('fixNote');
+    if (note && fixBox && !note.seen) {
+      const s = note.summary.reduce((a, x) => ({ added: a.added + x.added, retired: a.retired + x.retired }), { added: 0, retired: 0 });
+      fixBox.hidden = false;
+      fixBox.textContent = `Your guides were updated: ${s.added} rewritten or new guides (phrases saved as phrases, grammar as grammar), ${s.retired} replaced. Old versions are kept.`;
+      const ok = document.createElement('button');
+      ok.textContent = 'OK';
+      ok.addEventListener('click', () => {
+        fixBox.hidden = true;
+        browser.storage.local.set({ libraryFixNote: Object.assign(note, { seen: true }) });
+      });
+      fixBox.append(' ', ok);
+    }
     const nWords = guides.filter((g) => kindOf(g) === 'word').length;
     $('count').textContent = `${nWords} word${nWords === 1 ? '' : 's'} · ${guides.length - nWords} grammar form${guides.length - nWords === 1 ? '' : 's'}`;
     const kinds = $('kinds');
@@ -172,7 +189,7 @@
       if (g.lang) q.lang = g.lang;
       meta.append(document.createTextNode(' · first met in '), q);
     }
-    meta.append(document.createTextNode(' · ' + new Date(g.savedAt).toLocaleDateString() + (g.model === 'built-in' ? ' · built in' : '')));
+    meta.append(document.createTextNode(' · ' + new Date(g.savedAt).toLocaleDateString() + (g.model ? ' · ' + SG.modelLabel(g.model) : '') + (g.updatedAt && g.rewritten ? ' (updated ' + new Date(g.updatedAt).toLocaleDateString() + ')' : '')));
     head.append(meta);
     const tools = h('div', 'tools');
     const del = h('button', '', 'Delete this guide');

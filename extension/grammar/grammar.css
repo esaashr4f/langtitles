@@ -74,3 +74,4 @@ nav a .t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space:
 nav a small { display: inline; flex: 0 0 auto; }
 .none { color: var(--dim); font-size: 13px; padding: 0 10px; }
 .eyebrow { margin-bottom: 4px; color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+.fix-note { margin: 0 0 12px; padding: 8px 10px; border-radius: 8px; background: var(--soft); font-size: 13px; } .fix-note button { margin-left: 6px; }

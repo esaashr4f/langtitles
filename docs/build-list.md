@@ -6,11 +6,11 @@ docs/pending-notes.md and get loaded in as part of item 5.
 
 ## 1. Fixes (first)
 
-- [ ] **Full-screen clicks.** In the player's full screen, clicking subtitle words, the word card or the panel
+- [x] **Full-screen clicks.** In the player's full screen, clicking subtitle words, the word card or the panel
   does nothing (animepahe's player grabs every click first). Catch clicks on Langtitles' own elements
   before the player, start the content script earlier (document_start) so it registers first, and stop
   the player from also pausing. Test with a fake player that grabs all clicks in full screen.
-- [ ] **Panel layout bugs** (seen on animepahe at a narrow panel width):
+- [x] **Panel layout bugs** (seen on animepahe at a narrow panel width):
   - "Langtitles" title overlaps the Subtitles switch; status cut to "213/335…". Let the title shrink,
     make the switch icon-only when narrow.
   - Tabs cut off ("Transcr…"): fit at narrow widths (short labels or scrolling tab row).
@@ -18,9 +18,9 @@ docs/pending-notes.md and get loaded in as part of item 5.
   - Number boxes show the browser's own up/down arrows: style them.
   - The site's own styles leak in (text larger than intended): put the overlay in a Shadow DOM.
   - Test at the panel's narrowest width and on animepahe-like layouts before sending.
-- [ ] **Show detection.** Read the show name from the page title ("Monster Ep. 62 :: animepahe" -> Monster,
+- [x] **Show detection.** Read the show name from the page title ("Monster Ep. 62 :: animepahe" -> Monster,
   episode 62), removing site names, instead of "animepahe_monster".
-- [ ] **ID box.** Picking a show in "Find the show" sets its correct ID; typing a new title clears an ID
+- [x] **ID box.** Picking a show in "Find the show" sets its correct ID; typing a new title clears an ID
   that doesn't match; an ID search with no results falls back to the title.
 
 ## 2. Shows and subtitles
@@ -36,12 +36,12 @@ docs/pending-notes.md and get loaded in as part of item 5.
 
 ## 3. Saving and backing up your data
 
-- [ ] **Save Ask questions and answers permanently,** per line, episode and show, restored when you
+- [x] **Save Ask questions and answers permanently,** per line, episode and show, restored when you
   come back to an episode. A searchable "Questions" page grouped by show and episode. (High priority:
   answers are currently lost when the page closes.)
-- [ ] **Export / Import:** one `.langtitles` file with everything; restore by dropping it in; choose merge
+- [x] **Export / Import:** one `.langtitles` file with everything; restore by dropping it in; choose merge
   or replace; show a summary ("312 words, 84 guides…") and confirm before changing anything.
-- [ ] **Automatic backups to a folder** (Downloads/Langtitles backups/): check when Firefox starts and
+- [x] **Automatic backups to a folder** (Downloads/Langtitles backups/): check when Firefox starts and
   every few hours, back up if the last one is more than a day old (so long breaks are covered).
   Incremental: small change files after each backup, rolled into a full snapshot weekly, old files
   cleaned up, last few snapshots kept. Status in Options ("Last backup: today 14:02 · 12 changes"),
@@ -98,7 +98,7 @@ docs/pending-notes.md and get loaded in as part of item 5.
 
 ## 5. Guides
 
-- [ ] **Model label on every guide** (Library header line, word card, panel, full-screen reader:
+- [x] **Model label on every guide** (Library header line, word card, panel, full-screen reader:
   "Written by Opus 5.5", "Built in"); existing guides already store their model.
 - [ ] **Model per feature** in Options: Sonnet by default for word guides, kanji entries, Episode words and
   review questions; Opus for new grammar forms.
@@ -134,7 +134,7 @@ docs/pending-notes.md and get loaded in as part of item 5.
   built: nothing to break down"). Every guide leads with the line where you met it and the core idea in
   one sentence; length scales with how much there is to say; senses that are really one meaning are
   presented as one with nuances, not as separate senses.
-- [ ] **Apply the library fixes** (scripts/guides/library-fixes-ja.txt, written from docs/guide-audit.md): on
+- [x] **Apply the library fixes** (scripts/guides/library-fixes-ja.txt, written from docs/guide-audit.md): on
   update, add the 17 rewritten / new guides, retire the 16 replaced ones (kept for undo, notes and
   encounters moved over), patch the こと and もの sections, relink 殺害に関しては from the に guide, strip romaji
   from 6 old guides, turn the 4 name guides into one-line entries. Once only, with a summary in the Library.
@@ -200,7 +200,7 @@ docs/pending-notes.md and get loaded in as part of item 5.
 
 ## 9. Costs
 
-- [ ] **Spending tracker:** by feature (line breakdowns, word guides, grammar guides, kanji entries, Ask,
+- [x] **Spending tracker:** by feature (line breakdowns, word guides, grammar guides, kanji entries, Ask,
   Episode words, review questions), by show and episode, by day, and the most expensive individual
   requests; in the Progress page and the toolbar popup.
 

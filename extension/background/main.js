@@ -9,6 +9,9 @@
     settings = s;
   });
 
+  // Saved guides get any pending library fixes once (rewritten guides, phrases instead of words…).
+  ready.then(() => SG.libraryFixes.applyAll(cache, (k) => guideKey(k))).catch((e) => console.warn('Langtitles: library fixes', e));
+
   const ports = new Map(); // tabId -> Set(port)
   const tabStatus = new Map(); // tabId -> last state reported by the content script
   let lastError = null;
@@ -43,8 +46,9 @@
 
   // Ask Claude for a batch; if the reply was cut off, split the batch and try the halves.
   // Settings for one request, tagged with the tab it is for, so its cost can be shown there.
+  const tabShows = new Map(); // tabId -> show / episode name, for the spending log
   function forTab(tabId) {
-    return Object.assign({}, settings, { costTag: tabId });
+    return Object.assign({}, settings, { costTag: tabId, costShow: tabShows.get(tabId) || '' });
   }
 
   async function analyzeBatch(texts, context, langHint, s) {
@@ -124,10 +128,17 @@
   async function explainGuide(req, port) {
     await ready;
     if (req.kind !== 'wordguide') req.form = Object.assign({}, req.form, { k: SG.canonicalForm(req.form.k) });
+    // Guides retired by a library fix (関する -> に関して, なり -> the なり grammar guide…) open their replacement.
+    const aliases = (await browser.storage.local.get('guideAliases')).guideAliases || {};
+    const alias = aliases[req.form.k];
+    if (alias) {
+      req.form = Object.assign({}, req.form, { k: alias });
+      if (!alias.startsWith('word.')) req.kind = 'guide';
+    }
     const key = guideKey(req.form.k);
     const hit = (await cache.getMany('guides', [key])).get(key);
     if (hit) {
-      port.postMessage({ type: 'deepDone', reqId: req.reqId, text: hit.text });
+      port.postMessage({ type: 'deepDone', reqId: req.reqId, text: hit.text, model: hit.model || '' });
       return;
     }
     // The same form can be hovered in several places at once; write its guide only once.
@@ -145,7 +156,7 @@
       if (settings.addGrammarToReview) {
         bankSave({ kind: 'grammar', lang: req.lang || '', text: req.form.k, name: built.name, context: req.sentence ? { sentence: req.sentence, savedAt: Date.now() } : null }).catch(() => {});
       }
-      port.postMessage({ type: 'deepDone', reqId: req.reqId, text: built.text });
+      port.postMessage({ type: 'deepDone', reqId: req.reqId, text: built.text, model: 'built-in' });
       return;
     }
     const waiters = [{ port, reqId: req.reqId }];
@@ -170,7 +181,7 @@
       if (req.kind !== 'wordguide' && settings.addGrammarToReview) {
         bankSave({ kind: 'grammar', lang: req.lang || '', text: req.form.k, name: req.form.name || req.form.k, context: req.sentence ? { sentence: req.sentence, savedAt: Date.now() } : null }).catch(() => {});
       }
-      each((w) => w.port.postMessage({ type: 'deepDone', reqId: w.reqId, text }));
+      each((w) => w.port.postMessage({ type: 'deepDone', reqId: w.reqId, text, model: entry.model }));
     } catch (err) {
       each((w) => w.port.postMessage({ type: 'deepError', reqId: w.reqId, message: err.message }));
     } finally {
@@ -539,6 +550,26 @@
     return { track: trackFrom(result, sub), note };
   }
 
+  // ---- questions asked about lines: kept for good, shown again under the same line
+  function questionKey(sentence) {
+    return String(sentence || '').replace(/\s+/g, '');
+  }
+  async function saveQuestion(msg, answer) {
+    const id = ['q', Date.now(), Math.random().toString(36).slice(2, 7)].join('|');
+    const item = {
+      id, line: questionKey(msg.sentence), sentence: msg.sentence || '', translation: msg.translation || '',
+      q: msg.question, a: answer, show: msg.show || '', episode: msg.episode || null, lang: msg.lang || '',
+      url: msg.url || '', time: msg.time == null ? null : msg.time, model: settings.model, savedAt: Date.now(),
+    };
+    await cache.putMany('questions', [[id, item]]);
+    return item;
+  }
+  async function questionsFor(sentence) {
+    const line = questionKey(sentence);
+    const all = await cache.getAll('questions');
+    return all.filter((x) => x.line === line).sort((a, b) => a.savedAt - b.savedAt);
+  }
+
   // The show's usual subtitles: the site and fansub group last used for it, so every episode comes from them.
   async function showChoice(ep, lang) {
     const k = SG.episode.showKey(ep, lang);
@@ -670,6 +701,8 @@
         explain(msg, port);
       } else if (msg.type === 'state') {
         tabStatus.set(tabId, Object.assign({ at: Date.now() }, msg.state));
+        const ep = msg.state && msg.state.episode;
+        tabShows.set(tabId, ep && ep !== 'not detected' ? ep : (port.sender.tab.title || '').slice(0, 80));
       } else if (msg.type === 'openLibrary') {
         const url = browser.runtime.getURL('grammar/grammar.html') + (msg.k ? '#' + encodeURIComponent(msg.k) : '');
         browser.tabs.create({ url, index: port.sender.tab.index + 1 });
@@ -694,9 +727,14 @@
       } else if (msg.type === 'ask') {
         ready.then(() => claude.askLine(forTab(tabId), msg, (delta) => send(port, { type: 'askDelta', reqId: msg.reqId, delta })))
           .then(
-            (text) => send(port, { type: 'askDone', reqId: msg.reqId, text }),
+            (text) => {
+              send(port, { type: 'askDone', reqId: msg.reqId, text });
+              saveQuestion(msg, text).catch(() => {});
+            },
             (err) => send(port, { type: 'askError', reqId: msg.reqId, message: err.message }),
           );
+      } else if (msg.type === 'qaForLine') {
+        questionsFor(msg.sentence).then((list) => send(port, { type: 'qaList', reqId: msg.reqId, list }));
       } else if (msg.type === 'watched') {
         updateDay((d) => {
           d.minutes = d.minutes || {};
@@ -812,6 +850,16 @@
         lastError,
         usage: (await browser.storage.local.get('usage')).usage || {},
       }));
+    }
+    if (msg.type === 'spendLog') return browser.storage.local.get('spendLog').then((r) => r.spendLog || { days: {}, shows: {}, top: [] });
+    if (msg.type === 'backupNow') return SG.autobackup.check(true);
+    if (msg.type === 'backupStatus') return SG.autobackup.status();
+    if (msg.type === 'restored') {
+      // A backup was restored in the options page: reload settings and tell open tabs.
+      return SG.loadSettings().then((s) => {
+        settings = s;
+        return true;
+      });
     }
     if (msg.type === 'testKey') {
       return ready.then(() => claude.testKey(Object.assign({}, settings, msg.settings || {})));

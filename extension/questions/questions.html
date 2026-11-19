@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Langtitles questions</title>
+  <link rel="stylesheet" href="../grammar/grammar.css">
+  <link rel="stylesheet" href="questions.css">
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <h1>Questions</h1>
+      <p class="sub" id="count"></p>
+      <input id="search" type="search" placeholder="Search questions and answers" autocomplete="off">
+      <nav id="list"></nav>
+    </aside>
+    <main id="view">
+      <div class="empty" id="empty">
+        <h2>No questions yet</h2>
+        <p>Ask about any line in the side panel's Line tab. Every question and answer is kept here, grouped by show and episode, and shown again under the same line when you come back to it.</p>
+      </div>
+    </main>
+  </div>
+  <script src="../shared/settings.js"></script>
+  <script src="../shared/lang.js"></script>
+  <script src="../shared/guide.js"></script>
+  <script src="../background/cache.js"></script>
+  <script src="questions.js"></script>
+</body>
+</html>

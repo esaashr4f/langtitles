@@ -60,6 +60,13 @@
     toneColors: true, // pinyin coloured by tone
     pitchAccent: true, // Japanese pitch accent in the hover popup, word lists and review
     addGrammarToReview: true, // grammar forms you open guides for become review cards
+    // Automatic backups to Downloads/Langtitles backups (see background/autobackup.js).
+    autoBackup: true,
+    backupEveryHours: 24,
+    backupKeep: 4, // full snapshots kept; change files since the oldest kept snapshot are kept too
+    backupCaches: false,
+    backupKeys: false, // only when a passphrase is set
+    backupPassphrase: '',
     monthlyCap: 0, // stop Claude requests once this month's estimated spend reaches this many dollars; 0 = no cap
     glossClasses: ['noun', 'name', 'verb', 'adjective', 'adverb', 'particle', 'other'], // kinds of words that get notes above them
     jlptFrom: 5, // notes above Japanese words from this JLPT level up: 5 = every level, 4 = N4 and harder (N5 words plain), …
@@ -127,6 +134,15 @@
   };
 
   // Settings a site can have its own value for.
+  // Who wrote a guide, for the label under it.
+  SG.modelLabel = function (id) {
+    if (!id) return '';
+    if (id === 'built-in') return 'Built in';
+    if (id === 'rewrite') return 'Rewritten by Claude';
+    const m = SG.MODELS.find((x) => x.id === id);
+    return 'Written by ' + (m ? m.name.replace(/^Claude /, '') : id);
+  };
+
   SG.LOOK_KEYS = ['subFont', 'subColor', 'subBg', 'fontScale', 'subBottom', 'coverHardsubs', 'coverBottom', 'coverHeight', 'showTranslation', 'followHardsubs', 'peekHardsubs'];
 
   SG.SUB_COLOURS = [
@@ -166,7 +182,7 @@
     const out = Object.assign({}, s);
     out.hasKey = Boolean(s.apiKey);
     out.subProviders = [s.osApiKey && 'opensubtitles', s.subdlKey && 'subdl', s.jimakuKey && 'jimaku'].filter(Boolean);
-    for (const secret of ['apiKey', 'baseURL', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey']) delete out[secret];
+    for (const secret of ['apiKey', 'baseURL', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey', 'backupPassphrase']) delete out[secret];
     return out;
   };
 

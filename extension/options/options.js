@@ -4,8 +4,8 @@
   const $ = (id) => document.getElementById(id);
   let settings = await SG.loadSettings();
 
-  const CHECKS = ['hideKnownGlosses', 'toneColors', 'hanja', 'pitchAccent', 'addGrammarToReview', 'highlightNew', 'pauseOnePlus', 'slowReplay', 'autoKnownFromReview', 'autoFind', 'enabled', 'showMeaning', 'showParts', 'furigana', 'pinyin', 'hideKnownPinyin', 'showRoles', 'showTranslation', 'hideNative', 'hoverPause', 'resumeOnLeave', 'autoDeep'];
-  const TEXTS = ['apiKey', 'baseURL', 'nativeLang', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey'];
+  const CHECKS = ['hideKnownGlosses', 'toneColors', 'hanja', 'pitchAccent', 'addGrammarToReview', 'highlightNew', 'pauseOnePlus', 'slowReplay', 'autoKnownFromReview', 'autoFind', 'enabled', 'showMeaning', 'showParts', 'furigana', 'pinyin', 'hideKnownPinyin', 'showRoles', 'showTranslation', 'hideNative', 'hoverPause', 'resumeOnLeave', 'autoDeep', 'autoBackup', 'backupCaches', 'backupKeys'];
+  const TEXTS = ['apiKey', 'baseURL', 'nativeLang', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey', 'backupPassphrase'];
 
   const modelSel = $('model');
   for (const m of SG.MODELS) modelSel.append(new Option(m.name, m.id));
@@ -29,6 +29,9 @@
     $('newPerDay').value = settings.newPerDay;
     $('monthlyCap').value = settings.monthlyCap || 0;
     $('concurrency').value = settings.concurrency;
+    $('backupEveryHours').value = String(settings.backupEveryHours || 24);
+    $('backupKeep').value = String(settings.backupKeep || 4);
+    $('backupKeys').disabled = !settings.backupPassphrase;
     const m = SG.MODELS.find((x) => x.id === settings.model);
     $('modelNote').textContent = m ? `${m.note} $${m.inPrice} / $${m.outPrice} per million input / output tokens.` : '';
     renderHosts();
@@ -97,6 +100,92 @@
   $('newPerDay').addEventListener('change', (e) => save({ newPerDay: clampInt(e.target.value, 0, 200, 20) }));
   $('chunkSize').addEventListener('change', (e) => save({ chunkSize: clampInt(e.target.value, 2, 25, 8) }));
   $('concurrency').addEventListener('change', (e) => save({ concurrency: clampInt(e.target.value, 1, 8, 3) }));
+
+  // ---- backups
+  $('backupEveryHours').addEventListener('change', (e) => save({ backupEveryHours: Number(e.target.value) }));
+  $('backupKeep').addEventListener('change', (e) => save({ backupKeep: Number(e.target.value) }));
+  const ago = (t) => {
+    if (!t) return 'never';
+    const m = Math.round((Date.now() - t) / 60000);
+    return m < 60 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
+  };
+  async function backupStatus() {
+    const st = await browser.runtime.sendMessage({ type: 'backupStatus' });
+    const last = st && st.files && st.files[st.files.length - 1];
+    $('backupResult').textContent = `Last backup: ${ago(st && st.last)}` + (last ? ` (${last.kind === 'full' ? 'full snapshot' : `${last.changes} changes`})` : '');
+  }
+  backupStatus();
+  $('backupNow').addEventListener('click', async () => {
+    $('backupResult').textContent = 'Backing up…';
+    const r = await browser.runtime.sendMessage({ type: 'backupNow' });
+    if (r && r.error) $('backupResult').textContent = 'Backup failed: ' + r.error;
+    else if (r && r.skipped === 'nothing changed') $('backupResult').textContent = 'Nothing has changed since the last backup.';
+    else backupStatus();
+  });
+  $('downloadBackup').addEventListener('click', async () => {
+    $('backupResult').textContent = 'Preparing…';
+    const pass = settings.backupPassphrase || '';
+    const data = await SG.backup.collect({ includeCaches: settings.backupCaches, includeKeys: Boolean(pass && settings.backupKeys) });
+    data.kind = 'full';
+    const text = await SG.backup.serialize(data, pass);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    a.download = SG.backup.fileName();
+    document.body.append(a);
+    a.click();
+    a.remove();
+    $('backupResult').textContent = 'Saved: ' + SG.backup.describe(SG.backup.summary(data)) + (pass ? ' (encrypted)' : '');
+  });
+  let restoreFiles = [];
+  async function readRestore() {
+    const pass = $('restorePass').value;
+    const parsed = [];
+    for (const f of restoreFiles) {
+      try {
+        parsed.push(await SG.backup.parse(await f.text(), pass));
+      } catch (e) {
+        if (e.message === 'passphrase') {
+          $('restorePassRow').hidden = false;
+          $('restoreSummary').textContent = pass ? 'Wrong passphrase.' : 'These backups are encrypted. Enter the passphrase.';
+          return null;
+        }
+        $('restoreSummary').textContent = `${f.name}: ${e.message}`;
+        return null;
+      }
+    }
+    // Full snapshots first (oldest first), then change files in time order.
+    parsed.sort((a, b) => (a.kind === 'changes') - (b.kind === 'changes') || a.created - b.created);
+    return parsed;
+  }
+  async function showRestore() {
+    $('restoreBox').hidden = false;
+    const parsed = await readRestore();
+    if (!parsed) return;
+    const total = { words: 0, characters: 0, lines: 0, grammar: 0, guides: 0, questions: 0, knownWords: 0 };
+    for (const d of parsed) {
+      const s = SG.backup.summary(d);
+      for (const k of Object.keys(total)) total[k] += d.kind === 'changes' && k === 'knownWords' ? 0 : s[k];
+    }
+    const newest = new Date(Math.max(...parsed.map((d) => d.created))).toLocaleString();
+    $('restoreSummary').textContent = `${parsed.length} file${parsed.length === 1 ? '' : 's'}, newest ${newest}: ${SG.backup.describe(total)}. Nothing changes until you choose below.`;
+  }
+  $('restoreFiles').addEventListener('change', (e) => {
+    restoreFiles = Array.from(e.target.files || []);
+    if (restoreFiles.length) showRestore();
+  });
+  $('restorePass').addEventListener('change', showRestore);
+  async function doRestore(mode) {
+    const parsed = await readRestore();
+    if (!parsed) return;
+    if (mode === 'replace' && !confirm('Replace everything in Langtitles with this backup? (Your API keys are kept if the backup has none.)')) return;
+    for (let i = 0; i < parsed.length; i++) await SG.backup.restore(parsed[i], i === 0 ? mode : 'merge');
+    await browser.runtime.sendMessage({ type: 'restored' });
+    settings = await SG.loadSettings();
+    fill();
+    $('restoreSummary').textContent = 'Restored. Reload any open video tabs to see it there.';
+  }
+  $('restoreMerge').addEventListener('click', () => doRestore('merge'));
+  $('restoreReplace').addEventListener('click', () => doRestore('replace'));
 
   function renderHosts() {
     const ul = $('disabledHosts');

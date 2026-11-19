@@ -4,14 +4,14 @@
   const SG = (root.SG = root.SG || {});
 
   const DB_NAME = 'langtitles';
-  const STORES = ['lines', 'deep', 'guides', 'subs', 'picks', 'bank', 'chars', 'strokes'];
-  const memory = { lines: new Map(), deep: new Map(), guides: new Map(), subs: new Map(), picks: new Map(), bank: new Map(), chars: new Map(), strokes: new Map() };
+  const STORES = ['lines', 'deep', 'guides', 'subs', 'picks', 'bank', 'chars', 'strokes', 'questions', 'history'];
+  const memory = { lines: new Map(), deep: new Map(), guides: new Map(), subs: new Map(), picks: new Map(), bank: new Map(), chars: new Map(), strokes: new Map(), questions: new Map(), history: new Map() };
   let dbPromise = null;
 
   function open() {
     if (!dbPromise) {
       dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open(DB_NAME, 5);
+        const req = indexedDB.open(DB_NAME, 6);
         req.onupgradeneeded = () => {
           for (const name of STORES) {
             if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name);
@@ -108,5 +108,34 @@
     });
   }
 
-  SG.cache = { getMany, putMany, getAll, remove, clear };
+  // [key, value] pairs of a whole store (backups need the keys too).
+  async function entries(store) {
+    const db = await open();
+    if (!db) return Array.from(memory[store].entries());
+    return new Promise((resolve) => {
+      const os = db.transaction(store, 'readonly').objectStore(store);
+      const keysReq = os.getAllKeys();
+      const valsReq = os.getAll();
+      valsReq.onsuccess = () => {
+        const keys = keysReq.result || [];
+        resolve(keys.map((k, i) => [k, valsReq.result[i]]));
+      };
+      valsReq.onerror = () => resolve([]);
+    });
+  }
+
+  async function clearStore(store) {
+    memory[store].clear();
+    const db = await open();
+    if (!db) return;
+    await new Promise((resolve) => {
+      const tx = db.transaction(store, 'readwrite');
+      tx.objectStore(store).clear();
+      tx.oncomplete = resolve;
+      tx.onerror = resolve;
+      tx.onabort = resolve;
+    });
+  }
+
+  SG.cache = { getMany, putMany, getAll, remove, clear, entries, clearStore, STORES };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -107,7 +107,7 @@
   // Listeners told about each request's cost and which tab it was for (settings.costTag).
   const costListeners = new Set();
 
-  async function recordUsage(model, usage, batch, tag) {
+  async function recordUsage(model, usage, batch, tag, feature, show) {
     if (!usage) return;
     const cost = costOf(model, usage, batch);
     for (const fn of costListeners) {
@@ -121,6 +121,7 @@
     const mk = monthKey();
     spend[mk] = (spend[mk] || 0) + cost;
     await browser.storage.local.set({ spend });
+    await logSpend(model, cost, feature || 'other', show || '');
     const stored = (await browser.storage.local.get('usage')).usage || {};
     const u = stored[model] || { input: 0, output: 0, cacheRead: 0, requests: 0 };
     u.input += (usage.input_tokens || 0) + (usage.cache_creation_input_tokens || 0);
@@ -129,6 +130,30 @@
     u.requests += 1;
     stored[model] = u;
     await browser.storage.local.set({ usage: stored });
+  }
+
+  // Where the money goes: by feature, by day and by show, plus the most expensive single requests.
+  let spendQueue = Promise.resolve();
+  function logSpend(model, cost, feature, show) {
+    spendQueue = spendQueue.then(async () => {
+      const log = (await browser.storage.local.get('spendLog')).spendLog || { days: {}, shows: {}, top: [] };
+      const now = new Date();
+      const day = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate(); // same day key as the Progress page
+      const d = (log.days[day] = log.days[day] || {});
+      d[feature] = (d[feature] || 0) + cost;
+      if (show) {
+        const sh = (log.shows[show] = log.shows[show] || {});
+        sh[feature] = (sh[feature] || 0) + cost;
+      }
+      log.top.push({ at: Date.now(), feature, model, cost, show });
+      log.top.sort((a, b) => b.cost - a.cost);
+      log.top = log.top.slice(0, 25);
+      // Keep a year of days.
+      const days = Object.keys(log.days).sort((a, b) => new Date(a) - new Date(b));
+      for (const old of days.slice(0, Math.max(0, days.length - 366))) delete log.days[old];
+      await browser.storage.local.set({ spendLog: log });
+    }).catch(() => {});
+    return spendQueue;
   }
 
   // lines: array of strings. Resolves to { lang, lines: analysis[] } aligned with the input
@@ -165,7 +190,7 @@
     } catch (err) {
       throw describeError(err);
     }
-    recordUsage(message.model || settings.model, message.usage, false, settings.costTag).catch(() => {});
+    recordUsage(message.model || settings.model, message.usage, false, settings.costTag, 'lines', settings.costShow).catch(() => {});
     if (message.stop_reason === 'refusal') {
       throw new LangtitlesError('refusal', 'Claude declined to annotate these lines.');
     }
@@ -190,7 +215,7 @@
       const stream = getClient(settings).beta.messages.stream(params);
       stream.on('text', (delta) => onText(delta));
       const message = await stream.finalMessage();
-      recordUsage(message.model || settings.model, message.usage, false, settings.costTag).catch(() => {});
+      recordUsage(message.model || settings.model, message.usage, false, settings.costTag, settings.costFeature || 'guides', settings.costShow).catch(() => {});
       if (message.stop_reason === 'refusal') throw new LangtitlesError('refusal', 'Claude declined to explain this.');
       return textOf(message);
     } catch (err) {
@@ -200,12 +225,14 @@
 
   // A longer explanation of one word in its sentence.
   function explainWord(settings, req, onText) {
+    settings = Object.assign({}, settings, { costFeature: 'word notes' });
     const { prompt } = SG;
     return streamText(settings, prompt.deepSystemPrompt(settings.nativeLang), prompt.deepUserMessage(req), 4000, null, onText);
   }
 
   // A complete, reusable guide to a grammar form. Written once per form, so it gets more care.
   function explainForm(settings, req, onText) {
+    settings = Object.assign({}, settings, { costFeature: 'grammar guides' });
     const { prompt } = SG;
     const effort = settings.effort === 'low' ? 'medium' : settings.effort;
     return streamText(settings, prompt.guideSystemPrompt(settings.nativeLang), prompt.guideUserMessage(req), 12000, effort, onText);
@@ -213,6 +240,7 @@
 
   // A complete, reusable guide to one word: meanings, how it is built, where it fits and where it doesn't.
   function explainWordGuide(settings, req, onText) {
+    settings = Object.assign({}, settings, { costFeature: 'word guides' });
     const { prompt } = SG;
     const effort = settings.effort === 'low' ? 'medium' : settings.effort;
     return streamText(settings, prompt.wordGuideSystemPrompt(settings.nativeLang), prompt.wordGuideUserMessage(req), 12000, effort, onText);
@@ -232,7 +260,7 @@
     } catch (err) {
       throw describeError(err);
     }
-    recordUsage(message.model || settings.model, message.usage, false, settings.costTag).catch(() => {});
+    recordUsage(message.model || settings.model, message.usage, false, settings.costTag, 'kanji', settings.costShow).catch(() => {});
     if (message.stop_reason === 'refusal') throw new LangtitlesError('refusal', 'Claude declined to describe this character.');
     if (message.stop_reason === 'max_tokens') throw new LangtitlesError('truncated', 'The character entry was cut off.');
     try {
@@ -256,7 +284,7 @@
     } catch (err) {
       throw describeError(err);
     }
-    recordUsage(message.model || settings.model, message.usage, false, settings.costTag).catch(() => {});
+    recordUsage(message.model || settings.model, message.usage, false, settings.costTag, 'episode words', settings.costShow).catch(() => {});
     if (message.stop_reason === 'refusal') throw new LangtitlesError('refusal', 'Claude declined to list these words.');
     if (message.stop_reason === 'max_tokens') throw new LangtitlesError('truncated', 'The word list was cut off.');
     try {
@@ -277,7 +305,7 @@
       const stream = getClient(settings).beta.messages.stream(params);
       stream.on('text', (delta) => onText(delta));
       const message = await stream.finalMessage();
-      recordUsage(message.model || settings.model, message.usage, false, settings.costTag).catch(() => {});
+      recordUsage(message.model || settings.model, message.usage, false, settings.costTag, 'ask', settings.costShow).catch(() => {});
       if (message.stop_reason === 'refusal') throw new LangtitlesError('refusal', 'Claude declined to answer that.');
       return textOf(message);
     } catch (err) {
@@ -300,7 +328,7 @@
     } catch (err) {
       throw describeError(err);
     }
-    recordUsage(message.model || settings.model, message.usage, false, settings.costTag).catch(() => {});
+    recordUsage(message.model || settings.model, message.usage, false, settings.costTag, 'review', settings.costShow).catch(() => {});
     if (message.stop_reason !== 'end_turn') throw new LangtitlesError('parse', 'Could not make a question for this form.');
     return JSON.parse(textOf(message));
   }
@@ -332,7 +360,7 @@
           continue;
         }
         const msg = r.result.message;
-        recordUsage(msg.model || settings.model, msg.usage, true, settings.costTag).catch(() => {});
+        recordUsage(msg.model || settings.model, msg.usage, true, settings.costTag, 'season prep', settings.costShow).catch(() => {});
         let out = null;
         try {
           if (msg.stop_reason === 'end_turn') out = readAnalysis(textOf(msg), counts[r.custom_id] || 0);
