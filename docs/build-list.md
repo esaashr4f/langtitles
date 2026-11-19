@@ -355,6 +355,29 @@ opens with a different line (the 을/를 guide opening with 뭐라도 나를 나
 - [ ] Same rule for song guides' and lessons' links: clicking a word opens the general guide, with "In this
   line" for the line in the lesson.
 
+### One form's guide written as another form (원해 shown the 줘 guide), then "fixed" with an appendix
+Seen on 나를 원해: the chip "casual speech" opens the guide for 해 / 반말, but that guide explains 해 only
+inside the -아/어 줘 request pattern (해 줘 = "do it for me"), so the check says it would mislead, and then
+**adds "Other uses you've met" to that guide automatically**.
+- Cause 1, same as above: the 반말 guide (ko.casual_banmal) was written around the first line that used it, a
+  줘 request (구해줘 / 잊어 줘), so a guide that should cover casual speech in general became a 줘 guide.
+- Cause 2: 구해줘 carries two forms (보조 동사 -아/어 주다 "do for me" + the 반말 ending) and the breakdown
+  can name just one; the request meaning then lands in the 반말 guide.
+- Cause 3: the automatic note is a patch, not a fix. "Other uses you've met" grows an appendix on a guide
+  whose main sections are too narrow, and the next line shows the same warning again.
+- [ ] Section-14 fix (general guides) first; then **rewrite guides whose own sections are too narrow** when the
+  check finds a use of the same form they don't cover (rewrite the general sections once, cheap, keeping your
+  notes), instead of appending "Other uses you've met".
+- [ ] When the check finds the line actually uses a **different form** than the guide (해 ending vs 해 줘
+  request), it should say "this line uses X" and open / write X's guide, never add to the wrong guide.
+- [ ] Korean form identifiers: ask the breakdown to list **every** form in a word (구해줘 = ko.aux_a_juda +
+  ko.casual_banmal; 원해 = ko.casual_banmal only); add Korean name matching like Japanese has (none yet), and
+  split 반말 into its endings where they behave differently (-아/어, -지, -냐/-니, -자) with one overview.
+- [ ] Remove automatic "Other uses you've met" notes already added to guides where they belong to another form
+  (part of Check my guides).
+- [ ] Core Korean grammar (particles, 반말 / 해요 / 합니다, -아/어 주다, connectives) as **built-in guides** like
+  the 43 Japanese ones, so these are never written from a single line (also part of section 15).
+
 ### Phrases: only real phrases
 - [ ] A phrase is marked (bracket, phrase card, saved as a phrase) only when it's a **set phrase** or when the
   words **mean something different together** than apart. A word plus a verb that simply means the sum of its
@@ -375,6 +398,9 @@ opens with a different line (the 을/를 guide opening with 뭐라도 나를 나
   mode is offered; show the Listen offer in the panel instead of that hint.
 
 ## 15. Built-in guide library from a large corpus (when you're on a higher plan; not built yet)
+
+- [ ] When you ask: a list of shows and songs per language that together cover most everyday vocabulary;
+  later files mostly confirm what's covered and record new forms ("met as"), with fewer new guides.
 
 Idea: instead of the API writing a guide the first time you meet anything (even the most basic words), write
 general guides in advance for almost everything you'll meet, so the API only handles context.
