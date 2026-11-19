@@ -108,6 +108,11 @@ docs/pending-notes.md and get loaded in as part of item 5.
   Write 店を出す first.
 - [ ] **"Set phrases and expressions" group** in the Library's Words section; set phrases detected
   automatically get their own 📖 chip in the word card.
+- [ ] **Noun-modifying clauses everywhere:** add a fixed form for clauses that describe a noun (殺した連中, 要らない連中,
+  吸血鬼を取り巻くコウモリ) and tag the verb or adjective with it as well as its own form (past, negative…), so its
+  guide chip appears. A built-in guide for it (plain forms before a noun, が not は inside the clause, no
+  "that/which", tense inside the clause). Every built-in verb-form guide (past, negative, ～ている, potential,
+  passive, causative, ～たい…) gets a "Before a noun" use with an example; written guides are asked to cover it too.
 - [ ] **Dictionary-grounded guides:** pass the dictionary's readings and meanings into guide prompts.
 
 ## 6. Grammar as important as vocab

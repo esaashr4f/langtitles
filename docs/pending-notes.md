@@ -30,6 +30,17 @@ What tips it here:
 So 程度 contributes "a mere level", and the context makes it an insult to himself. Without しかない
 (コウモリ程度だ) it still leans dismissive because of the other clues, just less strongly.
 
+### Line: 俺が殺した連中は要らない連中なんだよ
+Show: Monster (2004) · animepahe
+
+**For the past ～た guide (built-in) and the noun-modifying clause guide**
+
+殺した here describes 連中: 俺が殺した連中 = "the guys I killed". A plain past verb placed before a noun
+works like an English relative clause, with no "that/who" word. Inside such a clause the subject takes が,
+not は (俺が殺した). 要らない連中 is the same pattern with a negative: "guys nobody needs". So the line is
+"The guys I killed are guys nobody needs, you know." The built-in past guide currently has no "before a
+noun" use; add one.
+
 ## Guides to write
 
 - 店を出す (みせをだす): "open a shop / start a business", a set phrase. Vocab, in the "Set phrases
