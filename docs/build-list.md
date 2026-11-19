@@ -273,3 +273,77 @@ subtitles) is in docs/music-mode.md. Build in this order:
 - [ ] K-pop, if wanted: concept and era notes in song guides. Not possible: per-member line colours (no reliable free data).
 - [x] Tests for LRC / enhanced LRC parsing, LRCLIB matching, chorus counts, video titles, MAL theme lines.
 - [ ] Adapter tests against saved page snapshots.
+
+## 14. Requested after 0.5.1 (not built yet: wait for "build")
+
+### Don't pay twice for the same subtitles
+- [~] Already there: every line breakdown is saved in the browser (IndexedDB), keyed by the line and the line
+  before it, so re-watching an episode reuses them for free; downloaded subtitle files are saved too.
+- [ ] **The gap to close:** saved breakdowns are only reused while the line-breakdown version, the line model
+  and your native language stay the same, so an update that improves the breakdowns (or switching the line
+  model) makes old episodes get bought again. Change this to: always reuse what's saved, whatever version
+  wrote it; show "made with an older version" on the line, with a per-episode "Redo this episode with the new
+  version" button (and its cost) instead of redoing it silently.
+- [ ] Per-episode breakdown store: keep each episode's full set of lines with its breakdowns together (not
+  only line by line), so a finished episode loads instantly and can be backed up / counted.
+
+### "I've finished this show" (spoilers allowed)
+- [ ] A **Finished this show** button (Library → Shows, and the panel): fetch subtitles for every episode of
+  every season from the subtitle sites (OpenSubtitles / SubDL / Jimaku), even episodes never watched with
+  Langtitles; show what was found and what's missing per season, with a cost estimate before anything is paid.
+- [ ] Then write a **whole-show guide** with spoilers allowed: a walk back through the show from the first
+  episode to the last, re-telling it while teaching the language, in the same blog-style lesson format as
+  below (one chapter per episode or arc, as long as it takes). Use the Batch API (half price) for the long run.
+- [ ] Frames for episodes never watched with Langtitles: not possible without playing them, so those chapters
+  use frames only where they exist; say so in the guide rather than leave gaps.
+
+### Episode lessons: one real lesson, not a word list
+- [ ] Merge **Recap** and **Lesson** into one **Lesson**: it walks through the episode from the beginning to
+  the end, as long as it takes, telling what happens while teaching the language, written like a Tae Kim-style
+  blog lesson (explaining, connecting, building up), never a list of words. Spoiler-free when the show isn't
+  marked finished (only lines up to where you've watched).
+- [ ] **Every word, phrase and grammar form in a lesson is a link** that opens its guide (writing it then if
+  it doesn't exist yet, from the line in the lesson).
+- [ ] **Frames inside the lesson, at least 3 per episode:** while watching, keep a small frame every minute or
+  so (with its time and the line on screen), so the lesson can place the frame where a line or word is taught
+  and explain around it ("here, as he turns away, he says …"). The model is told which frames exist (time and
+  line) and chooses where they go; optionally the frames are sent to Claude so it can describe the scene (costs
+  more; a setting).
+- [ ] Same rules for the **whole-show guide** above.
+
+### Song guides: a dissection, not a translation
+- [ ] Rewrite the song guide format: explore the song with the reader like a blog post / lesson (why this word,
+  what this image is doing, how this line turns the meaning of the last one, what the listener feels and why),
+  not quote → translation → bullet notes. Translations only where needed, inside the explanation.
+- [ ] Make both song guides and episode lessons **engaging**: a voice, questions to the reader, build-ups and
+  pay-offs, short sections, frames / artwork where they help.
+- [ ] Same links on every word, phrase and form in song guides.
+
+### Guides: general first, your line second
+- [ ] Word and grammar guides start with the **general** meaning and use, never with the line you met it in
+  (e.g. 내게's guide must not open with 내게 말해). The line you met it in goes in its own section
+  ("Where you met it" / "In this line") further down. Undo the earlier "lead with the line" rule; re-check saved
+  guides that open with their line (Check my guides) and offer to fix them.
+- [ ] **"Why it means something different here"** only when the meaning or use in the line is genuinely
+  different from what the guide covers (another sense, another function). Not when the guide simply has no
+  example of this exact situation, and never an answer that ends up saying "the guide already covers it":
+  that should be "no difference", shown as nothing. Keep it short and assume the reader is smart.
+
+### Phrases: only real phrases
+- [ ] A phrase is marked (bracket, phrase card, saved as a phrase) only when it's a **set phrase** or when the
+  words **mean something different together** than apart. A word plus a verb that simply means the sum of its
+  parts (내게 말해 = "tell me") is not a phrase; check the phrase list against this, and the dictionary check too
+  (Korean has no expression dictionary yet, so Korean phrases need the stricter rule most).
+- [ ] Korean: respect the spacing (띄어쓰기). Words separated by a space are separate words unless they form a
+  set phrase; a particle belongs to the word it's attached to. Check the 내게서 case: written together it's
+  나에게서 "from me" (에게서 is one particle); if the lyric has 내게 서… the 서 belongs to the next word.
+- [ ] Particle forms like 내게서 / 내게 can still have their own form guides (에게서, 에게), but a guide for 내게
+  is about 내게.
+
+### YouTube
+- [ ] **The overlay sits too high on YouTube:** the panel and subtitles follow the video element, which on
+  YouTube can be taller than the visible player (cropped by the player box). Fit to the visible player instead
+  (the video rect clipped by its player container / any clipping ancestor), and keep the panel below the site's
+  top bar.
+- [ ] On a YouTube video that's clearly a song, the "Turn on subtitles in the player" hint shows before Listen
+  mode is offered; show the Listen offer in the panel instead of that hint.
