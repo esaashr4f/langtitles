@@ -93,7 +93,7 @@ docs/pending-notes.md and get loaded in as part of item 5.
     (saving に関して saves に関して, not 関する); the word bank shows phrases in their own group;
   - detection by the analysis (phrase spans returned with the line) and checked locally against the
     dictionary's expression entries (JMdict marks these), longest match first.
-- [ ] **Phrases already saved as their head verb** (e.g. に関して stored as 関する) are found and offered to be
+- [x] **Phrases already saved as their head verb** (0.5.1: Word bank offers Convert / Convert all) (e.g. に関して stored as 関する) are found and offered to be
   converted when the dictionary is in.
 
 ## 5. Guides

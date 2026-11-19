@@ -115,3 +115,12 @@ main { padding: 16px 16px 80px; display: flex; flex-direction: column; gap: 12px
   .head-char { font-size: 38px; }
 }
 .met-as { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin: 4px 0; } .met-one b { font-weight: 600; }
+.phrase-fix { max-width: 860px; margin: 16px auto 0; padding: 18px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.phrase-fix h2 { margin: 0 0 4px; font-size: 16px; }
+.phrase-fix .dim { margin: 0 0 12px; color: var(--dim); font-size: 13.5px; }
+.pf-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.pf-what { min-width: 0; }
+.pf-from { color: var(--dim); text-decoration: line-through; }
+.pf-to { font-size: 17px; font-weight: 600; }
+.pf-m { margin-left: 10px; color: var(--dim); font-size: 13px; }
+.phrase-fix > button { margin-top: 12px; }

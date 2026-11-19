@@ -609,6 +609,53 @@
     return entry;
   }
 
+  // Words saved as their head verb that were really met inside a set phrase (関する saved from に関して,
+  // 出す from 店を出す): found by checking the dictionary for the phrase around the form met.
+  async function phraseCandidates() {
+    const bank = await cache.getAll('bank');
+    const out = [];
+    for (const item of bank) {
+      if (item.kind !== 'word' || item.lang !== 'ja' || (item.word && item.word.phrase)) continue;
+      const forms = [...new Set([].concat((item.metAs || []).map((x) => x.s), item.word && item.word.s ? [item.word.s] : []).filter(Boolean))];
+      let best = null;
+      for (const c of item.contexts || []) {
+        const sentence = c.sentence || '';
+        for (const f of forms) {
+          const at = sentence.indexOf(f);
+          if (at < 0) continue;
+          for (let n = 4; n >= 1 && !best; n--) {
+            if (at - n < 0) continue;
+            const pre = sentence.slice(at - n, at);
+            if (/[、。！？\s「」]/.test(pre)) continue;
+            for (const tail of [item.text, f]) {
+              const hit = (await SG.dict.exact(pre + tail)).find((e) => e.s.some((x) => /exp/.test(x[0])));
+              if (hit) {
+                best = { phrase: pre + tail, met: pre + f, meaning: hit.s.map((x) => x[1]).slice(0, 2).join('; '), reading: (hit.r || [])[0] || '', sentence };
+                break;
+              }
+            }
+          }
+          if (best) break;
+        }
+        if (best) break;
+      }
+      if (best) out.push(Object.assign({ key: item.key, text: item.text }, best));
+    }
+    return out;
+  }
+
+  // Replace a head-verb save with the phrase, keeping its contexts and review progress.
+  async function convertToPhrase(key, phrase, meaning, reading) {
+    const old = (await cache.getMany('bank', [key])).get(key);
+    if (!old) return { error: 'That word is no longer saved.' };
+    const nkey = bankKey('word', old.lang, phrase);
+    const word = Object.assign({}, old.word || {}, { s: phrase, d: phrase, r: reading || '', dr: reading || '', m: meaning || (old.word && old.word.m) || '', pos: 'expression', phrase: true, f: [] });
+    const entry = Object.assign({}, old, { key: nkey, text: phrase, word, convertedFrom: old.text, updatedAt: Date.now() });
+    await cache.putMany('bank', [[nkey, entry]]);
+    if (nkey !== key) await cache.remove('bank', key);
+    return { ok: true, key: nkey };
+  }
+
   async function bankStatus(keys) {
     const found = await cache.getMany('bank', keys);
     const out = {};
@@ -1100,6 +1147,8 @@
     }
     if (msg.type === 'rewriteGuide') return ready.then(() => rewriteGuide(msg.key, msg.model));
     if (msg.type === 'episodesAll') return SG.episodes.all();
+    if (msg.type === 'phraseCandidates') return ready.then(phraseCandidates).catch((err) => ({ error: err.message }));
+    if (msg.type === 'convertPhrase') return ready.then(() => convertToPhrase(msg.key, msg.phrase, msg.meaning, msg.reading)).catch((err) => ({ error: err.message }));
     if (msg.type === 'framesGet') return SG.episodes.getFrames(msg.ids || []);
     if (msg.type === 'episodeWrite') return ready.then(() => SG.episodes.write(msg.key, msg.kind, settings, msg.again)).catch((err) => ({ error: err.message }));
     if (msg.type === 'showVocab') return ready.then(() => SG.episodes.showVocab(msg.showKey, settings, msg.again)).catch((err) => ({ error: err.message }));

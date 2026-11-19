@@ -36,6 +36,50 @@
     return m >= 60 ? `${Math.floor(m / 60)}:${pad(m % 60)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
   }
 
+  // Words saved as their head verb that you met inside a set phrase: offer to save the phrase instead.
+  async function offerPhraseFixes() {
+    const box = $('phraseFix');
+    if (!box) return;
+    const list = await browser.runtime.sendMessage({ type: 'phraseCandidates' }).catch(() => null);
+    if (!Array.isArray(list) || !list.length) return (box.hidden = true);
+    box.hidden = false;
+    box.textContent = '';
+    box.append(h('h2', '', `${list.length} word${list.length === 1 ? ' looks' : 's look'} like ${list.length === 1 ? 'it was' : 'they were'} saved from a set phrase`));
+    box.append(h('p', 'dim', 'For example に関して saved as 関する. Converting saves the phrase instead, keeping where you met it and your review progress.'));
+    const rows = h('div', 'pf-rows');
+    const convert = async (x, row) => {
+      const res = await browser.runtime.sendMessage({ type: 'convertPhrase', key: x.key, phrase: x.phrase, meaning: x.meaning, reading: x.reading });
+      if (res && res.ok) row.remove();
+    };
+    for (const x of list) {
+      const row = h('div', 'pf-row');
+      const what = h('div', 'pf-what');
+      const from = h('span', 'pf-from', x.text);
+      from.lang = 'ja';
+      const to = h('span', 'pf-to', x.phrase);
+      to.lang = 'ja';
+      what.append(from, document.createTextNode(' → '), to, h('span', 'pf-m', x.meaning));
+      const b = h('button', 'secondary', 'Convert');
+      b.addEventListener('click', async () => {
+        await convert(x, row);
+        if (!rows.childElementCount) box.hidden = true;
+        load();
+      });
+      row.append(what, b);
+      rows.append(row);
+    }
+    const all = h('button', '', 'Convert all');
+    all.addEventListener('click', async () => {
+      for (const x of list) {
+        const row = Array.from(rows.children).find((r) => r.querySelector('.pf-from') && r.querySelector('.pf-to').textContent === x.phrase);
+        if (row) await convert(x, row);
+      }
+      box.hidden = true;
+      load();
+    });
+    box.append(rows, all);
+  }
+
   async function load() {
     items = await SG.cache.getAll('bank');
     known = Object.assign({ ja: '', zh: '' }, (await browser.storage.local.get('known')).known);
@@ -560,4 +604,5 @@
     if (!document.hidden) load();
   });
   await load();
+  offerPhraseFixes();
 })();
