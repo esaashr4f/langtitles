@@ -134,6 +134,16 @@ docs/pending-notes.md and get loaded in as part of item 5.
   built: nothing to break down"). Every guide leads with the line where you met it and the core idea in
   one sentence; length scales with how much there is to say; senses that are really one meaning are
   presented as one with nuances, not as separate senses.
+- [ ] **Guide check-up for guides already saved:** a "Check my guides" button in the Library that scans every
+  saved guide and lists the ones that need rewriting, each with the reason:
+  - a word guide for something that is grammar (particle, suffix, auxiliary: なり, では);
+  - a word guide for the head word of a phrase (関する where the line had に関して; 歯切れ alone);
+  - missing or empty sections, or sections that don't match the item's kind;
+  - contradictions found by the consistency check;
+  - a built-in guide now exists for it (replace for free);
+  - written with an older guide version.
+  Shows the estimated cost, rewrites the ones you tick (batch processing at half price, or straight away),
+  keeps the old version so a rewrite can be undone, keeps your question notes, and updates the model label.
 - [ ] **Consistency check on new guides:** a cheap pass that flags contradictions inside a guide (the なり guide
   says it attaches to adjectives and verbs, then lists that as a mistake) and claims it can't support, and
   fixes them before saving.
