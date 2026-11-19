@@ -134,6 +134,29 @@ docs/pending-notes.md and get loaded in as part of item 5.
   built: nothing to break down"). Every guide leads with the line where you met it and the core idea in
   one sentence; length scales with how much there is to say; senses that are really one meaning are
   presented as one with nuances, not as separate senses.
+- [ ] **Apply the library fixes** (scripts/guides/library-fixes-ja.txt, written from docs/guide-audit.md): on
+  update, add the 17 rewritten / new guides, retire the 16 replaced ones (kept for undo, notes and
+  encounters moved over), patch the こと and もの sections, relink 殺害に関しては from the に guide, strip romaji
+  from 6 old guides, turn the 4 name guides into one-line entries. Once only, with a summary in the Library.
+- [ ] **Prevent every problem found in the audit from happening again** (each gets a regression test built from
+  the real lines in docs/guide-audit.md):
+  - phrases filed under one word (関する for に関して, 歯切れ for 歯切れが悪い, 店 for 店を出す…) → phrases as real units
+    (section 4b), detected by the analysis and the dictionary; guides and saving use the phrase;
+  - grammar written up as a word (なり, とおり, 的, では, と) → items classified as word / grammar / phrase, matching
+    template; function words and suffixes always get grammar guides;
+  - wrong analysis of a set pattern (こと + noun + に関しては called "garbled") → the analysis is told set patterns
+    exist before guessing at errors; guides that say "probably garbled / can't say" are flagged for a second look
+    by the stronger model;
+  - wrong guide attached to a compound (に guide on に関しては) → compound particles have their own forms;
+  - duplicates under different names (copula_da / copula_da_desu…) → fixed form identifiers plus aliases (done in
+    0.1.8), and the check-up merges any that slip through;
+  - romaji and missing furigana → romaji is stripped automatically from any guide text, furigana checked before
+    saving (and filled from the dictionary);
+  - full guides on names → names never get guides, only a one-line entry (also for names the analysis tags
+    loosely, checked against katakana-only names and the "proper noun" part of speech);
+  - over-long guides on basic words → length scales with the item; basic words get a short guide;
+  - self-contradictions (なり) → the consistency check;
+  - missing uses that the line needs (past ～た before a noun) → the "doesn't match this line" check adds them.
 - [ ] **Guide check-up for guides already saved:** a "Check my guides" button in the Library that scans every
   saved guide and lists the ones that need rewriting, each with the reason:
   - a word guide for something that is grammar (particle, suffix, auxiliary: なり, では);

@@ -43,6 +43,8 @@ noun" use; add one.
 
 ## Guides to write
 
+(店を出す, 歯切れが悪い, に関して and なり are now written in scripts/guides/library-fixes-ja.txt.)
+
 - 店を出す (みせをだす): "open a shop / start a business", a set phrase. Vocab, in the "Set phrases
   and expressions" group. Met as 店を出した.
 - 歯切れが悪い (はぎれがわるい): idiom, "evasive, vague, not speaking plainly" (literally "the cut of the
