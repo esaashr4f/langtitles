@@ -170,3 +170,23 @@ docs/pending-notes.md and get loaded in as part of item 5.
   contextMenus; one codebase builds both; $5 developer fee.
 - [ ] **Money (later):** donation link first; hosted "no key needed" plan with accounts and payments; check
   OpenSubtitles / SubDL / Jimaku terms for commercial use.
+
+## 13. Listen mode (music)
+
+A separate mode of the extension for songs; the full design (UX, UI, technical, how it fits with the
+subtitles) is in docs/music-mode.md. Build in this order:
+
+- [ ] **YouTube Music and YouTube music videos:** site adapters, lyrics from the page or LRCLIB (by duration,
+  word-level timing when available), search / paste / `.lrc` by hand, choices and timing saved per track,
+  Watch | Listen switch (automatic, overridable per site). Lyrics become a normal Langtitles track.
+- [ ] **Lyrics sheet** (Strip / Sheet / Focus) on music sites, Listen-mode panel tabs (Line, Lyrics, Study,
+  Song, Display); **song-mode analysis:** whole song in context, choruses analysed once, sung readings
+  (本気 → マジ) with both shown in the card, poetic and old grammar explained with its own guides, imagery notes.
+- [ ] **Spotify web player** (its own synced lyrics and active line; progress bar fallback) and **Apple Music web**.
+- [ ] **Song guides, artist pages, Library → Music** (artwork from the page, iTunes Search, Cover Art Archive),
+  lyrics coverage ("you know 82%").
+- [ ] **Practice:** loop and slow down where possible, Fill the gaps listening quiz, sing-along view,
+  shadowing with the microphone, song coverage, review cards with artwork and "play from 1:23".
+- [ ] **Anime openings and endings:** "Learn this opening" from an episode (AnimeThemes), songs listed under
+  the show and the artist.
+- [ ] Tests for lyrics parsing, LRCLIB matching, chorus de-duplication and each site adapter.
