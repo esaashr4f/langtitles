@@ -59,31 +59,31 @@ docs/pending-notes.md and get loaded in as part of item 5.
 
 ## 4. Line breakdowns
 
-- [ ] **Whole-phrase meanings:** a cluster like 開始したっていうのか gets its own meaning and a step-by-step
+- [x] **Whole-phrase meanings:** a cluster like 開始したっていうのか gets its own meaning and a step-by-step
   build-up (開始する -> 開始した -> …って -> …っていう -> …の -> …のか), shown as a thin bracket over the
   words (switchable in the Show row) and an "As a whole" section in the word card. Nothing removed.
-- [ ] **Compound words kept whole** (素行調査 "background check"), with the parts as pieces; once the
+- [x] **Compound words kept whole** (素行調査 "background check"), with the parts as pieces; once the
   dictionary is in, join neighbouring words that form a dictionary entry (longest match), locally.
-- [ ] **Set phrases kept whole** (必要とする "need", 問題にする, 店を出す, 気になる, 手を出す), their parts glossed
+- [x] **Set phrases kept whole** (必要とする "need", 問題にする, 店を出す, 気になる, 手を出す), their parts glossed
   from the phrase (no "treating" for して).
-- [ ] **Split patterns linked** (いかに…のか, ～ば…ほど): one meaning, both ends highlighted together.
-- [ ] **"How the sentence works"** replaces "Word for word" and "Structure":
+- [x] **Split patterns linked** (いかに…のか, ～ば…ほど): one meaning, both ends highlighted together.
+- [x] **"How the sentence works"** replaces "Word for word" and "Structure":
   - always visible, two or three lines: the line in Japanese order, chunk by chunk, each with a short
     natural gloss (自分など someone like me · まだ still · 吸血鬼を取り巻く that circle vampires ·
     コウモリ程度 a mere bat-level · でしかない am nothing but · と …that); role labels on the chunks;
   - "How it fits together ▾" expands the build-up from the core outward, showing why English reverses
     the order; notes when the burned-in English is a looser translation;
   - lines that continue into the next subtitle marked "continues ->".
-- [ ] **Particles inside phrases get their meaning** even when particle notes are switched off (まで in までして).
-- [ ] **Quality check:** each word's and phrase's meaning must agree with the full-line translation.
-- [ ] **Combined particles get their own forms:** では (contrast "at X, at least"), ではない/じゃない ("is not"),
+- [x] **Particles inside phrases get their meaning** even when particle notes are switched off (まで in までして).
+- [x] **Quality check:** each word's and phrase's meaning must agree with the full-line translation.
+- [x] **Combined particles get their own forms:** では (contrast "at X, at least"), ではない/じゃない ("is not"),
   では "well then", には, とは, からは, までは, でも, にも; their guides explain the combination, how it differs
   from each part and the look-alikes. Built-in guides for では, には and じゃない.
-- [ ] **Option: Sonnet for line breakdowns** (better at whole-sentence reasoning, about 3x Haiku's cost).
+- [x] **Option: Sonnet for line breakdowns** (better at whole-sentence reasoning, about 3x Haiku's cost).
 
 ## 4b. Phrases as real units (high priority)
 
-- [ ] **Phrases are first-class, not their head word.** Japanese meaning often lives in multi-word units:
+- [x] **Phrases are first-class, not their head word.** Japanese meaning often lives in multi-word units:
   compound particles (に関して "regarding", について, によって, として, にとって, に対して), set phrases and idioms
   (歯切れが悪い "evasive, not straight-talking", 店を出す, 気になる, 手を出す), noun + する/とする/にする phrases
   (必要とする), and split patterns (いかに…のか). Each gets:
@@ -121,14 +121,14 @@ docs/pending-notes.md and get loaded in as part of item 5.
 - [ ] **Ask can write guides:** "write a guide on 店を出す" creates a vocab or grammar guide (root form),
   saved to the Library; Ask offers "Make a guide for X" when an answer reveals a missing set phrase.
   Write 店を出す first.
-- [ ] **"Set phrases and expressions" group** in the Library's Words section; set phrases detected
+- [x] **"Set phrases and expressions" group** in the Library's Words section; set phrases detected
   automatically get their own 📖 chip in the word card.
-- [ ] **Noun-modifying clauses everywhere:** add a fixed form for clauses that describe a noun (殺した連中, 要らない連中,
+- [x] **Noun-modifying clauses everywhere:** add a fixed form for clauses that describe a noun (殺した連中, 要らない連中,
   吸血鬼を取り巻くコウモリ) and tag the verb or adjective with it as well as its own form (past, negative…), so its
   guide chip appears. A built-in guide for it (plain forms before a noun, が not は inside the clause, no
   "that/which", tense inside the clause). Every built-in verb-form guide (past, negative, ～ている, potential,
   passive, causative, ～たい…) gets a "Before a noun" use with an example; written guides are asked to cover it too.
-- [ ] **Guides shaped by what the item is** (the なり guide problem): classify each item as a content word, a
+- [x] **Guides shaped by what the item is** (the なり guide problem): classify each item as a content word, a
   function word / suffix / particle, or a phrase, and use a matching template. Function words like なり get
   the grammar template (core idea, how it attaches, uses, look-alikes), not the word template ("How it's
   built: nothing to break down"). Every guide leads with the line where you met it and the core idea in
@@ -167,22 +167,22 @@ docs/pending-notes.md and get loaded in as part of item 5.
   - written with an older guide version.
   Shows the estimated cost, rewrites the ones you tick (batch processing at half price, or straight away),
   keeps the old version so a rewrite can be undone, keeps your question notes, and updates the model label.
-- [ ] **Consistency check on new guides:** a cheap pass that flags contradictions inside a guide (the なり guide
+- [x] **Consistency check on new guides:** a cheap pass that flags contradictions inside a guide (the なり guide
   says it attaches to adjectives and verbs, then lists that as a mistake) and claims it can't support, and
   fixes them before saving.
 - [ ] **Dictionary-grounded guides:** pass the dictionary's readings and meanings into guide prompts.
 
 ## 6. Grammar as important as vocab
 
-- [ ] **Study tab** (replacing Words): Words | Grammar side by side. Grammar lists every form in the episode,
+- [x] **Study tab** (replacing Words): Words | Grammar side by side. Grammar lists every form in the episode,
   most frequent first, count, example line to jump to, ✓ if its guide was read, ☆ to add to review,
   filter for unstudied forms. Built from the line analyses at no extra cost.
-- [ ] **Grammar counts on the Progress page,** a grammar filter in the word bank, an optional underline
+- [x] **Grammar counts on the Progress page,** a grammar filter in the word bank, an optional underline
   under unstudied forms.
 
 ## 7. Saved words
 
-- [ ] **Saved cards lead with the root:** 食べる with its reading and plain meaning (the analysis returns the
+- [x] **Saved cards lead with the root:** 食べる with its reading and plain meaning (the analysis returns the
   root's reading; later the dictionary). "Met as" lists each conjugated form with its in-context meaning
   and line. Review asks about the root with the met form as the example.
 

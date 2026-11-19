@@ -30,6 +30,10 @@
       'beki', 'nakereba_naranai', 'nakute_mo_ii', 'koto_ga_aru', 'koto_ga_dekiru', 'tsumori', 'tokoro', 'bakari_just',
       'sugiru', 'yasui_nikui', 'hou_ga_ii', 'to_omou', 'to_iu', 'quotation_to_tte', 'nominalizer_no_koto', 'wake',
       'zu_ni', 'mama', 'uchi_ni', 'tame_ni', 'you_ni', 'n_ja_nai', 'janai_ka', 'ka_dou_ka', 'question_word_ka_mo',
+      // combined particles and forms added with phrases (0.2.1)
+      'dewa_contrast', 'dewa_nai', 'conj_dewa', 'particle_ni_wa', 'particle_to_wa', 'particle_kara_wa', 'particle_made_wa',
+      'particle_demo', 'particle_ni_mo', 'noun_modifying_clause', 'nari', 'toori', 'mono_wa_mono', 'teki', 'ikani_ka',
+      'ni_mieru', 'to_suru', 'koto_noun_ni_kanshite',
     ],
     ko: [
       'particle_topic_eun_neun', 'particle_subject_i_ga', 'particle_object_eul_reul', 'particle_e', 'particle_eseo',
@@ -95,11 +99,23 @@
       nakereba_ikenai: 'nakereba_naranai', nakya: 'nakereba_naranai', nakucha: 'nakereba_naranai',
       tte_quote: 'quotation_to_tte', quotative_to: 'quotation_to_tte', quotation_to: 'quotation_to_tte',
       janai: 'n_ja_nai', n_janai: 'n_ja_nai',
+      particle_dewa: 'dewa_contrast', dewa: 'dewa_contrast', de_wa: 'dewa_contrast', particle_de_wa: 'dewa_contrast',
+      ja_nai: 'dewa_nai', de_wa_nai: 'dewa_nai', negative_copula: 'dewa_nai', copula_negative: 'dewa_nai',
+      relative_clause: 'noun_modifying_clause', noun_modification: 'noun_modifying_clause', modifying_clause: 'noun_modifying_clause',
+      niwa: 'particle_ni_wa', ni_wa: 'particle_ni_wa', towa: 'particle_to_wa', demo: 'particle_demo', nimo: 'particle_ni_mo',
+      fn_なり: 'nari', fn_とおり: 'toori', fn_どおり: 'toori', fn_通り: 'toori', fn_的: 'teki', fn_では: 'dewa_contrast', fn_じゃ: 'dewa_contrast',
+      fn_には: 'particle_ni_wa', fn_とは: 'particle_to_wa', fn_でも: 'particle_demo', fn_にも: 'particle_ni_mo',
+      fn_は: 'particle_wa', fn_が: 'particle_ga', fn_を: 'particle_wo', fn_に: 'particle_ni', fn_で: 'particle_de', fn_も: 'particle_mo',
+      fn_の: 'particle_no', fn_と: 'particle_to', fn_から: 'particle_kara', fn_まで: 'particle_made', fn_など: 'particle_nado',
+      fn_だけ: 'particle_dake', fn_しか: 'particle_shika', fn_ばかり: 'particle_bakari', fn_こそ: 'particle_koso', fn_って: 'quotation_to_tte',
+      fn_よ: 'ending_yo', fn_ね: 'ending_ne', fn_か: 'ending_ka', fn_な: 'ending_na', fn_さ: 'ending_sa', fn_かな: 'ending_kana',
+      fn_だ: 'copula_da_desu', fn_です: 'copula_da_desu', fn_らしい: 'rashii', fn_みたい: 'you_mitai', fn_よう: 'you_mitai',
     },
     ko: {}, zh: {},
   };
 
-  const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  // Letters of any script survive (fn_なり), everything else becomes "_".
+  const norm = (s) => String(s || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '');
   const known = {};
   for (const [lang, list] of Object.entries(IDS)) known[lang] = new Set(list);
 

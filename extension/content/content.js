@@ -722,7 +722,7 @@
     head.append(logo, titles, hideBtn, readBtn, bankBtn, close);
 
     // ---- tabs
-    const TABS = [['line', 'Line'], ['transcript', 'Transcript'], ['words', 'Words'], ['subs', 'Subtitles'], ['display', 'Display']];
+    const TABS = [['line', 'Line'], ['transcript', 'Transcript'], ['words', 'Study'], ['subs', 'Subtitles'], ['display', 'Display']];
     const tabBar = h('div', 'sg-tabs');
     const tabButtons = new Map();
     const tabBodies = new Map();
@@ -739,7 +739,7 @@
       b.append(h('span', 'sg-tab-long', label), h('span', 'sg-tab-short', SHORT[id] || label));
       b.addEventListener('click', () => {
         setTab(id);
-        if (id === 'words' && !wordsBody.childElementCount) openEpisodeWords();
+        if (id === 'words') openStudy(studyMode);
         if (id === 'subs' && !findBody.childElementCount) openFind();
       });
       tabButtons.set(id, b);
@@ -789,10 +789,20 @@
     tabBodies.get('transcript').append(list);
 
     // ---- Words: the episode's vocabulary
+    // Study: the episode's words, grammar and phrases, side by side.
+    const studySeg = h('div', 'sg-studyseg');
+    const studyBtns = new Map();
+    for (const [id, label] of [['words', 'Words'], ['grammar', 'Grammar'], ['phrases', 'Phrases']]) {
+      const b = h('button', 'sg-seg-b', label);
+      b.addEventListener('click', () => openStudy(id));
+      studyBtns.set(id, b);
+      studySeg.append(b);
+    }
     const words = h('div', 'sg-pane');
     const wordsBody = h('div', 'sg-pane-body');
-    words.append(wordsBody);
-    tabBodies.get('words').append(words);
+    const studyBody = h('div', 'sg-pane-body');
+    words.append(wordsBody, studyBody);
+    tabBodies.get('words').append(studySeg, words);
 
     // ---- Subtitles: track, timing, finding and loading subtitles
     const subsTab = tabBodies.get('subs');
@@ -977,7 +987,7 @@
     setTab('line');
     return {
       el, status, select, offset, hint, showChips, hideBtn, loopBtn, siteBox, classChips, jlptChips, look, setTab,
-      find, findBody, words, wordsBody, guide, guideTitle, guideBody, detail, list, rows: new Map(),
+      find, findBody, words, wordsBody, studyBody, studyBtns, guide, guideTitle, guideBody, detail, list, rows: new Map(),
     };
   }
 
@@ -1032,6 +1042,7 @@
     c.toggle('sg-no-parts', !settings.showParts);
     c.toggle('sg-no-mean', !settings.showMeaning);
     c.toggle('sg-no-roles', !settings.showRoles);
+    c.toggle('sg-no-phrases', settings.showPhrases === false);
     c.toggle('sg-no-tr', !settings.showTranslation);
     c.toggle('sg-hidden', overlayHidden);
     ui.panel.hideBtn.classList.toggle('sg-on', !overlayHidden);
@@ -1421,13 +1432,32 @@
       const t = active();
       const ctx = { key, sentence: cue.text, translation: a.tr, lang: langCode(a.lang), time: cue.start + (t ? t.offset : 0) };
       let index = 0;
+      // Phrases whose words sit next to each other are wrapped, with one meaning over the whole span.
+      const spans = phraseSpans(a);
+      let group = null;
+      let groupEnd = -1;
       for (const item of alignWords(cue.text, a.w)) {
         if (item.gap != null) {
-          line.append(buildGap(item.gap));
+          (group && index <= groupEnd ? group.row : line).append(buildGap(item.gap));
           continue;
         }
         const w = item.word;
-        line.append(buildToken(w, index++, w.c !== lastPhrase, ctx));
+        const i = index++;
+        const sp = spans.byStart.get(i);
+        if (sp) {
+          group = buildPhraseBox(sp, ctx);
+          groupEnd = sp.to;
+          line.append(group.el);
+        }
+        const tok = buildToken(w, i, w.c !== lastPhrase, ctx);
+        const linked = spans.patternOf.get(i);
+        if (linked) {
+          tok.dataset.pat = linked.id;
+          tok.addEventListener('mouseenter', () => highlightPattern(linked.id, true));
+          tok.addEventListener('mouseleave', () => highlightPattern(linked.id, false));
+        }
+        (group && i <= groupEnd ? group.row : line).append(tok);
+        if (group && i >= groupEnd) group = null;
         lastPhrase = w.c;
       }
       tr.textContent = a.tr || '';
@@ -1440,6 +1470,43 @@
     tr.style.display = tr.textContent ? '' : 'none';
     sub.classList.add('sg-show');
     renderDetail(cue, a);
+  }
+
+  // Contiguous phrases (by first word index) and the words of split patterns.
+  function phraseSpans(a) {
+    const byStart = new Map();
+    const patternOf = new Map();
+    const taken = new Set();
+    const list = (Array.isArray(a.phrases) ? a.phrases : []).filter((p) => p && Array.isArray(p.w) && p.w.length >= 2);
+    list.forEach((p, n) => {
+      const idx = p.w.slice().sort((x, y) => x - y);
+      const contiguous = idx.every((v, j) => j === 0 || v === idx[j - 1] + 1);
+      if (contiguous && !idx.some((v) => taken.has(v))) {
+        idx.forEach((v) => taken.add(v));
+        byStart.set(idx[0], Object.assign({ from: idx[0], to: idx[idx.length - 1], n }, p));
+      } else if (!contiguous) {
+        for (const v of idx) patternOf.set(v, { id: 'p' + n, phrase: p });
+      }
+    });
+    return { byStart, patternOf };
+  }
+
+  function buildPhraseBox(sp, ctx) {
+    const el = h('span', 'sg-phr sg-phr-' + String(sp.kind || '').replace(/\s+/g, '-'));
+    const m = h('span', 'sg-phr-m', sp.m || '');
+    m.title = (sp.d || '') + (sp.m ? ' — ' + sp.m : '');
+    const row = h('span', 'sg-phr-row');
+    el.append(m, row);
+    m.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openPhraseCard(sp, ctx, el);
+    });
+    return { el, row };
+  }
+
+  function highlightPattern(id, on) {
+    if (!ui) return;
+    for (const t of ui.line.querySelectorAll(`[data-pat="${id}"]`)) t.classList.toggle('sg-pat-on', on);
   }
 
   function clearLine() {
@@ -1589,26 +1656,49 @@
     const deep = h('div', 'sg-pop-deep');
     // Guides: one for the word itself (what it means, how it's built, where it fits and
     // where it doesn't), and one for each grammar form it carries.
-    const wordForm = wordGuideForm(w, ctx.lang);
+    const fn = isFunctionWord(w);
+    const wordForm = fn ? functionWordForm(w, ctx.lang) : wordGuideForm(w, ctx.lang);
     // Names and places get their short meaning, not a whole guide.
     const isName = SG.wordClass(w.pos) === 'name';
-    const guides = ((isTrivial(w) && forms.length) || isName ? [] : [{ f: wordForm, word: true }]).concat(forms.map((f) => ({ f, word: false })));
-    const firstGuide = forms.length ? guides.find((g) => !g.word) : guides[0];
+    const own = (isTrivial(w) && forms.length) || isName || (fn && forms.length) ? [] : [{ f: wordForm, word: !fn }];
+    // Phrases this word is part of come first: their meaning belongs to the whole.
+    const inPhrases = phrasesWith(ctx, index);
+    for (const p of inPhrases) {
+      const box = h('div', 'sg-pop-phrase');
+      box.append(h('span', 'sg-pop-forms-label', 'Part of'));
+      const name = h('button', 'sg-form sg-form-word', p.d);
+      name.title = 'Open the card for the whole phrase';
+      name.addEventListener('click', () => openPhraseCard(p, ctx, tok));
+      box.append(name, h('span', 'sg-pop-phrase-m', p.m || ''));
+      pop.append(box);
+    }
+    const phraseGuides = inPhrases.map((p) => {
+      const f = phraseGuideForm(p, ctx.lang);
+      return { f, word: !f.grammar, phrase: p };
+    });
+    const guides = phraseGuides.concat(own, forms.map((f) => ({ f, word: false })));
+    const firstGuide = phraseGuides[0] || (forms.length ? guides.find((g) => !g.word) : guides[0]);
     let currentGuide = firstGuide;
+    const openG = (g) => {
+      if (g.phrase && g.word) showPhraseGuide(deep, g.phrase, ctx);
+      else if (g.phrase) showGuide(deep, g.f, ctx, phraseAsWord(g.phrase));
+      else if (g.word) showWordGuide(deep, w, ctx);
+      else showGuide(deep, g.f, ctx, w);
+    };
     if (guides.length) {
       const row = h('div', 'sg-pop-forms');
       row.append(h('span', 'sg-pop-forms-label', 'Guides'));
       for (const g of guides) {
-        const chip = h('button', 'sg-form' + (g.word ? ' sg-form-word' : '') + (g === firstGuide ? ' sg-on' : ''), g.word ? '📖 ' + (w.d || w.s) : g.f.name || g.f.k);
-        chip.title = g.word ? 'Everything about this word: meanings, how it is built, where it fits and where it does not' : 'Full guide to this grammar form';
+        const label = g.phrase ? (g.word ? '📖 ' : '') + g.phrase.d : g.word ? '📖 ' + (w.d || w.s) : g.f.name || g.f.k;
+        const chip = h('button', 'sg-form' + (g.word ? ' sg-form-word' : '') + (g === firstGuide ? ' sg-on' : ''), label);
+        chip.title = g.phrase ? 'Guide to the whole phrase' : g.word ? 'Everything about this word: meanings, how it is built, where it fits and where it does not' : 'Full guide to this grammar form';
         chip.dataset.k = g.f.k;
         chip.addEventListener('click', () => {
           clearTimeout(deepTimer);
           for (const c of pop.querySelectorAll('.sg-form, .sg-char')) c.classList.toggle('sg-on', c === chip);
           pop.classList.add('sg-wide');
           currentGuide = g;
-          if (g.word) showWordGuide(deep, w, ctx);
-          else showGuide(deep, g.f, ctx, w);
+          openG(g);
           placePop(tok);
         });
         row.append(chip);
@@ -1623,11 +1713,8 @@
       full.title = 'Read this guide full screen';
       full.addEventListener('click', () => {
         const g = currentGuide || firstGuide;
-        openReader(g.f, ctx, w, g.word, () => {
-          if (deep.isConnected && deep.classList.contains('sg-show') && currentGuide === g) {
-            if (g.word) showWordGuide(deep, w, ctx);
-            else showGuide(deep, g.f, ctx, w);
-          }
+        openReader(g.f, ctx, g.phrase ? phraseAsWord(g.phrase) : w, g.word, () => {
+          if (deep.isConnected && deep.classList.contains('sg-show') && currentGuide === g) openG(g);
         });
       });
       row.append(lib, full);
@@ -1670,17 +1757,16 @@
     const ask = () => {
       if (!firstGuide) return;
       pop.classList.add('sg-wide');
-      if (firstGuide.word) showWordGuide(deep, w, ctx);
-      else showGuide(deep, firstGuide.f, ctx, w);
+      openG(firstGuide);
       placePop(tok);
     };
-    const ready = firstGuide && deepTexts.has(firstGuide.word ? guideCacheKey(wordForm) : guideCacheKey(firstGuide.f));
+    const ready = firstGuide && deepTexts.has(guideCacheKey(firstGuide.word && !firstGuide.phrase ? wordForm : firstGuide.f));
     if (ready) {
       ask();
     } else if (settings.hasKey && settings.autoDeep && firstGuide) {
       deepTimer = setTimeout(ask, 650);
     } else if (settings.hasKey && firstGuide) {
-      const more = h('button', 'sg-btn', firstGuide.word ? 'Word guide' : 'Full guide to ' + (firstGuide.f.name || firstGuide.f.k));
+      const more = h('button', 'sg-btn', firstGuide.phrase ? 'Guide to ' + firstGuide.phrase.d : firstGuide.word ? 'Word guide' : 'Full guide to ' + (firstGuide.f.name || firstGuide.f.k));
       more.addEventListener('click', () => {
         more.remove();
         ask();
@@ -1759,7 +1845,90 @@
     return { k: `word.${lang || 'und'}.${d}`, name: d + (w.r && w.d === w.s ? ` (${w.r})` : '') };
   }
 
+  // Function words (particles, suffixes, auxiliaries, the copula) get a grammar guide, not a word guide.
+  function isFunctionWord(w) {
+    return /particle|suffix|auxiliary|copula|助詞|助動詞|接尾/i.test(w.pos || '') && !/proper noun/i.test(w.pos || '');
+  }
+  function functionWordForm(w, lang) {
+    const d = w.d || w.s;
+    return { k: SG.canonicalForm(`${lang || 'und'}.fn_${d}`), name: d };
+  }
+
+  // A phrase as a learnable item: its own guide (phrase.<lang>.<d>) or, for a grammar pattern, the
+  // grammar guide named by its identifier.
+  function phraseGuideForm(p, lang) {
+    if (p.kind === 'pattern' && p.k && !p.k.startsWith('phrase.')) return { k: SG.canonicalForm(p.k), name: p.d, grammar: true };
+    const k = p.k && p.k.startsWith('phrase.') ? p.k : `phrase.${lang || 'und'}.${p.d}`;
+    return { k, name: p.d + (p.r ? ` (${p.r})` : ''), phrase: true };
+  }
+  function phraseAsWord(p) {
+    return { s: p.d, d: p.d, r: p.r || '', dr: p.r || '', m: p.m || '', pos: p.kind || 'phrase', k: p.k || '', phrase: true, b: p.b || [] };
+  }
+  async function phraseItem(p, ctx) {
+    return { kind: 'word', lang: ctx.lang, text: p.d, word: Object.assign(phraseAsWord(p), { f: [] }), context: await lineContext(ctx) };
+  }
+  function phrasesWith(ctx, index) {
+    const a = analyses.get(ctx.key);
+    return (a && Array.isArray(a.phrases) ? a.phrases : []).filter((p) => p && Array.isArray(p.w) && p.w.length >= 2 && p.w.includes(index) && p.d);
+  }
+
+  // The card for a whole phrase (clicked on its meaning above the line, or from a word's card).
+  function openPhraseCard(p, ctx, anchor) {
+    hidePop();
+    const pop = ui.pop;
+    pop.textContent = '';
+    pop.classList.add('sg-wide');
+    popFor = anchor;
+    const head = h('div', 'sg-pop-head');
+    const word = h('span', 'sg-pop-word', p.d);
+    word.lang = ctx.lang;
+    head.append(word);
+    if (p.r && !sameText(p.r, p.d)) head.append(h('span', 'sg-pop-read', p.r));
+    head.append(h('span', 'sg-jlpt', p.kind || 'phrase'));
+    head.append(speakButton(p.d, ctx.lang), knownWordButton(phraseAsWord(p), ctx.lang), starButton('word', ctx.lang, p.d, () => phraseItem(p, ctx)));
+    pop.append(head, h('div', 'sg-pop-mean', p.m || ''));
+    if (Array.isArray(p.b) && p.b.length > 1) {
+      const chain = h('div', 'sg-build');
+      p.b.forEach((step, i) => {
+        if (i) chain.append(h('span', 'sg-build-arrow', '→'));
+        const one = h('span', 'sg-build-step');
+        const t = h('span', 'sg-build-t', step.t);
+        t.lang = ctx.lang;
+        one.append(t, h('span', 'sg-build-m', step.m));
+        chain.append(one);
+      });
+      pop.append(chain);
+    }
+    const deep = h('div', 'sg-pop-deep');
+    const form = phraseGuideForm(p, ctx.lang);
+    const row = h('div', 'sg-pop-forms');
+    row.append(h('span', 'sg-pop-forms-label', 'Guide'));
+    const chip = h('button', 'sg-form' + (form.grammar ? '' : ' sg-form-word') + ' sg-on', (form.grammar ? '' : '📖 ') + p.d);
+    const open = () => {
+      if (form.grammar) showGuide(deep, form, ctx, phraseAsWord(p));
+      else showPhraseGuide(deep, p, ctx);
+      placePop(anchor);
+    };
+    chip.addEventListener('click', open);
+    const full = h('button', 'sg-btn sg-lib sg-expand', '⤢');
+    full.title = 'Read this guide full screen';
+    full.addEventListener('click', () => openReader(form, ctx, phraseAsWord(p), !form.grammar));
+    row.append(chip, full);
+    pop.append(row, deep);
+    pop.classList.add('sg-show');
+    placePop(anchor);
+    if (deepTexts.has(guideCacheKey(form)) || settings.autoDeep) open();
+  }
+
+  function showPhraseGuide(el, p, ctx) {
+    const form = phraseGuideForm(p, ctx.lang);
+    startDeep(el, guideCacheKey(form), true, {
+      kind: 'wordguide', form, lang: ctx.lang, sentence: ctx.sentence, word: p.d, dict: p.d, reading: p.r, pos: p.kind, meaning: p.m, phrase: true,
+    });
+  }
+
   function showWordGuide(el, w, ctx) {
+    if (w.phrase) return showPhraseGuide(el, { d: w.d, r: w.r, kind: w.pos, m: w.m, k: w.k }, ctx);
     const form = wordGuideForm(w, ctx.lang);
     startDeep(el, guideCacheKey(form), true, {
       kind: 'wordguide', form, lang: ctx.lang, sentence: ctx.sentence, word: w.s, dict: w.d, reading: w.r, pos: w.pos, meaning: w.m,
@@ -1829,27 +1998,8 @@
     lineTools.append(say, allKnown, saveLbl);
     box.append(lineTools);
     box.append(askBox(cue, a));
-    if (a.lit) {
-      box.append(h('div', 'sg-section', 'Word for word'), h('div', 'sg-d-lit', a.lit));
-    }
     const words = a.w || [];
-    if (words.length) {
-      box.append(h('div', 'sg-section', 'Structure'));
-      const chips = h('div', 'sg-chips');
-      let cur = null;
-      let chip = null;
-      for (const w of words) {
-        if (w.c !== cur || !chip) {
-          cur = w.c;
-          chip = h('span', 'sg-chip sg-role-' + (w.role || 'other'));
-          chip.append(h('span', 'sg-chip-role', ROLE_LABELS[w.role] || 'other'), h('span', 'sg-chip-text', ''));
-          chips.append(chip);
-        }
-        chip.lastChild.textContent += w.s;
-      }
-      box.append(chips);
-      if (a.pat) box.append(h('div', 'sg-d-pat', a.pat));
-    }
+    box.append(howItWorks(a, words));
     if (a.notes && a.notes.length) {
       box.append(h('div', 'sg-section', 'Notes'));
       for (const n of a.notes) box.append(h('div', 'sg-d-note', n));
@@ -1951,6 +2101,62 @@
     p.guideBody.scrollTop = 0;
     if (isWord) showWordGuide(p.guideBody, w, ctx);
     else showGuide(p.guideBody, form, ctx, w);
+  }
+
+  // "How the sentence works": the line in its own order, chunk by chunk with a gloss under each, and
+  // (opened on request) how it builds from the core outward. Older analyses show the literal rendering
+  // and phrase chips they were saved with.
+  function howItWorks(a, words) {
+    const wrap = h('div', 'sg-how');
+    wrap.append(h('div', 'sg-section', 'How the sentence works'));
+    const chunks = Array.isArray(a.chunks) ? a.chunks.filter((c) => words[c.from] && words[c.to]) : [];
+    if (chunks.length) {
+      const row = h('div', 'sg-chunks');
+      for (const c of chunks) {
+        const el = h('span', 'sg-chunk sg-role-' + (c.role || 'other'));
+        const jp = h('span', 'sg-chunk-t', words.slice(c.from, c.to + 1).map((w) => w.s).join(''));
+        jp.lang = a.lang || '';
+        el.append(jp, h('span', 'sg-chunk-m', c.m || ''), h('span', 'sg-chunk-r', ROLE_LABELS[c.role] || ''));
+        row.append(el);
+      }
+      if (a.cont) row.append(h('span', 'sg-chunk-cont', 'continues →'));
+      wrap.append(row);
+    } else if (a.lit || words.length) {
+      if (a.lit) wrap.append(h('div', 'sg-d-lit', a.lit));
+      const chips = h('div', 'sg-chips');
+      let cur = null;
+      let chip = null;
+      for (const w of words) {
+        if (w.c !== cur || !chip) {
+          cur = w.c;
+          chip = h('span', 'sg-chip sg-role-' + (w.role || 'other'));
+          chip.append(h('span', 'sg-chip-role', ROLE_LABELS[w.role] || 'other'), h('span', 'sg-chip-text', ''));
+          chips.append(chip);
+        }
+        chip.lastChild.textContent += w.s;
+      }
+      wrap.append(chips);
+      if (a.pat) wrap.append(h('div', 'sg-d-pat', a.pat));
+    }
+    if (Array.isArray(a.build) && a.build.length > 1) {
+      const more = h('button', 'sg-more', 'How it fits together ▾');
+      const steps = h('ol', 'sg-build-steps');
+      steps.hidden = true;
+      for (const st of a.build) {
+        const li = h('li', 'sg-bstep');
+        const t = h('span', 'sg-bstep-t', st.t);
+        t.lang = a.lang || '';
+        li.append(t, h('span', 'sg-bstep-m', st.m));
+        if (st.why) li.append(h('span', 'sg-bstep-why', st.why));
+        steps.append(li);
+      }
+      more.addEventListener('click', () => {
+        steps.hidden = !steps.hidden;
+        more.textContent = steps.hidden ? 'How it fits together ▾' : 'How it fits together ▴';
+      });
+      wrap.append(more, steps);
+    }
+    return wrap;
   }
 
   function renderTranscript() {
@@ -2327,9 +2533,108 @@
 
   // ------------------------------------------------------------ episode words
 
+  let studyMode = 'words';
+  function openStudy(mode) {
+    studyMode = mode;
+    const p = ui.panel;
+    p.setTab('words');
+    for (const [id, b] of p.studyBtns) b.classList.toggle('sg-on', id === mode);
+    p.wordsBody.hidden = mode !== 'words';
+    p.studyBody.hidden = mode === 'words';
+    if (mode === 'words') {
+      if (!p.wordsBody.childElementCount) openEpisodeWords();
+    } else if (mode === 'grammar') renderStudyGrammar(p.studyBody);
+    else renderStudyPhrases(p.studyBody);
+  }
+
+  // Every grammar form in the episode's analysed lines, most frequent first. Free: it comes from the
+  // line breakdowns already made.
+  function collectStudy(kind) {
+    const t = active();
+    const out = new Map();
+    if (!t) return { t, list: [] };
+    t.cues.forEach((cue, i) => {
+      const a = analyses.get(t.keys[i]);
+      if (!a || !a.w) return;
+      const ctx = { key: t.keys[i], sentence: cue.text, translation: a.tr, lang: langCode(a.lang), time: cue.start + t.offset };
+      const add = (k, item) => {
+        if (!out.has(k)) out.set(k, Object.assign(item, { count: 0, first: i, ctx }));
+        out.get(k).count++;
+      };
+      if (kind === 'grammar') {
+        a.w.forEach((w) => formsOf(w).forEach((f) => add(f.k, { f, w })));
+      } else {
+        (a.phrases || []).filter((p) => p && p.d && Array.isArray(p.w) && p.w.length >= 2).forEach((p) => add(p.k || p.d, { p }));
+      }
+    });
+    return { t, list: Array.from(out.values()).sort((x, y) => y.count - x.count || x.first - y.first) };
+  }
+
+  function studyRows(body, kind) {
+    body.textContent = '';
+    const { t, list } = collectStudy(kind);
+    if (!t) {
+      body.append(h('div', 'sg-g-p', 'No subtitles yet.'));
+      return;
+    }
+    const ready = t.keys.filter((k) => analyses.has(k)).length;
+    const note = h('div', 'sg-find-status', `${list.length} ${kind === 'grammar' ? 'grammar forms' : 'phrases'} in the ${ready} of ${t.cues.length} lines prepared so far, most frequent first.`);
+    const filter = h('label', 'sg-f-check');
+    const box = h('input');
+    box.type = 'checkbox';
+    filter.append(box, document.createTextNode(kind === 'grammar' ? ' Only forms I haven\'t studied' : ' Only phrases I haven\'t saved'));
+    const rows = h('div', 'sg-study');
+    body.append(note, filter, rows);
+    const draw = async () => {
+      rows.textContent = '';
+      const keys = list.map((x) => (kind === 'grammar' ? ['grammar', x.ctx.lang, x.f.k] : ['word', x.ctx.lang, x.p.d]).join('|'));
+      const status = (await request({ type: 'bankStatus', keys })).status || {};
+      list.forEach((x, n) => {
+        const saved = Boolean(status[keys[n]]);
+        const read = kind === 'grammar' && deepTexts.has(guideCacheKey(x.f));
+        if (box.checked && (saved || read)) return;
+        const row = h('div', 'sg-wl');
+        const top = h('div', 'sg-wl-top');
+        const name = h('button', 'sg-form' + (kind === 'grammar' ? '' : ' sg-form-word') + (read ? ' sg-saved' : ''), kind === 'grammar' ? x.f.name || x.f.k : x.p.d);
+        name.title = kind === 'grammar' ? 'Open the guide to this form' : 'Open the guide to this phrase';
+        name.addEventListener('click', () => {
+          if (kind === 'grammar') openPanelGuide(x.f, x.ctx, x.w);
+          else openPanelGuide(phraseGuideForm(x.p, x.ctx.lang), x.ctx, phraseAsWord(x.p), !phraseGuideForm(x.p, x.ctx.lang).grammar);
+        });
+        top.append(name, h('span', 'sg-wl-n', '×' + x.count));
+        const star = kind === 'grammar'
+          ? starButton('grammar', x.ctx.lang, x.f.k, async () => ({ kind: 'grammar', lang: x.ctx.lang, text: x.f.k, name: x.f.name || x.f.k, context: await lineContext(x.ctx) }))
+          : starButton('word', x.ctx.lang, x.p.d, () => phraseItem(x.p, x.ctx));
+        top.append(star);
+        row.append(top);
+        if (kind === 'phrases' && x.p.m) row.append(h('div', 'sg-wl-m', x.p.m));
+        const ex = h('button', 'sg-wl-ex', t.cues[x.first].text);
+        ex.title = 'Jump to this line';
+        ex.addEventListener('click', () => {
+          video.currentTime = t.cues[x.first].start + t.offset + 0.01;
+        });
+        row.append(ex);
+        rows.append(row);
+      });
+      if (!rows.childElementCount) rows.append(h('div', 'sg-g-p', list.length ? 'All studied.' : 'Nothing yet: lines are listed here as they are prepared.'));
+    };
+    box.addEventListener('change', draw);
+    draw();
+  }
+  function renderStudyGrammar(body) {
+    studyRows(body, 'grammar');
+  }
+  function renderStudyPhrases(body) {
+    studyRows(body, 'phrases');
+  }
+
   async function openEpisodeWords() {
     const p = ui.panel;
     p.setTab('words');
+    studyMode = 'words';
+    for (const [id, b] of p.studyBtns) b.classList.toggle('sg-on', id === 'words');
+    p.wordsBody.hidden = false;
+    p.studyBody.hidden = true;
     const body = p.wordsBody;
     body.textContent = '';
     const t = active();
@@ -2443,7 +2748,7 @@
   async function wordItem(w, ctx) {
     return {
       kind: 'word', lang: ctx.lang, text: w.d || w.s,
-      word: { s: w.s, r: w.r, f: SG.ruby.segmentsFor(w, ctx.lang), d: w.d, pos: w.pos, m: w.m, p: w.p, n: w.n, g: formsOf(w) },
+      word: { s: w.s, r: w.r, f: SG.ruby.segmentsFor(w, ctx.lang), d: w.d, dr: w.dr || '', pos: w.pos, m: w.m, p: w.p, n: w.n, g: formsOf(w) },
       context: await lineContext(ctx),
     };
   }

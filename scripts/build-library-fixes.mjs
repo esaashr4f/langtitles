@@ -6,7 +6,7 @@ const dir = new URL('./guides/', import.meta.url);
 for (const file of readdirSync(dir).filter((f) => /^library-fixes-.+\.txt$/.test(f))) {
   const lang = file.replace(/^library-fixes-|\.txt$/g, '');
   const ops = [];
-  const text = readFileSync(new URL(file, dir), 'utf8').split('\n').filter((l) => !l.startsWith('#')).join('\n');
+  const text = readFileSync(new URL(file, dir), 'utf8').split('\n').filter((l) => !/^#(?!#)/.test(l)).join('\n');
   for (const block of text.split(/^=== /m).slice(1)) {
     const nl = block.indexOf('\n');
     const head = (nl < 0 ? block : block.slice(0, nl)).trim();
@@ -35,7 +35,7 @@ for (const file of readdirSync(dir).filter((f) => /^library-fixes-.+\.txt$/.test
       throw new Error(`${file}: unknown directive ${verb}`);
     }
   }
-  const version = 1;
+  const version = 2; // 2: version 1 lost the guides' headings in the build
   writeFileSync(new URL(`../extension/data/library-fixes-${lang}.json`, import.meta.url), JSON.stringify({ lang, version, ops }) + '\n');
   console.log(lang, ops.length, 'fixes');
 }

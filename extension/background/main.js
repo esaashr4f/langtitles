@@ -172,7 +172,11 @@
     };
     try {
       const writer = req.kind === 'wordguide' ? claude.explainWordGuide : claude.explainForm;
-      const text = await writer(forTab(port.sender && port.sender.tab ? port.sender.tab.id : -1), req, (delta) => each((w) => w.port.postMessage({ type: 'deepDelta', reqId: w.reqId, delta })));
+      const tabSettings = forTab(port.sender && port.sender.tab ? port.sender.tab.id : -1);
+      let text = await writer(tabSettings, req, (delta) => each((w) => w.port.postMessage({ type: 'deepDelta', reqId: w.reqId, delta })));
+      // Before it's saved: no romaji, and a proofreading pass for contradictions (fixed only if found).
+      text = SG.guideText.stripRomaji(text);
+      if (settings.checkGuides !== false) text = (await claude.checkGuide(tabSettings, text)).text;
       const entry = {
         key, k: req.form.k, name: req.form.name || req.form.k, kind: req.kind === 'wordguide' ? 'word' : 'grammar', lang: req.lang || '', nativeLang: settings.nativeLang,
         text, sentence: req.sentence || '', word: req.word || '', model: settings.model, savedAt: Date.now(),
@@ -498,6 +502,12 @@
       contexts.unshift(item.context);
     }
     entry.contexts = contexts.slice(0, 12);
+    // Every form a word was saved from (食べさせられた, 食べない…) is kept under its dictionary form.
+    if (item.word && item.word.s) {
+      const met = ((prev && prev.metAs) || []).filter((x) => x.s !== item.word.s);
+      met.unshift({ s: item.word.s, m: item.word.m || '', sentence: item.context ? item.context.sentence : '' });
+      entry.metAs = met.slice(0, 12);
+    }
     delete entry.context;
     await cache.putMany('bank', [[key, entry]]);
     return entry;

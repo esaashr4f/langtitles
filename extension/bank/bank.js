@@ -142,14 +142,28 @@
     const card = h('div', 'card');
     const head = h('div', 'card-head');
     head.append(rubyEl(w.s === item.text ? w.f : null, item.text));
-    if (w.s && w.s !== item.text) head.append(h('span', 'pos', 'seen as ' + w.s + (w.r ? ` (${w.r})` : '')));
-    else if (w.r && !(w.f && w.f.some((x) => x.r))) head.append(h('span', 'reading', w.r));
+    // The dictionary form leads, with its own reading; the forms it was met in follow.
+    if (w.s && w.s !== item.text) {
+      if (w.dr) head.append(h('span', 'reading', w.dr));
+    } else if (w.r && !(w.f && w.f.some((x) => x.r))) head.append(h('span', 'reading', w.r));
     head.append(sayButton(w.s || item.text, item.lang), h('span', 'lang-tag', SG.lang.langName(item.lang)), h('span', 'spacer'));
     const del = h('button', 'icon-btn', 'Remove');
     del.addEventListener('click', () => remove(item));
     head.append(del);
     card.append(head);
-    if (w.m) card.append(h('div', 'meaning', w.m));
+    const met = (item.metAs && item.metAs.length ? item.metAs : w.s && w.s !== item.text ? [{ s: w.s, m: w.m }] : []).filter((x) => x.s && x.s !== item.text);
+    if (met.length) {
+      const box = h('div', 'met-as');
+      box.append(h('span', 'pos', 'Met as'));
+      for (const x of met) {
+        const one = h('span', 'met-one');
+        const form = h('b', '', x.s);
+        form.lang = item.lang;
+        one.append(form, document.createTextNode(x.m ? ' — ' + x.m : ''));
+        box.append(one);
+      }
+      card.append(box);
+    } else if (w.m) card.append(h('div', 'meaning', w.m));
     if (item.lang === 'ja') {
       const pitchBox = h('div', 'pos');
       card.append(pitchBox);

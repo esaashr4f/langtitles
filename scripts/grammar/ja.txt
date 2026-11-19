@@ -50,6 +50,7 @@ te-form + いる. {食|た}べている, {読|よ}んでいる, {結婚|けっ�
 In casual speech the い drops: {食|た}べてる, {読|よ}んでる, {知|し}ってる.
 
 ## When to use it
+- Before a noun (often shortened to ～た): {眼鏡|めがね}をかけている{人|ひと} / {眼鏡|めがね}をかけた{人|ひと} — the person wearing glasses.
 - An action in progress, with verbs that take time (eat, read, run, rain).
 {今|いま}、ご{飯|はん}を{食|た}べている。 — I'm eating right now.
 - A resulting state, with verbs of instant change (die, marry, open, arrive, know, wear).
@@ -216,6 +217,7 @@ Like the te-form, with た/だ instead of て/で. {食|た}べた, {読|よ}ん
 - Nouns and な-adjectives: だった. {学生|がくせい}だった. Polite: でした.
 
 ## When to use it
+- Before a noun, describing it: {昨日|きのう}{見|み}た{映画|えいが} — the film I saw yesterday; {俺|おれ}が{殺|ころ}した{連中|れんちゅう} — the guys I killed (see the guide to clauses that describe a noun).
 - Past events.
 {昨日|きのう}{映画|えいが}を{見|み}た。 — I watched a film yesterday.
 - Completion, including before a future event.
@@ -248,6 +250,7 @@ The plain negative: "not". ない itself conjugates like an い-adjective, so it
 - Casual: ～ん ({知|し}らん), ～ねえ ({知|し}らねえ, rough).
 
 ## When to use it
+- Before a noun, describing it: {要|い}らない{物|もの} — things nobody needs; {知|し}らない{人|ひと} — a stranger.
 - Plain negation.
 {今日|きょう}は{行|い}かない。 — I'm not going today.
 - Questions as invitations: "won't you…?"
@@ -306,6 +309,7 @@ The form for ability or possibility: "can", "be able to".
 - The object can take が instead of を: {日本語|にほんご}が{話|はな}せる.
 
 ## When to use it
+- Before a noun: {泳|およ}げる{人|ひと} — people who can swim.
 - Ability.
 {泳|およ}げる？ — Can you swim?
 - Possibility in circumstances.
@@ -336,6 +340,7 @@ The passive: the subject has something done to it. Japanese also has a "sufferin
 - The doer is marked with に (sometimes によって in writing).
 
 ## When to use it
+- Before a noun: {盗|ぬす}まれた{財布|さいふ} — the stolen wallet.
 - Ordinary passive.
 {先生|せんせい}に{褒|ほ}められた。 — I was praised by the teacher.
 - Suffering passive: being troubled by something, even with intransitive verbs.
@@ -368,6 +373,7 @@ The causative: someone makes or lets someone else do something. Whether it's "ma
 - The person made to act: に (let / ask) or を (make, with intransitive verbs).
 
 ## When to use it
+- Before a noun: {子供|こども}に{食|た}べさせる{料理|りょうり} — food you give children to eat.
 - Making someone do something.
 {子供|こども}に{野菜|やさい}を{食|た}べさせた。 — I made my child eat vegetables.
 - Letting someone do something.
@@ -510,6 +516,7 @@ masu-stem + たい. {食|た}べたい, {行|い}きたい. It conjugates like a
 The object can take が or を: {水|みず}が{飲|の}みたい.
 
 ## When to use it
+- Before a noun: {行|い}きたい{所|ところ} — a place I want to go.
 - Your own wishes.
 {家|いえ}に{帰|かえ}りたい。 — I want to go home.
 - Asking close friends what they want.
@@ -873,3 +880,51 @@ Plain form + かもしれない. Nouns and な-adjectives directly: {雨|あめ}
 
 ## Common mistakes
 - Reading なきゃ as a negative: it means "must".
+
+=== ja.particle_ni_wa | には (for / at, as for)
+## What it is
+には is に + は: the target or place of に, made into the topic or set in contrast. "For X, …", "at X (at least)", "to X (as opposed to others)".
+
+## How to make it
+Noun + には. {私|わたし}には, {東京|とうきょう}には, {明日|あした}までには ("by tomorrow, at the latest").
+
+## When to use it
+- Who something is possible, difficult or true for: {私|わたし}には{難|むずか}しい。 — It's hard for me.
+{子供|こども}には{分|わ}からない。 — A child wouldn't understand.
+- Where something exists, in contrast: {東京|とうきょう}には{海|うみ}がある。 — Tokyo (at least) has the sea.
+- Purpose, with a verb: {駅|えき}に{行|い}くには、このバスが{便利|べんり}だ。 — To get to the station, this bus is handy.
+- Giving to someone, set apart: {彼|かれ}には{言|い}わないで。 — Don't tell *him*.
+
+## When it seems to fit but doesn't
+- では: で + は, for where an action happens or a standard: {学校|がっこう}では{静|しず}かだ (at school, he's quiet) vs {学校|がっこう}には{図書館|としょかん}がある (the school has a library).
+- に alone: when there's no topic or contrast: {駅|えき}に{行|い}く.
+
+## Nuance and register
+Neutral. The は makes it sound like "as for X" or "for X, unlike others".
+
+## Common mistakes
+Using には for where an action happens (use では), and reading it as two unrelated particles.
+
+=== ja.dewa_nai | ではない / じゃない (is not)
+## What it is
+ではない (spoken じゃない) is the negative of だ: "is not". It follows nouns and な-adjectives. The polite form is ではありません / じゃないです.
+
+## How to make it
+- Noun / な-adjective + ではない / じゃない: {学生|がくせい}じゃない, {静|しず}かではない
+- Past: ではなかった / じゃなかった
+- Casual contraction: じゃねえ (rough), じゃん is a different word ("isn't it!")
+- い-adjectives don't use it: {高|たか}くない, not 高いじゃない (that means "it's expensive, isn't it!").
+
+## When to use it
+- Plain negation: {彼|かれ}は{医者|いしゃ}じゃない。 — He isn't a doctor.
+- With の / ん, rhetorical: {君|きみ}のせいじゃないか。 — Isn't it your fault? (pointing it out)
+
+## When it seems to fit but doesn't
+- では as "by / in (contrast)": {日本|にほん}では… — in Japan. Only では followed by ない is "is not".
+- じゃない at the end with rising intonation often means "isn't it?" / "you know", not a negative: いいじゃない。 — That's nice, isn't it?
+
+## Nuance and register
+ではない is neutral or written; じゃない is spoken.
+
+## Common mistakes
+Reading every じゃ as negative; check for ない after it.

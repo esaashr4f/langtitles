@@ -150,6 +150,14 @@ Subtitles that are burned into the video picture cannot be read.
 
 donkey.to and similar sites play the video in an embedded player from another domain. Langtitles runs inside embedded players and captures their subtitle requests, so turning subtitles on in that player should be enough. If no subtitles show up, use **Pick on page** or **Load file**. The popup lists every subtitle file it has captured on the tab, which helps when reporting a site that doesn't work.
 
+## Phrases, and how the sentence works
+
+- **Phrases are units.** Compound particles (に関して "regarding"), set phrases (店を出す, 実行に移す, 必要とする), idioms (歯切れが悪い) and chains of endings (開始したっていうのか) get one meaning over a bracket spanning their words (Show → Phrases). Click the meaning for the phrase's card: what it means as a whole, how it builds up, its own guide, and ☆ to save it as the phrase (not as one of its words). A word's card says which phrase it's part of. Patterns split across a line (いかに…か) light up together. Established compounds such as 素行調査 stay one word, with their parts as pieces.
+- **How the sentence works** (Line tab) shows the line in its own order, chunk by chunk with a gloss under each, and "How it fits together" builds it up from the core outward, showing why the English order differs. Lines that carry on into the next subtitle say so.
+- **Study tab:** Words, Grammar and Phrases for the episode. Grammar lists every form in the lines prepared so far, most frequent first, with an example line to jump to, ✓ for guides you've read and ☆ to review it; free, from the breakdowns already made.
+- **Saved words lead with the dictionary form** and its reading, with every form you met them in ("Met as 食べさせられた — was made to eat").
+- **Guides fit what they're about:** particles, suffixes and endings (なり, では, とおり) get grammar guides; phrases get phrase guides. Every new guide opens with your line and the core idea, runs only as long as it needs, has no romaji, and is proofread by the cheap model (fixed by the guide model only if something is wrong).
+
 ## Your data: questions, backups, spending
 
 - **Questions are kept.** Everything you ask about a line, with the answer, is saved and shown again under that line when you come back to it. Toolbar popup → **Questions** lists them all by show and episode, searchable.

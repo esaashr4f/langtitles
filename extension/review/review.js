@@ -56,6 +56,7 @@
     const segs = w.s === item.text ? w.f : null;
     if (!segs) {
       el.textContent = item.text;
+      if (w.dr) el.append(h('div', 'reading', w.dr));
       return el;
     }
     for (const s of segs) {

@@ -33,6 +33,8 @@
     pinyin: true, // pinyin over Chinese characters
     hideKnownPinyin: true, // also hide pinyin over hanzi marked as known
     showRoles: true,
+    showPhrases: true,
+    checkGuides: true, // proofread new guides with the cheap model before saving
     showTranslation: true,
     fontScale: 1,
     // How the subtitles look: font (sans | rounded | serif), colour, background (none | shadow | box),
@@ -87,6 +89,7 @@
   // Annotations that can be switched on and off while watching (side panel and toolbar popup).
   SG.ANNOTATIONS = [
     { key: 'showMeaning', label: 'Meaning', title: 'What each word means, above it' },
+    { key: 'showPhrases', label: 'Phrases', title: 'One meaning over set phrases, compound particles and endings that belong together (に関して, 歯切れが悪い)' },
     { key: 'showParts', label: 'Pieces', title: 'The pieces a word is built from, with what each does (x + y + z)' },
     { key: 'furigana', label: 'Furigana', title: 'Hiragana over kanji you have not marked known' },
     { key: 'pinyin', label: 'Pinyin', title: 'Pinyin over Chinese characters' },

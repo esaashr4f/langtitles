@@ -4,9 +4,9 @@
   const SG = (root.SG = root.SG || {});
 
   // Bump when the prompt or schema changes so cached analyses from the old version are not reused.
-  const PROMPT_VERSION = 8;
+  const PROMPT_VERSION = 9;
   // Grammar guides are cached by form, separately from line analyses.
-  const GUIDE_VERSION = 1;
+  const GUIDE_VERSION = 1; // stays 1: saved guides remain valid; new guides follow the newer prompts
 
   const ROLES = [
     'subject', 'topic', 'object', 'indirect_object', 'predicate', 'complement', 'modifier',
@@ -24,20 +24,78 @@
         items: {
           type: 'object',
           additionalProperties: false,
-          required: ['i', 'tr', 'lit', 'pat', 'notes', 'w'],
+          required: ['i', 'tr', 'notes', 'chunks', 'build', 'cont', 'phrases', 'w'],
           properties: {
             i: { type: 'integer', description: 'The line number given in the request.' },
             tr: { type: 'string', description: 'Natural translation of the line.' },
-            lit: { type: 'string', description: 'Literal rendering that keeps the original word order and makes the grammar visible.' },
-            pat: { type: 'string', description: 'The sentence skeleton: its phrases in order, each labelled with the job it does.' },
             notes: { type: 'array', items: { type: 'string' }, description: 'Zero to three points worth knowing about this line.' },
+            chunks: {
+              type: 'array',
+              description: 'The line split into its meaningful chunks, in order, covering every word: what each chunk means here and its job.',
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['from', 'to', 'm', 'role'],
+                properties: {
+                  from: { type: 'integer', description: 'Index in w of the chunk\'s first word (0-based).' },
+                  to: { type: 'integer', description: 'Index in w of the chunk\'s last word.' },
+                  m: { type: 'string', description: 'A short natural gloss of the chunk in this sentence.' },
+                  role: { type: 'string', enum: ROLES, description: 'The chunk\'s job in the sentence.' },
+                },
+              },
+            },
+            build: {
+              type: 'array',
+              description: 'How the sentence builds from its core outward, one step at a time.',
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['t', 'm', 'why'],
+                properties: {
+                  t: { type: 'string', description: 'The Japanese (or other) text at this step.' },
+                  m: { type: 'string', description: 'What it means at this step.' },
+                  why: { type: 'string', description: 'What the newly added part does, and why the order differs from the reader\'s language, in one short sentence.' },
+                },
+              },
+            },
+            cont: { type: 'boolean', description: 'True when the sentence carries on into the next subtitle line.' },
+            phrases: {
+              type: 'array',
+              description: 'Multi-word units whose meaning belongs to the whole: compound particles, set phrases and idioms, noun + する/とする/にする phrases, clusters of auxiliaries and endings, and split patterns.',
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['w', 'kind', 'd', 'r', 'm', 'k', 'b'],
+                properties: {
+                  w: { type: 'array', items: { type: 'integer' }, description: 'Indexes in w of the words that make up the unit (two or more; not necessarily next to each other for a split pattern).' },
+                  kind: { type: 'string', enum: ['compound particle', 'set phrase', 'idiom', 'pattern', 'cluster'] },
+                  d: { type: 'string', description: 'The unit in its dictionary form, as a learner would save it (に関して, 歯切れが悪い, 店を出す, 必要とする, いかに…か).' },
+                  r: { type: 'string', description: 'Hiragana reading of d when it contains kanji, otherwise an empty string.' },
+                  m: { type: 'string', description: 'What the whole unit means here, in a few words.' },
+                  k: { type: 'string', description: 'Identifier: "phrase.<lang>.<d>" for compound particles, set phrases and idioms; a grammar identifier from the list for patterns; empty for clusters.' },
+                  b: {
+                    type: 'array',
+                    description: 'For a cluster or pattern: how its meaning builds, one piece at a time. Empty otherwise.',
+                    items: {
+                      type: 'object',
+                      additionalProperties: false,
+                      required: ['t', 'm'],
+                      properties: {
+                        t: { type: 'string' },
+                        m: { type: 'string' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
             w: {
               type: 'array',
               description: 'Every word of the line in order, skipping only punctuation and symbols.',
               items: {
                 type: 'object',
                 additionalProperties: false,
-                required: ['s', 'r', 'f', 'x', 'b', 'd', 'pos', 'm', 'p', 'c', 'role', 'n', 'g'],
+                required: ['s', 'r', 'f', 'x', 'b', 'd', 'dr', 'pos', 'm', 'p', 'c', 'role', 'n', 'g'],
                 properties: {
                   s: { type: 'string', description: 'The word exactly as it appears in the line.' },
                   r: { type: 'string', description: 'Hiragana reading of a Japanese word containing kanji, or pinyin of a Chinese word; otherwise an empty string.' },
@@ -83,6 +141,7 @@
                     },
                   },
                   d: { type: 'string', description: 'Dictionary form.' },
+                  dr: { type: 'string', description: 'Hiragana reading of the dictionary form when it contains kanji (or pinyin for Chinese), otherwise an empty string.' },
                   pos: { type: 'string', description: 'Part of speech and form, e.g. "verb, causative-passive, negative past".' },
                   m: { type: 'string', description: 'The best translation of the word in this sentence, in one to three words.' },
                   p: {
@@ -131,8 +190,16 @@ Your output is drawn directly over the video. Above each word the learner sees t
 For each numbered line, return:
 
 tr: a natural translation, the way a good subtitler would put it.
-lit: a literal rendering that follows the original word order and names the grammar where ${nativeLang} has no equivalent, for example "I [topic] apple [object] ate".
-pat: the skeleton of the sentence: its phrases in order, each labelled with its job, for example "[topic] 私は · [object] りんごを · [predicate] 食べた".
+chunks: the line split into its meaningful chunks, in order, together covering every word exactly once (from and to are word indexes in w, 0-based). Each chunk gets a short natural gloss for what it means in this sentence (not a dictionary list) and its job. Read in order, the glosses show how the original fits together: 自分など "someone like me" · まだ "still" · 吸血鬼を取り巻く "that circle vampires" · コウモリ程度 "a mere bat-level" · でしかない "am nothing but" · と "…(that)". Particles belong to the chunk they mark.
+build: how the sentence builds from its core outward, three to six steps, each adding one part: t is the text so far, m what it means, why what the added part does and, where useful, why the order differs from ${nativeLang} (a clause before a noun describes it; しか + negative means "only"). For a very short line give one step.
+cont: true when the sentence carries on into the next line (for example it ends in と, が, けど, て, or a clause with no main verb yet).
+phrases: every multi-word unit whose meaning belongs to the whole rather than to its words, so it can be learned and saved as one item:
+  compound particle: に関して "regarding", について, によって, にとって, に対して, として, をめぐって;
+  set phrase: 店を出す "open a shop", 実行に移す "put into action", 悪態をつく "curse", 必要とする "need", 気になる, 手を出す;
+  idiom: 歯切れが悪い "evasive", 腹が立つ;
+  pattern: a grammar pattern spread over several words, including split ones (いかに…か, ～ば…ほど, こと + noun + に関しては, X ものは X); give k from the grammar list;
+  cluster: a chain of auxiliaries and endings across several words whose combined meaning a learner can't work out from the parts (開始したっていうのか "so you're saying it started?!"), with b showing how the meaning builds.
+  w lists the word indexes; d is the unit as a learner would save it, in dictionary form; k is "phrase.<lang>.<d>" for compound particles, set phrases and idioms. Leave the list empty when there are none. Never treat a known set pattern as a subtitle error.
 notes: zero to three short points a teacher would stop and mention: a grammar pattern in play, an idiom and the image behind it, a dropped subject and who it is, register or politeness, a cultural reference. Leave the list empty when the line is plain.
 w: every word in order.
 
@@ -141,7 +208,7 @@ For each word:
 s: the word copied exactly from the line, so it can be found in the text. Cover the whole line; skip only punctuation and symbols.
 p: the pieces of the word, in order, whose t values concatenate to exactly s. For each piece, g says what it means or what it does, in at most four words, since it is drawn above the piece while the video plays. For a piece with a meaning of its own, give that meaning ("eat", "field", "school"). For a grammatical piece, give a short plain meaning and, where it helps, the name of the form in brackets, using the same label every time the same piece appears so the learner learns to recognise it: "make/let (causative)", "be done to (passive)", "can (potential)", "past", "not", "polite", "want to", "-ing (ongoing)", "topic marker", "object marker", "at/in", "plural". Never write a gloss that is awkward English. A word that does not decompose usefully gets a single piece: the whole word, with a gloss that says what it is.
 b: for a word made of a stem and two or more grammatical pieces (食べさせられた, 먹었어요 with several endings, a Chinese verb with a complement and 了), how the meaning builds, adding one piece at a time, starting from the dictionary form: 食べる "eat" → 食べさせる "make (someone) eat" → 食べさせられる "be made to eat" → 食べさせられた "was made to eat". Each step's t is the form at that step (an ordinary form a learner could look up or say) and m its meaning in a few words. Leave the list empty for every other word.
-m: the single best translation of the word in this sentence, in one to three words: the word you would choose if you were translating this exact line, fitted to this scene (not the first sense in a dictionary, and not a list of senses). It is shown above the word while the video plays, so keep it short; the other senses and details belong in the guides.
+m (checked against tr: every word's and chunk's meaning must agree with your translation of the line; when a word only makes sense as part of a phrase, give the meaning it has in that phrase, never an unrelated dictionary sense such as "treating" for the して of 必要として): the single best translation of the word in this sentence, in one to three words: the word you would choose if you were translating this exact line, fitted to this scene (not the first sense in a dictionary, and not a list of senses). It is shown above the word while the video plays, so keep it short; the other senses and details belong in the guides.
 r: the reading of the whole word: hiragana for a Japanese word containing kanji, pinyin with tone marks for a Chinese word. For every other word, including Japanese written only in kana and every language other than Japanese and Chinese, use an empty string. Never write romanization: no romaji, no Korean or other romanization.
 f: the word split into segments for ruby text drawn above the characters; the t values concatenate to exactly s.
   Japanese: each kanji is its own segment with its hiragana reading (食べる = 食/た + べる/""), and each run of kana is a segment with an empty reading. Keep kanji together in one segment only when the reading cannot be divided between them (今日 = 今日/きょう, 大人 = 大人/おとな). Katakana and kana-only words are one segment with an empty reading.
@@ -150,6 +217,7 @@ f: the word split into segments for ruby text drawn above the characters; the t 
   Every other language: an empty list.
 x: for a word built from Chinese characters (a kanji compound, a Chinese word, a Sino-Korean word), the same word in the other two of Japanese, Chinese and Korean when it exists there with the same characters and a related meaning, written the way that language writes it (Japanese 学校 がっこう, Chinese 学校 xuéxiào, Korean 학교 with the hanja 學校 noted in note). In note say how the meaning or use differs, or leave it empty when it is the same. Leave the list empty for every other word, and never invent a cognate that is not in real use.
 d: the dictionary form.
+dr: the reading of the dictionary form (hiragana for Japanese with kanji, pinyin for Chinese), or an empty string.
 pos: part of speech and the form it is in. For a proper noun, write "proper noun" and what it names in brackets: "proper noun (person)", "proper noun (place)", "proper noun (organisation)", "proper noun (title)".
 c and role: group the words into phrases. Words in the same phrase share a phrase number c, counted from 0 in order, and share the role that phrase plays in the sentence. A noun and the particle or case ending that marks it belong to one phrase.
 n: a hover note of one short sentence, only when there is something worth knowing that the meaning and pieces do not already show: why this form is used here, the nuance against a near-synonym, the register, a common confusion, the literal image behind an expression. Otherwise an empty string: most particles and plain everyday words need no note, and a note that repeats the gloss wastes the learner's attention.
@@ -162,7 +230,7 @@ Leave g empty for words with nothing to study beyond their meaning, such as most
 
 How to split words:
 
-Japanese: keep an inflected verb or adjective together with its auxiliaries as one word and show the stem and each auxiliary as pieces (食べさせられなかった = 食べ + させ + られ + なかっ + た). Particles are their own words. Split a kanji compound into its kanji when their meanings add up to the word's meaning.
+Japanese: keep an inflected verb or adjective together with its auxiliaries as one word and show the stem and each auxiliary as pieces (食べさせられなかった = 食べ + させ + られ + なかっ + た). Particles are their own words. Keep an established compound as one word, even when it is made of two words that exist on their own (素行調査 "background check" is one word with pieces 素行 + 調査; 男子生徒, 出産後, 雑貨店), and show its parts as pieces. Split a kanji compound into its kanji as pieces when their meanings add up to the word's meaning. When a verb or adjective describes the noun after it (俺が殺した連中, 要らない連中, 吸血鬼を取り巻くコウモリ), add ja.noun_modifying_clause to its g. Names of people and places get no g and no note beyond what they are.
 Korean: a word is one space-delimited unit; its pieces are the stem and each attached particle or ending (학교에서 = 학교 + 에서, 먹었어요 = 먹 + 었 + 어요).
 Chinese: segment into words; the pieces of a compound are its characters when their meanings build the word (火车 = 火 + 车). Aspect and structural particles such as 了, 过, 着, 的 are their own words.
 Other languages: words are the written words. Show prefixes, stems and endings as pieces when that explains the form (German gemacht = ge + mach + t, Spanish hablábamos = habl + ába + mos), and split clitics and contractions.
@@ -237,7 +305,15 @@ The mistakes learners actually make with it, each with the correction.
 ## Where you met it
 Two or three sentences on what the form is doing in the line where the learner met it.
 
-Formatting: plain text only, apart from the "## " headings. Start a line with "- " for a list item. Put each example sentence on its own line, followed by " — " and its translation. Write every Japanese word that contains kanji as {kanji part|reading}, for example {食|た}べさせられる, {母|はは}, {昨日|きのう}, so readings can be drawn over the kanji; do not also add a reading in brackets after it. Be thorough without padding; most guides need 500 to 900 words. Accuracy matters more than coverage: state only rules you are sure of, and say so when usage varies between speakers or regions.`;
+Formatting: plain text only, apart from the "## " headings. Start a line with "- " for a list item. Put each example sentence on its own line, followed by " — " and its translation. Write every Japanese word that contains kanji as {kanji part|reading}, for example {食|た}べさせられる, {母|はは}, {昨日|きのう}, so readings can be drawn over the kanji; do not also add a reading in brackets after it. Accuracy matters more than coverage: state only rules you are sure of, and say so when usage varies between speakers or regions.
+
+Rules for every guide:
+- Open the first section with the core idea in one sentence, tied to the line where the learner met it; then the details.
+- Length follows the item: a simple everyday word needs a short guide (150 to 300 words); a rich word or form gets more. Never pad.
+- When several "senses" are really one meaning with shades, present one meaning and its shades, not separate senses.
+- If the line uses a known set pattern or a compound (こと + noun + に関しては, に関して, X ものは X), say so. Don't call the line a subtitle error unless nothing in the language explains it.
+- Be consistent: don't list as a mistake something you have shown as correct usage.
+- No romanization anywhere (no romaji, no Korean romanization).`;
   }
 
   function wordGuideSystemPrompt(nativeLang) {
@@ -266,10 +342,26 @@ The mistakes learners actually make with it, each with the correction.
 ## Where you met it
 Two or three sentences on what the word means and why this word was chosen in the line where the learner met it.
 
-Formatting: plain text only, apart from the "## " headings. Start a line with "- " for a list item. Put each example sentence on its own line, followed by " — " and its translation. Write every Japanese word that contains kanji as {kanji part|reading}, for example {食|た}べる, {母|はは}, {昨日|きのう}, so readings can be drawn over the kanji; do not also add a reading in brackets after it. Be thorough without padding; most guides need 500 to 900 words, a simple word fewer. Accuracy matters more than coverage: state only what you are sure of, and say so when usage varies between speakers or regions.`;
+Formatting: plain text only, apart from the "## " headings. Start a line with "- " for a list item. Put each example sentence on its own line, followed by " — " and its translation. Write every Japanese word that contains kanji as {kanji part|reading}, for example {食|た}べる, {母|はは}, {昨日|きのう}, so readings can be drawn over the kanji; do not also add a reading in brackets after it. Accuracy matters more than coverage: state only what you are sure of, and say so when usage varies between speakers or regions.
+
+Rules for every guide:
+- Open the first section with the core idea in one sentence, tied to the line where the learner met it; then the details.
+- Length follows the item: a simple everyday word needs a short guide (150 to 300 words); a rich word gets more. Never pad. For a simple word with nothing to break down, leave "How it's built" to one line.
+- When several "senses" are really one meaning with shades, present one meaning and its shades, not separate senses.
+- If the word is part of a set phrase or pattern in the line (に関して, 歯切れが悪い, こと + noun + に関しては), say so first and explain the line through the phrase. Don't call the line a subtitle error unless nothing in the language explains it.
+- Be consistent: don't list as a mistake something you have shown as correct usage.
+- No romanization anywhere (no romaji, no Korean romanization).`;
   }
 
   function wordGuideUserMessage(req) {
+    if (req.phrase) {
+      return `This is a multi-word unit (${req.pos || 'set phrase'}), not a single word. Write the guide about the unit as a whole: what it means as a unit, why its parts add up to that (or don't), and how it is used. Don't write about any one of its words on its own.
+Unit: ${req.dict || req.word || ''}
+Reading: ${req.reading || ''}
+Meaning there: ${req.meaning || ''}
+Language: ${req.lang || 'unknown'}
+Line where the learner met it: ${req.sentence || ''}`;
+    }
     return `Word as it appeared: ${req.word || ''}
 Dictionary form: ${req.dict || req.word || ''}
 Reading: ${req.reading || ''}
@@ -286,6 +378,34 @@ Identifier: ${f.k}
 Language: ${req.lang || 'unknown'}
 Line where the learner met it: ${req.sentence || ''}
 Word that carries it there: ${req.word || ''}`;
+  }
+
+  // A cheap check of a freshly written guide for contradictions and claims it can't back up.
+  const CHECK_SCHEMA = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['problems'],
+    properties: {
+      problems: {
+        type: 'array',
+        description: 'Real problems only; an empty list when the guide is consistent.',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['quote', 'issue'],
+          properties: {
+            quote: { type: 'string', description: 'The exact words in the guide that are wrong.' },
+            issue: { type: 'string', description: 'What is wrong, in one sentence.' },
+          },
+        },
+      },
+    },
+  };
+  function checkSystemPrompt() {
+    return `You proofread a language guide written for a learner. Report only real problems: the guide contradicting itself (for example showing a use as correct and then listing it as a mistake), a statement about the language that is wrong, calling a line a subtitle error when it is a known pattern, or romanization. Don't report style, length or things you merely would have written differently. Most guides have no problems; then return an empty list.`;
+  }
+  function reviseSystemPrompt(nativeLang) {
+    return `You revise a language guide for a learner who reads ${nativeLang}. Fix exactly the problems listed and nothing else. Keep the headings, the formatting, the {kanji|reading} markup and everything that is right. Return the whole corrected guide and nothing else.`;
   }
 
   // Single kanji / hanzi entries are cached by character, separately from line analyses.
@@ -451,5 +571,5 @@ Write one natural, everyday sentence in the target language with the part that s
     return msg;
   }
 
-  SG.prompt = { askSystemPrompt, askMessages, CLOZE_SCHEMA, clozeSystemPrompt, clozeUserMessage, wordGuideSystemPrompt, wordGuideUserMessage, WORDS_VERSION, WORDS_SCHEMA, wordsSystemPrompt, PROMPT_VERSION, GUIDE_VERSION, CHAR_VERSION, CHAR_SCHEMA, charSystemPrompt, charUserMessage, guideSystemPrompt, guideUserMessage, ROLES, ANALYSIS_SCHEMA, systemPrompt, userMessage, deepSystemPrompt, deepUserMessage };
+  SG.prompt = { CHECK_SCHEMA, checkSystemPrompt, reviseSystemPrompt, askSystemPrompt, askMessages, CLOZE_SCHEMA, clozeSystemPrompt, clozeUserMessage, wordGuideSystemPrompt, wordGuideUserMessage, WORDS_VERSION, WORDS_SCHEMA, wordsSystemPrompt, PROMPT_VERSION, GUIDE_VERSION, CHAR_VERSION, CHAR_SCHEMA, charSystemPrompt, charUserMessage, guideSystemPrompt, guideUserMessage, ROLES, ANALYSIS_SCHEMA, systemPrompt, userMessage, deepSystemPrompt, deepUserMessage };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

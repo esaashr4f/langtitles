@@ -41,3 +41,11 @@ test('library fixes plan on a sample of saved guides', () => {
   assert.ok(p.history.length >= 8, 'old versions kept');
   for (const key of p.remove) assert.ok(!put.has(key));
 });
+
+test('every added guide keeps its headings', () => {
+  for (const op of data.ops.filter((o) => o.op === 'add' || o.op === 'section')) {
+    if (op.op === 'add') assert.ok(op.text.startsWith('## '), op.k);
+    assert.ok(!/^#(?!#)/m.test(op.text), op.k);
+  }
+  assert.ok(data.version >= 2);
+});

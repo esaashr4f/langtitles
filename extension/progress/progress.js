@@ -53,9 +53,15 @@
   const newDone = log.day === SG.srs.dayKey(Date.now()) ? log.newDone || 0 : 0;
   const due = SG.srs.counts(items, Date.now(), (settings.newPerDay || 20) - newDone);
   const byKind = (k) => items.filter((x) => x.kind === k).length;
+  const guideCount = (await SG.cache.getAll('guides').catch(() => [])).filter((g) => g.kind === 'grammar').length;
   const tiles = [
     ['Words you know', knownTotal, Object.entries(kw).filter(([, l]) => (l || []).length).map(([l, list]) => `${SG.lang.langName(l)} ${list.length}`).join(' · ') || 'Mark words known while watching'],
     ['Characters you know', charsTotal, [kc.ja ? `kanji ${Array.from(kc.ja).length}` : '', kc.zh ? `hanzi ${Array.from(kc.zh).length}` : ''].filter(Boolean).join(' · ') || 'No furigana over these'],
+    ['Grammar studied', items.filter((x) => x.kind === 'grammar').length, (() => {
+      const g = items.filter((x) => x.kind === 'grammar');
+      const learned = g.filter((x) => x.srs && x.srs.interval >= 21).length;
+      return g.length ? `${learned} learned (reviewed 3+ weeks apart) · ${guideCount} guides in your Library` : `${guideCount} guides in your Library · ★ a form to review it`;
+    })()],
     ['Day streak', streak, streak ? 'days in a row watching or reviewing' : 'Watch or review today to start one'],
     ['Minutes this week', Math.round(week(minutes)), `${Math.round(minutes.reduce((a, b) => a + b, 0))} in the last 30 days`],
     ['Reviewed this week', week(reviews), due.total ? `${due.total} cards ready now` : 'Nothing due right now'],

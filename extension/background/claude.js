@@ -176,7 +176,7 @@
     const out = new Array(count).fill(null);
     for (const line of data.lines || []) {
       if (Number.isInteger(line.i) && line.i >= 0 && line.i < count) {
-        out[line.i] = { lang: data.lang, tr: line.tr, lit: line.lit, pat: line.pat, notes: line.notes || [], w: line.w || [] };
+        out[line.i] = { lang: data.lang, tr: line.tr, lit: line.lit, pat: line.pat, notes: line.notes || [], chunks: line.chunks || [], build: line.build || [], cont: Boolean(line.cont), phrases: line.phrases || [], w: line.w || [] };
       }
     }
     return out;
@@ -267,6 +267,37 @@
       return JSON.parse(textOf(message));
     } catch (e) {
       throw new LangtitlesError('parse', 'Claude returned a character entry that could not be read.');
+    }
+  }
+
+  // A freshly written guide is proofread by the cheap model; only when it finds real problems does the
+  // guide's own model revise it. Returns the guide text to keep.
+  async function checkGuide(settings, text) {
+    const { prompt } = SG;
+    let problems = [];
+    try {
+      const params = baseParams(settings, 2000, 'claude-haiku-5-5');
+      params.output_config.effort = 'low';
+      params.system = prompt.checkSystemPrompt();
+      params.messages = [{ role: 'user', content: text }];
+      params.output_config.format = { type: 'json_schema', schema: prompt.CHECK_SCHEMA };
+      const message = await getClient(settings).beta.messages.stream(params).finalMessage();
+      recordUsage(message.model || 'claude-haiku-5-5', message.usage, false, settings.costTag, 'guide checks', settings.costShow).catch(() => {});
+      problems = (JSON.parse(textOf(message)).problems || []).filter((p) => p && p.quote && text.includes(p.quote.slice(0, 40)));
+    } catch (e) {
+      return { text, problems: [] };
+    }
+    if (!problems.length) return { text, problems };
+    try {
+      const params = baseParams(settings, 12000);
+      params.system = prompt.reviseSystemPrompt(settings.nativeLang);
+      params.messages = [{ role: 'user', content: 'Problems:\n' + problems.map((p) => `- "${p.quote}": ${p.issue}`).join('\n') + '\n\nGuide:\n' + text }];
+      const message = await getClient(settings).beta.messages.stream(params).finalMessage();
+      recordUsage(message.model || settings.model, message.usage, false, settings.costTag, 'guide checks', settings.costShow).catch(() => {});
+      const revised = textOf(message).trim();
+      return { text: revised.startsWith('## ') ? revised : text, problems };
+    } catch (e) {
+      return { text, problems };
     }
   }
 
@@ -394,5 +425,5 @@
     }
   }
 
-  SG.claude = { onCost: (fn) => costListeners.add(fn), lineModelOf, spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
+  SG.claude = { checkGuide, onCost: (fn) => costListeners.add(fn), lineModelOf, spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
