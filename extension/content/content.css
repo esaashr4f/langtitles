@@ -1205,3 +1205,157 @@
 @keyframes lt-pop-in { from { opacity: 0; transform: translateY(4px) scale(0.99); } to { opacity: 1; transform: none; } }
 .lt-root .sg-pop.sg-show { animation: lt-pop-in 0.14s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .lt-root .sg-tabbody.sg-on { animation: sg-fade 0.12s ease-out; }
+
+/* =====================================================================================
+   Spacing pass (0.3.1): fewer things competing on screen, tight groups with generous gaps
+   between them, one primary action at a time. Rules from Impeccable / Vercel / Emil Kowalski.
+   ===================================================================================== */
+.lt-root .sg-panel-head { padding: 16px 14px 12px 18px; gap: 8px; }
+.lt-root .sg-panel-logo { width: 26px; height: 26px; filter: none; }
+.lt-root .sg-panel-title { font-weight: 600; font-size: 14.5px; }
+.lt-root .sg-tabs { margin: 0 16px 4px; border: 0; background: rgba(255, 255, 255, 0.04); }
+.lt-root .sg-tab { font-weight: 550; padding: 7px 4px; }
+.lt-root .sg-tabbody { padding: 4px 20px 0; border-top: 0; }
+.lt-root .sg-tabbody::after { content: ""; display: block; flex: 0 0 20px; }
+
+/* Section labels: more room above than below, so each group reads as one. */
+.lt-root .sg-section { margin: 28px 0 10px; font-size: 12.5px; font-weight: 600; color: var(--sg-soft); }
+
+/* The line itself is the one primary thing. */
+.lt-root .sg-detail { padding-top: 16px; }
+.lt-root .sg-d-head { display: flex; align-items: flex-start; gap: 10px; }
+.lt-root .sg-d-head .sg-d-orig { flex: 1; min-width: 0; }
+.lt-root .sg-d-orig { font-size: 22px; line-height: 1.5; font-weight: 500; letter-spacing: 0.01em; }
+.lt-root .sg-d-say { margin-top: 4px; }
+.lt-root .sg-d-tr { margin-top: 8px; font-size: 14px; line-height: 1.55; }
+.lt-root .sg-d-tools { gap: 18px; margin-top: 14px; align-items: center; }
+.lt-root .sg-d-save { display: inline-flex; align-items: center; gap: 2px; color: var(--sg-soft); font-size: 12.5px; }
+.lt-root .sg-link {
+  all: unset;
+  color: var(--sg-soft);
+  font-size: 12.5px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.2);
+  text-underline-offset: 3px;
+}
+.lt-root .sg-link:hover { color: #fff; text-decoration-color: currentColor; }
+.lt-root .sg-link:focus-visible { outline: 2px solid var(--lt-accent); outline-offset: 2px; border-radius: 3px; }
+
+/* Ask: one quiet line until you use it. */
+.lt-root .sg-ask { margin-top: 28px; }
+.lt-root .sg-ask-form { align-items: center; }
+.lt-root .sg-ask-in { min-height: 0; resize: none; padding: 9px 12px; border-radius: 10px; }
+.lt-root .sg-ask .sg-go { display: none; }
+.lt-root .sg-ask.sg-ask-open .sg-go { display: inline-flex; }
+.lt-root .sg-ask.sg-ask-open .sg-ask-in { min-height: 4.2em; resize: vertical; }
+.lt-root .sg-ask-thread:empty { display: none; }
+.lt-root .sg-ask-thread { gap: 10px; margin-bottom: 12px; }
+.lt-root .sg-ask-q { background: rgba(242, 179, 94, 0.14); }
+.lt-root .sg-ask-a { border: 0; background: rgba(255, 255, 255, 0.05); line-height: 1.6; }
+
+/* Playback controls: one slim bar pinned to the bottom of the Line tab, icons with short labels. */
+.lt-root .sg-controls {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  order: 99;
+  display: flex;
+  gap: 2px;
+  margin: 24px -20px 0;
+  padding: 8px 12px 10px;
+  background: var(--sg-glass-strong);
+  border-top: 1px solid var(--sg-line);
+}
+.lt-root .sg-ctl {
+  flex: 1 1 0;
+  flex-direction: row;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sg-soft);
+}
+.lt-root .sg-ctl:hover { background: var(--sg-fill-hover); border-color: transparent; }
+.lt-root .sg-ctl.sg-on { background: rgba(242, 179, 94, 0.14); color: var(--lt-accent); border-color: transparent; }
+.lt-root .sg-ctl-l { font-size: 12px; font-weight: 550; }
+.lt-root .sg-ctl-k { display: none; }
+.lt-root .sg-tabbody.sg-tab-line::after { display: none; }
+
+/* How the sentence works: chunks breathe instead of touching. */
+.lt-root .sg-how-chunks, .lt-root .sg-chunks { gap: 8px; }
+.lt-root .sg-d-forms { gap: 8px; }
+
+/* Word list: rows separated by space and a hairline, not boxes. */
+.lt-root .sg-word { padding: 12px 0; border: 0; border-bottom: 1px solid var(--sg-line); background: none; border-radius: 0; }
+.lt-root .sg-word:last-child { border-bottom: 0; }
+.lt-root .sg-word-head { gap: 10px; }
+.lt-root .sg-word-n, .lt-root .sg-word-p { margin-top: 4px; }
+
+/* Word card: a little more air. */
+.lt-root .sg-pop { padding: 18px 20px; }
+
+/* Motion (Emil Kowalski): quick, ease-out, never from scale 0; exits faster than entrances. */
+.lt-root.sg-panel-open .sg-panel { animation: lt-panel-in 0.18s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes lt-panel-in { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: none; } }
+.lt-root .sg-ctl, .lt-root .sg-tab, .lt-root .sg-link, .lt-root .sg-icon-btn { transition: background-color 0.12s ease-out, color 0.12s ease-out; }
+.lt-root .sg-ctl:active, .lt-root .sg-btn:active, .lt-root .sg-icon-btn:active { transform: scale(0.97); }
+@media (prefers-reduced-motion: reduce) {
+  .lt-root.sg-panel-open .sg-panel { animation: none; }
+  .lt-root .sg-ctl:active, .lt-root .sg-btn:active, .lt-root .sg-icon-btn:active { transform: none; }
+}
+@container (max-width: 300px) {
+  .lt-root .sg-ctl-l { display: none; }
+}
+.lt-root .sg-controls { background: #111216; }
+.lt-root .sg-d-note { margin: 0 0 10px; padding: 0; border-left: 0; color: #dcdde3; line-height: 1.6; }
+.lt-root .sg-d-note:last-of-type { margin-bottom: 0; }
+/* Study lists: rows, not boxes; the count sits beside its item. */
+.lt-root .sg-wl { margin: 0; padding: 12px 0; border: 0; border-bottom: 1px solid var(--sg-line); border-radius: 0; background: none; }
+.lt-root .sg-wl:last-child { border-bottom: 0; }
+.lt-root .sg-wl-top { align-items: center; gap: 8px; }
+.lt-root .sg-wl-n { margin-right: 0; }
+.lt-root .sg-wl-top .sg-star { margin-left: auto; }
+.lt-root .sg-wl-ex { margin-top: 6px; }
+.lt-root .sg-studyseg { margin-bottom: 4px; }
+/* Forms: labels sit with their field, fields keep their distance from the next row. */
+.lt-root .sg-f { gap: 6px; }
+.lt-root .sg-f-label { font-size: 12px; font-weight: 550; color: var(--sg-soft); }
+.lt-root .sg-find-body .sg-f, .lt-root .sg-find .sg-f { margin-bottom: 8px; }
+.lt-root .sg-chips, .lt-root .sg-show-row { gap: 8px; }
+
+/* Word card, decluttered: the meaning leads; everything else is quieter and unboxed. */
+.lt-root .sg-pop { line-height: 1.55; }
+.lt-root .sg-pop-head { gap: 0.6em; }
+.lt-root .sg-pop-meta { margin-top: 2px; font-size: 0.86em; }
+.lt-root .sg-pop-mean { margin-top: 0.75em; font-size: 1.18em; font-weight: 600; }
+/* Pieces of the word: plain rows, no box inside the card. */
+.lt-root .sg-pop-parts { margin-top: 0.8em; padding: 0; background: none; border: 0; gap: 0.35em 1em; }
+/* The dictionary's entry: one quiet line under the meaning; click it for the other senses. */
+.lt-root .sg-pop-dict:empty { display: none; }
+.lt-root .sg-pop-dict { margin-top: 0.5em; padding: 0; border: 0; background: none; color: var(--sg-soft); font-size: 0.88em; cursor: pointer; }
+.lt-root .sg-pop-dict .sg-dict-head { display: none; }
+.lt-root .sg-pop-dict .sg-dict-s { display: none; }
+.lt-root .sg-pop-dict .sg-dict-s:first-of-type { display: block; }
+.lt-root .sg-pop-dict .sg-dict-s:first-of-type .sg-dict-n { display: none; }
+.lt-root .sg-pop-dict .sg-dict-s:first-of-type::before { content: "Dictionary: "; color: var(--sg-dim); }
+.lt-root .sg-pop-dict.sg-open .sg-dict-head, .lt-root .sg-pop-dict.sg-open .sg-dict-s { display: flex; }
+.lt-root .sg-pop-dict.sg-open .sg-dict-s:first-of-type::before { content: none; }
+.lt-root .sg-pop-dict.sg-open .sg-dict-n { display: inline; }
+.lt-root .sg-pop-dict:hover { color: var(--sg-text); }
+/* Known? and Library: quiet until used. */
+.lt-root .sg-pop-head .sg-kw { border-color: transparent; }
+.lt-root .sg-pop-head .sg-kw:not(.sg-on) { color: var(--sg-dim); }
+.lt-root .sg-pop-forms { margin-top: 1.1em; gap: 0.5em; }
+.lt-root .sg-pop-forms-label { min-width: 0; margin-right: 0.3em; }
+.lt-root .sg-pop-forms .sg-lib { margin-left: auto !important; }
+.lt-root .sg-pop-forms .sg-icon-btn { width: 28px; height: 28px; }
+.lt-root .sg-pop-chars { margin-top: 0.6em; }
+.lt-root .sg-char { border-color: var(--sg-line); background: none; }
+.lt-root .sg-pop-deep { margin-top: 1.1em; padding-top: 1.1em; }
+.lt-root .sg-build { margin-top: 0.8em; }
+.lt-root .sg-pop-t-char { cursor: pointer; border-radius: 6px; padding: 0 0.15em; margin: 0 -0.15em; text-decoration: underline dotted rgba(255, 255, 255, 0.25); text-underline-offset: 0.25em; }
+.lt-root .sg-pop-t-char:hover, .lt-root .sg-pop-t-char.sg-on { background: var(--sg-fill-hover); }
+.lt-root .sg-pop-t-char:focus-visible { outline: 2px solid var(--lt-accent); }

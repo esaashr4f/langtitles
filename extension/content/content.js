@@ -400,6 +400,7 @@
         renderTrackList();
         renderTranscript();
         applyHideNative();
+        applySettings();
       }
       pump();
     }
@@ -787,7 +788,8 @@
     const ctl = (icon, label, key, fn) => {
       const b = h('button', 'sg-ctl');
       b.title = `${label} (${key})`;
-      b.append(ih('span', 'sg-ctl-i', icon, '', 18), h('span', 'sg-ctl-l', label), h('kbd', 'sg-ctl-k', key));
+      b.setAttribute('aria-label', label);
+      b.append(ih('span', 'sg-ctl-i', icon, '', 16), h('span', 'sg-ctl-l', label));
       b.addEventListener('click', fn);
       controls.append(b);
       return b;
@@ -796,7 +798,7 @@
     ctl('rotate-ccw', 'Replay slow', 'S', () => replayLine(false));
     const loopBtn = ctl('repeat', 'Loop', 'L', () => replayLine(true));
     ctl('skip-forward', 'Next', 'D', () => seekToCue(1));
-    tabBodies.get('line').append(controls, hint, guide, detail);
+    tabBodies.get('line').append(hint, guide, detail, controls);
 
     // ---- Transcript
     const list = h('div', 'sg-list');
@@ -1063,7 +1065,13 @@
     ui.panel.hideBtn.classList.toggle('sg-on', !overlayHidden);
     ui.panel.hideBtn.setAttribute('aria-pressed', String(!overlayHidden));
     applyLook();
-    for (const [key, chip] of ui.panel.showChips) chip.classList.toggle('sg-on', Boolean(settings[key]));
+    const nowLang = active() ? langCode(active().lang) : null;
+    for (const [key, chip] of ui.panel.showChips) {
+      chip.classList.toggle('sg-on', Boolean(settings[key]));
+      const only = (SG.ANNOTATIONS.find((x) => x.key === key) || {}).lang;
+      // Furigana, pinyin and hanja only matter for their own language.
+      chip.hidden = Boolean(only && nowLang && only !== nowLang);
+    }
     for (const [key, chip] of ui.panel.classChips) chip.classList.toggle('sg-on', (settings.glossClasses || []).includes(key));
     for (const [value, chip] of ui.panel.jlptChips) chip.classList.toggle('sg-on', (settings.jlptFrom || 5) === value);
     place();
@@ -1658,6 +1666,11 @@
           if (e.common) top.append(h('span', 'sg-jlpt', 'common'));
           top.append(h('span', 'sg-dict-src', card.source));
           dictBox.append(top);
+          dictBox.title = 'Dictionary entry: click for more senses';
+          dictBox.addEventListener('click', () => {
+            dictBox.classList.toggle('sg-open');
+            placePop(tok);
+          });
           e.senses.slice(0, 3).forEach((x, i) => {
             const li = h('div', 'sg-dict-s');
             li.append(h('span', 'sg-dict-n', String(i + 1)), document.createTextNode(x[1]));
@@ -1744,13 +1757,14 @@
         });
         row.append(chip);
       }
-      const lib = h('button', 'sg-btn sg-lib', 'Library');
-      lib.title = 'All the guides you have collected';
+      const lib = ih('button', 'sg-icon-btn sg-lib', 'library', '', 16);
+      lib.title = 'Open the Library: all the guides you have collected';
+      lib.setAttribute('aria-label', 'Library');
       lib.addEventListener('click', () => {
         const on = row.querySelector('.sg-form.sg-on');
         post({ type: 'openLibrary', k: on ? on.dataset.k : '' });
       });
-      const full = ih('button', 'sg-btn sg-lib sg-expand', 'maximize-2', '', 14);
+      const full = ih('button', 'sg-icon-btn sg-expand', 'maximize-2', '', 15);
       full.title = 'Read this guide full screen';
       full.addEventListener('click', () => {
         const g = currentGuide || firstGuide;
@@ -1776,7 +1790,28 @@
       pop.append(row);
     }
     const chars = ctx.lang === 'ja' || ctx.lang === 'zh' ? SG.ruby.hanChars(w.s) : [];
-    if (chars.length) {
+    // When the word's pieces are exactly its characters (昨 + 日), the pieces themselves open each
+    // character's entry, so the same characters aren't listed twice.
+    const pieceEls = Array.from(pop.querySelectorAll('.sg-pop-parts .sg-pop-t'));
+    const piecesAreChars = chars.length > 0 && pieceEls.length === chars.length && pieceEls.every((el, i) => el.textContent === chars[i]);
+    if (piecesAreChars) {
+      pieceEls.forEach((el, i) => {
+        const ch = chars[i];
+        el.classList.add('sg-pop-t-char');
+        if (known[ctx.lang].has(ch)) el.classList.add('sg-known');
+        el.tabIndex = 0;
+        el.setAttribute('role', 'button');
+        el.title = 'Open this character\'s entry';
+        el.addEventListener('click', () => {
+          clearTimeout(deepTimer);
+          for (const c of pop.querySelectorAll('.sg-form, .sg-char, .sg-pop-t-char')) c.classList.toggle('sg-on', c === el);
+          pop.classList.add('sg-wide');
+          showCharEntry(deep, ch, ctx, w);
+          placePop(tok);
+        });
+      });
+    }
+    if (chars.length && !piecesAreChars) {
       const row = h('div', 'sg-pop-forms sg-pop-chars');
       row.append(h('span', 'sg-pop-forms-label', ctx.lang === 'ja' ? 'Kanji' : 'Characters'));
       for (const ch of chars) {
@@ -2018,7 +2053,7 @@
       placePop(anchor);
     };
     chip.addEventListener('click', open);
-    const full = ih('button', 'sg-btn sg-lib sg-expand', 'maximize-2', '', 14);
+    const full = ih('button', 'sg-icon-btn sg-expand', 'maximize-2', '', 15);
     full.title = 'Read this guide full screen';
     full.addEventListener('click', () => openReader(form, ctx, phraseAsWord(p), !form.grammar));
     row.append(chip, full);
@@ -2092,9 +2127,11 @@
     if (!ui || !settings.panelOpen) return;
     const box = ui.panel.detail;
     box.textContent = '';
+    const head = h('div', 'sg-d-head');
     const orig = h('div', 'sg-d-orig', cue.text);
     if (a && a.lang) orig.lang = a.lang;
-    box.append(orig);
+    head.append(orig);
+    box.append(head);
     if (!a) {
       box.append(h('div', 'sg-d-wait', settings.hasKey ? 'Analyzing this line…' : 'No API key set.'));
       return;
@@ -2102,9 +2139,12 @@
     if (a.tr) box.append(h('div', 'sg-d-tr', a.tr));
     const lineTools = h('div', 'sg-d-tools');
     const lang = langCode(a.lang);
-    const say = ih('button', 'sg-btn', 'volume-2', 'Hear the line');
+    const say = ih('button', 'sg-icon-btn sg-d-say', 'volume-2', '', 18);
+    say.title = 'Hear the line';
+    say.setAttribute('aria-label', 'Hear the line');
     say.addEventListener('click', () => speakText(cue.text, lang));
-    const allKnown = h('button', 'sg-btn', 'Mark every word known');
+    head.append(say);
+    const allKnown = h('button', 'sg-link', 'Mark all known');
     allKnown.title = 'Marks each word in this line as known (particles and names are never highlighted anyway)';
     allKnown.addEventListener('click', async () => {
       const words = (a.w || []).filter((w) => !isTrivial(w)).map((w) => w.d || w.s);
@@ -2119,11 +2159,11 @@
     lineStar.title = 'Save this line as a review card';
     const saveLbl = h('span', 'sg-d-save');
     saveLbl.append(lineStar, document.createTextNode(' Save line'));
-    lineTools.append(say, allKnown, saveLbl);
+    lineTools.append(saveLbl, allKnown);
     box.append(lineTools);
-    box.append(askBox(cue, a));
     const words = a.w || [];
     box.append(howItWorks(a, words));
+    box.append(askBox(cue, a));
     if (a.notes && a.notes.length) {
       box.append(h('div', 'sg-section', 'Notes'));
       for (const n of a.notes) box.append(h('div', 'sg-d-note', n));
@@ -3107,7 +3147,6 @@
   function askBox(cue, a) {
     const key = shownKey;
     const wrap = h('div', 'sg-ask');
-    wrap.append(h('div', 'sg-section', 'Ask about this line'));
     const thread = h('div', 'sg-ask-thread');
     const turns = askThreads.get(key) || [];
     const addTurn = (turn) => {
@@ -3130,8 +3169,12 @@
     }
     const form = h('div', 'sg-ask-form');
     const input = h('textarea', 'sg-in sg-ask-in');
-    input.rows = 2;
-    input.placeholder = 'Why は and not が here? Could I say this to my boss?';
+    input.rows = 1;
+    input.placeholder = 'Ask about this line…';
+    input.title = 'For example: why は and not が here? Could I say this to my boss?';
+    const grow = () => wrap.classList.toggle('sg-ask-open', (ui && ui.host.shadowRoot.activeElement === input) || Boolean(input.value) || thread.childElementCount > 0);
+    input.addEventListener('focus', () => wrap.classList.add('sg-ask-open'));
+    input.addEventListener('blur', () => setTimeout(grow, 0));
     const go = h('button', 'sg-btn sg-go', 'Ask');
     const send = () => {
       const question = input.value.trim();
@@ -3173,6 +3216,7 @@
     });
     form.append(input, go);
     wrap.append(thread, form);
+    if (turns.length) wrap.classList.add('sg-ask-open');
     return wrap;
   }
 
