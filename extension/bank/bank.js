@@ -14,6 +14,13 @@
     return e;
   }
 
+  function ih(tag, cls, icon, text) {
+    const el = h(tag, cls);
+    el.append(SG.icon(icon, { size: 15 }));
+    if (text) el.append(document.createTextNode(text));
+    return el;
+  }
+
   let toastTimer = null;
   function toast(text) {
     $('toast').textContent = text;
@@ -56,7 +63,7 @@
   let knownWords = {};
 
   function sayButton(text, lang) {
-    const b = h('button', 'say', '🔊');
+    const b = ih('button', 'say', 'volume-2');
     b.title = 'Hear it';
     b.addEventListener('click', async () => {
       const ok = await SG.speech.speak(text, lang);
@@ -187,7 +194,7 @@
       card.append(pieces);
     }
     if (w.n) card.append(h('div', 'note', w.n));
-    const wg = h('a', 'chip', '📖 Word guide');
+    const wg = ih('a', 'chip', 'book-open', ' Word guide');
     wg.href = '../grammar/grammar.html#' + encodeURIComponent(`word.${item.lang}.${item.text}`);
     wg.title = 'Opens the word guide, if you have opened it while watching';
     const guideChips = h('div', 'chips');
@@ -218,10 +225,12 @@
     const reads = h('span', 'reading', (e.readings || []).map((r) => r.r).join('  ·  '));
     head.append(reads, h('span', 'lang-tag', SG.lang.langName(item.lang)), h('span', 'spacer'));
     const isKnown = Array.from(known[item.lang] || '').includes(ch);
-    const kb = h('button', 'icon-btn' + (isKnown ? ' known-on' : ''), isKnown ? '✓ Known' : 'Mark known');
+    const kb = h('button', 'icon-btn' + (isKnown ? ' known-on' : ''));
+    const knownLabel = (on) => kb.replaceChildren(...(on ? [SG.icon('check', { size: 14 }), document.createTextNode(' Known')] : [document.createTextNode('Mark known')]));
+    knownLabel(isKnown);
     kb.addEventListener('click', async () => {
       const now = await toggleKnown(ch, item.lang);
-      kb.textContent = now ? '✓ Known' : 'Mark known';
+      knownLabel(now);
       kb.classList.toggle('known-on', now);
       $('nKnown').textContent = Array.from(known.ja + known.zh).length || '';
     });
@@ -426,9 +435,9 @@
       main.append(h('div', 'empty', items.some((x) => x.kind === tab)
         ? 'Nothing matches.'
         : {
-          word: 'No saved words yet. While watching, hover a word and click ☆ to save it.',
-          char: 'No saved characters yet. While watching, hover a word, click one of its characters, then click ☆.',
-          line: 'No saved lines yet. In the side panel (G), click ☆ Save line under a line.',
+          word: 'No saved words yet. While watching, hover a word and click the star to save it.',
+          char: 'No saved characters yet. While watching, hover a word, click one of its characters, then click the star.',
+          line: 'No saved lines yet. In the side panel (G), click Save line under a line.',
           grammar: 'No grammar forms yet. Each grammar form you open a guide for is added here for review (this can be turned off in Options).',
         }[tab]));
       return;

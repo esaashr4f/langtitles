@@ -1,0 +1,62 @@
+/* The same look as the overlay for Langtitles' own pages (Library, Progress, Bank, Review, Options,
+   Questions, popup). Loaded after each page's stylesheet, so these tokens win. */
+@import url("../fonts/geist/geist.css");
+
+:root {
+  --bg: #f6f5f2;
+  --card: #ffffff;
+  --text: #1b1b1d;
+  --dim: #6a6a72;
+  --line: #e4e2dc;
+  --accent: #9a5a12;
+  --accent-text: #ffffff;
+  --soft: rgba(154, 90, 18, 0.08);
+  --lt-ui: "LT Geist", system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "BIZ UDPGothic", "Noto Sans CJK JP",
+    "Apple SD Gothic Neo", "Noto Sans KR", "PingFang SC", "Noto Sans SC", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111216;
+    --card: #17181d;
+    --text: #ececef;
+    --dim: #9a9ba3;
+    --line: rgba(255, 255, 255, 0.08);
+    --accent: #f2b35e;
+    --accent-text: #1d1407;
+    --soft: rgba(242, 179, 94, 0.1);
+  }
+}
+body {
+  font-family: var(--lt-ui);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "cv11";
+}
+h1 { letter-spacing: -0.02em; font-weight: 650; }
+h2 { letter-spacing: -0.01em; font-weight: 620; }
+button, input, select, textarea { font-family: inherit; }
+button { border-radius: 8px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Labels in sentence case: the uppercase, letter-spaced eyebrows read as template. */
+.label, .section, .sg-g-h, .group-head, .eyebrow {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+.label, .section { font-weight: 600; }
+
+/* Cards: hairline borders, a touch more room, no heavy shadows. */
+section, .card { border-color: var(--line); border-radius: 12px; box-shadow: none; }
+
+/* Numbers line up in tables and stats. */
+table, .stat, .num, .n { font-variant-numeric: tabular-nums; }
+
+/* Buttons that do the main thing use the one flat accent. */
+.primary, button.go, .btn-primary { background: var(--accent); color: var(--accent-text); border-color: transparent; }
+
+@media (prefers-reduced-motion: no-preference) {
+  button, a, .card, section { transition: background-color 0.12s, border-color 0.12s, color 0.12s; }
+}
+
+/* Icons sit on the text line inside buttons and chips. */
+.say, .chip, .icon-btn { display: inline-flex; align-items: center; gap: 0.35em; }
+svg { flex: 0 0 auto; }

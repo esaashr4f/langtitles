@@ -126,6 +126,14 @@
     return el;
   }
 
+  // A button or span with an icon (and optional text after it).
+  function ih(tag, cls, icon, text, size) {
+    const el = h(tag, cls);
+    el.append(SG.icon(icon, { size: size || 16 }));
+    if (text) el.append(h('span', 'lt-icon-t', text));
+    return el;
+  }
+
   function enabled() {
     return Boolean(settings.enabled) && !(settings.disabledHosts || []).includes(tabHost);
   }
@@ -618,7 +626,7 @@
     if (SG.uiEvents) SG.uiEvents.setRoot(root);
     const cover = h('div', 'sg-cover');
     const sub = h('div', 'sg-sub');
-    const grip = h('div', 'sg-grip', '⋮⋮');
+    const grip = ih('div', 'sg-grip', 'grip-horizontal', '', 16);
     grip.title = 'Drag to move the subtitles up or down';
     const line = h('div', 'sg-line');
     const tr = h('div', 'sg-tr');
@@ -719,10 +727,10 @@
     hideBtn.title = 'Turn Langtitles subtitles on or off (H)';
     hideBtn.append(h('span', 'sg-switch-label', 'Subtitles'), h('span', 'sg-switch-track'));
     hideBtn.addEventListener('click', () => toggleSubtitles());
-    const bankBtn = h('button', 'sg-icon-btn', '★');
+    const bankBtn = ih('button', 'sg-icon-btn', 'bookmark');
     bankBtn.title = 'Word bank';
     bankBtn.addEventListener('click', () => post({ type: 'openBank' }));
-    const close = h('button', 'sg-icon-btn sg-close', '✕');
+    const close = ih('button', 'sg-icon-btn sg-close', 'x');
     close.title = 'Close panel (G)';
     close.addEventListener('click', () => setPanel(false));
     head.append(logo, titles, hideBtn, readBtn, bankBtn, close);
@@ -757,14 +765,14 @@
     const hint = h('div', 'sg-hint');
     const guide = h('div', 'sg-pguide');
     const guideHead = h('div', 'sg-pguide-head');
-    const guideBack = h('button', 'sg-icon-btn', '‹');
+    const guideBack = ih('button', 'sg-icon-btn', 'chevron-left');
     guideBack.title = 'Back to the line';
     guideBack.addEventListener('click', () => guide.classList.remove('sg-show'));
     const guideTitle = h('span', 'sg-pguide-title');
     const guideLib = h('button', 'sg-btn sg-ghost', 'Library');
     guideLib.title = 'All the guides you have collected';
     guideLib.addEventListener('click', () => post({ type: 'openLibrary', k: guide.dataset.k || '' }));
-    const guideFull = h('button', 'sg-icon-btn', '⤢');
+    const guideFull = ih('button', 'sg-icon-btn', 'maximize-2');
     guideFull.title = 'Read this guide full screen';
     guideFull.addEventListener('click', () => {
       const g = panelGuide;
@@ -779,15 +787,15 @@
     const ctl = (icon, label, key, fn) => {
       const b = h('button', 'sg-ctl');
       b.title = `${label} (${key})`;
-      b.append(h('span', 'sg-ctl-i', icon), h('span', 'sg-ctl-l', label), h('kbd', 'sg-ctl-k', key));
+      b.append(ih('span', 'sg-ctl-i', icon, '', 18), h('span', 'sg-ctl-l', label), h('kbd', 'sg-ctl-k', key));
       b.addEventListener('click', fn);
       controls.append(b);
       return b;
     };
-    ctl('⏮', 'Previous', 'A', () => seekToCue(-1));
-    ctl('↺', 'Replay slow', 'S', () => replayLine(false));
-    const loopBtn = ctl('🔁', 'Loop', 'L', () => replayLine(true));
-    ctl('⏭', 'Next', 'D', () => seekToCue(1));
+    ctl('skip-back', 'Previous', 'A', () => seekToCue(-1));
+    ctl('rotate-ccw', 'Replay slow', 'S', () => replayLine(false));
+    const loopBtn = ctl('repeat', 'Loop', 'L', () => replayLine(true));
+    ctl('skip-forward', 'Next', 'D', () => seekToCue(1));
     tabBodies.get('line').append(controls, hint, guide, detail);
 
     // ---- Transcript
@@ -839,9 +847,10 @@
       showToast('Click the subtitle text on the video. Press Escape to cancel.');
     });
     const timing = h('div', 'sg-timing');
-    const early = h('button', 'sg-btn sg-ghost', '◀ Earlier');
+    const early = ih('button', 'sg-btn sg-ghost', 'chevron-left', 'Earlier');
     early.title = 'Show subtitles 0.25 s earlier (key [ · Shift for 1 s)';
-    const late = h('button', 'sg-btn sg-ghost', 'Later ▶');
+    const late = h('button', 'sg-btn sg-ghost', 'Later');
+    late.append(SG.icon('chevron-right', { size: 16 }));
     late.title = 'Show subtitles 0.25 s later (key ] · Shift for 1 s)';
     const offset = h('button', 'sg-offset', '+0.00s');
     offset.title = 'Subtitle timing shift; click to reset (key \\)';
@@ -1604,7 +1613,7 @@
     pop.textContent = '';
     pop.classList.remove('sg-wide');
     if (touchMode) {
-      const close = h('button', 'sg-pop-close', '×');
+      const close = ih('button', 'sg-pop-close', 'x', '', 18);
       close.title = 'Close and keep watching';
       close.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1721,8 +1730,8 @@
       const row = h('div', 'sg-pop-forms');
       row.append(h('span', 'sg-pop-forms-label', 'Guides'));
       for (const g of guides) {
-        const label = g.phrase ? (g.word ? '📖 ' : '') + g.phrase.d : g.word ? '📖 ' + (w.d || w.s) : g.f.name || g.f.k;
-        const chip = h('button', 'sg-form' + (g.word ? ' sg-form-word' : '') + (g === firstGuide ? ' sg-on' : ''), label);
+        const label = g.phrase ? g.phrase.d : g.word ? w.d || w.s : g.f.name || g.f.k;
+        const chip = g.word ? ih('button', 'sg-form sg-form-word' + (g === firstGuide ? ' sg-on' : ''), 'book-open', label, 13) : h('button', 'sg-form' + (g === firstGuide ? ' sg-on' : ''), label);
         chip.title = g.phrase ? 'Guide to the whole phrase' : g.word ? 'Everything about this word: meanings, how it is built, where it fits and where it does not' : 'Full guide to this grammar form';
         chip.dataset.k = g.f.k;
         chip.addEventListener('click', () => {
@@ -1741,7 +1750,7 @@
         const on = row.querySelector('.sg-form.sg-on');
         post({ type: 'openLibrary', k: on ? on.dataset.k : '' });
       });
-      const full = h('button', 'sg-btn sg-lib sg-expand', '⤢');
+      const full = ih('button', 'sg-btn sg-lib sg-expand', 'maximize-2', '', 14);
       full.title = 'Read this guide full screen';
       full.addEventListener('click', () => {
         const g = currentGuide || firstGuide;
@@ -2002,14 +2011,14 @@
     const form = phraseGuideForm(p, ctx.lang);
     const row = h('div', 'sg-pop-forms');
     row.append(h('span', 'sg-pop-forms-label', 'Guide'));
-    const chip = h('button', 'sg-form' + (form.grammar ? '' : ' sg-form-word') + ' sg-on', (form.grammar ? '' : '📖 ') + p.d);
+    const chip = form.grammar ? h('button', 'sg-form sg-on', p.d) : ih('button', 'sg-form sg-form-word sg-on', 'book-open', p.d, 13);
     const open = () => {
       if (form.grammar) showGuide(deep, form, ctx, phraseAsWord(p));
       else showPhraseGuide(deep, p, ctx);
       placePop(anchor);
     };
     chip.addEventListener('click', open);
-    const full = h('button', 'sg-btn sg-lib sg-expand', '⤢');
+    const full = ih('button', 'sg-btn sg-lib sg-expand', 'maximize-2', '', 14);
     full.title = 'Read this guide full screen';
     full.addEventListener('click', () => openReader(form, ctx, phraseAsWord(p), !form.grammar));
     row.append(chip, full);
@@ -2093,7 +2102,7 @@
     if (a.tr) box.append(h('div', 'sg-d-tr', a.tr));
     const lineTools = h('div', 'sg-d-tools');
     const lang = langCode(a.lang);
-    const say = h('button', 'sg-btn', '🔊 Hear the line');
+    const say = ih('button', 'sg-btn', 'volume-2', 'Hear the line');
     say.addEventListener('click', () => speakText(cue.text, lang));
     const allKnown = h('button', 'sg-btn', 'Mark every word known');
     allKnown.title = 'Marks each word in this line as known (particles and names are never highlighted anyway)';
@@ -2151,7 +2160,7 @@
         if (w.r && !sameText(w.r, w.s)) head.append(h('span', 'sg-word-r', w.r));
         head.append(h('span', 'sg-word-m', w.m || ''));
         const wctx = { sentence: cue.text, translation: a.tr, lang: langCode(a.lang), time: cue.start + (active() ? active().offset : 0) };
-        const gb = h('button', 'sg-say', '📖');
+        const gb = ih('button', 'sg-say', 'book-open', '', 15);
         gb.title = 'Word guide';
         gb.addEventListener('click', () => openPanelGuide(wordGuideForm(w, wctx.lang), wctx, w, true));
         head.append(gb, starButton('word', langCode(a.lang), w.d || w.s, () => wordItem(w, wctx)));
@@ -2187,7 +2196,7 @@
     titles.append(kind, title);
     const lib = h('button', 'sg-btn sg-ghost', 'Library');
     lib.addEventListener('click', () => post({ type: 'openLibrary', k: form.k }));
-    const close = h('button', 'sg-icon-btn sg-close', '✕');
+    const close = ih('button', 'sg-icon-btn sg-close', 'x');
     close.title = 'Close (Esc)';
     close.addEventListener('click', closeReader);
     head.append(titles, lib, close);
@@ -2211,7 +2220,7 @@
     const p = ui.panel;
     p.setTab('line');
     p.guide.dataset.k = form.k;
-    p.guideTitle.textContent = isWord ? '📖 ' + (form.name || form.k) : form.name || form.k;
+    p.guideTitle.textContent = form.name || form.k;
     p.guide.classList.add('sg-show');
     p.guideBody.scrollTop = 0;
     if (isWord) showWordGuide(p.guideBody, w, ctx);
@@ -2585,7 +2594,7 @@
   }
 
   function speakButton(text, lang) {
-    const b = h('button', 'sg-say', '🔊');
+    const b = ih('button', 'sg-say', 'volume-2', '', 16);
     b.title = 'Hear it';
     b.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -2800,7 +2809,7 @@
         const ctx = { sentence: line ? line.text : '', translation: '', lang, time: line ? line.start + t.offset : 0 };
         const kn = knownWordButton(fake, lang);
         kn.addEventListener('click', () => setTimeout(draw, 50));
-        const gb = h('button', 'sg-say', '📖');
+        const gb = ih('button', 'sg-say', 'book-open', '', 15);
         gb.title = 'Word guide';
         gb.addEventListener('click', () => openPanelGuide(wordGuideForm(fake, lang), ctx, fake, true));
         top.append(speakButton(x.d, lang), gb, kn, starButton('word', lang, x.d, () => wordItem(fake, ctx)));
@@ -2871,11 +2880,16 @@
   // A star that saves (or removes) a word or character, showing whether it is already saved.
   function starButton(kind, lang, text, makeItem) {
     const key = [kind, lang, text].join('|');
-    const b = h('button', 'sg-star', '☆');
+    const b = h('button', 'sg-star');
+    const draw = (on) => {
+      b.textContent = '';
+      b.append(SG.icon('star', { size: 18, fill: on }));
+    };
+    draw(false);
     b.title = 'Save to your word bank';
     request({ type: 'bankStatus', keys: [key] }).then((res) => {
       if (res.status && res.status[key]) {
-        b.textContent = '★';
+        draw(true);
         b.classList.add('sg-saved');
         b.title = 'Saved · click to remove';
       }
@@ -2884,7 +2898,7 @@
       e.stopPropagation();
       if (b.classList.contains('sg-saved')) {
         await request({ type: 'bankRemove', key });
-        b.textContent = '☆';
+        draw(false);
         b.classList.remove('sg-saved');
         b.title = 'Save to your word bank';
         return;
@@ -2894,7 +2908,7 @@
         showToast(res.error);
         return;
       }
-      b.textContent = '★';
+      draw(true);
       b.classList.add('sg-saved');
       b.title = 'Saved · click to remove';
     });
@@ -3075,7 +3089,7 @@
     }
     if (msg.guide && msg.guide.key) {
       const g = msg.guide;
-      const make = h('button', 'sg-form sg-form-word', (g.kind === 'grammar' ? 'Guide to ' : '📖 Make a guide for ') + (g.name || g.d));
+      const make = ih('button', 'sg-form sg-form-word', g.kind === 'grammar' ? 'book-open' : 'wand-sparkles', (g.kind === 'grammar' ? 'Guide to ' : 'Make a guide for ') + (g.name || g.d), 13);
       make.addEventListener('click', () => {
         const lang = ctx.lang || 'ja';
         if (g.kind === 'grammar') openPanelGuide({ k: g.key, name: g.name || g.d }, ctx, { s: g.d, m: '' });

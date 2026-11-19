@@ -1143,3 +1143,65 @@
 .lt-root .sg-dict-s { color: var(--sg-soft); line-height: 1.4; }
 .lt-root .sg-dict-n { display: inline-block; min-width: 1.2em; color: var(--sg-dim); }
 .lt-root .sg-dict-pos { margin-left: 0.4em; color: var(--sg-dim); font-size: 0.8em; }
+
+/* =====================================================================================
+   Design pass (0.3): Geist for the interface, Lucide icons, sentence-case labels, one flat accent,
+   calmer surfaces. Later rules override the earlier ones on purpose.
+   ===================================================================================== */
+.lt-root {
+  --lt-ui: "LT Geist", "Inter", system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "BIZ UDPGothic", "Meiryo",
+    "Noto Sans CJK JP", "Noto Sans JP", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --sg-glass: rgba(17, 18, 22, 0.86);
+  --sg-glass-strong: rgba(16, 17, 21, 0.95);
+  --sg-line: rgba(255, 255, 255, 0.08);
+  --sg-line-strong: rgba(255, 255, 255, 0.14);
+  --sg-fill: rgba(255, 255, 255, 0.04);
+  --sg-fill-hover: rgba(255, 255, 255, 0.08);
+  --lt-accent: #f2b35e;
+  --lt-accent-ink: #1d1407;
+  --sg-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+.lt-root .lt-icon { display: block; flex: 0 0 auto; }
+.lt-root .lt-icon-t { white-space: nowrap; }
+.lt-root .sg-btn .lt-icon, .lt-root .sg-form .lt-icon { margin-right: 0.1em; }
+.lt-root .sg-form { display: inline-flex; align-items: center; gap: 0.35em; }
+.lt-root .sg-say { display: inline-flex; align-items: center; }
+.lt-root .sg-star { display: inline-flex; align-items: center; }
+.lt-root .sg-star.sg-saved { color: var(--lt-accent); }
+.lt-root .sg-pop-close { display: inline-flex; }
+.lt-root .sg-grip { display: flex; align-items: center; justify-content: center; letter-spacing: 0; padding: 1px 10px 2px; }
+
+/* labels: sentence case, quieter */
+.lt-root .sg-section {
+  margin: 16px 0 6px;
+  color: var(--sg-soft);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.lt-root .sg-g-h { font-size: 0.95em; font-weight: 650; letter-spacing: 0; text-transform: none; color: var(--lt-accent); }
+.lt-root .sg-reader-kind { letter-spacing: 0.02em; text-transform: none; font-size: 12px; font-weight: 600; }
+.lt-root .sg-usual-k { text-transform: none; letter-spacing: 0; font-size: 12px; }
+
+/* one flat accent instead of gradients */
+.lt-root .sg-go, .lt-root .sg-go:hover { background: var(--lt-accent); color: var(--lt-accent-ink); border-color: transparent; }
+.lt-root .sg-go:hover { filter: brightness(1.06); }
+.lt-root .sg-switch.sg-on .sg-switch-track { background: var(--lt-accent); }
+.lt-root .sg-slider input[type="range"]::-moz-range-progress { background: var(--lt-accent); }
+.lt-root .sg-show-chip.sg-on { background: rgba(242, 179, 94, 0.14); border-color: rgba(242, 179, 94, 0.5); }
+.lt-root .sg-tab.sg-on { background: rgba(255, 255, 255, 0.1); box-shadow: none; }
+.lt-root .sg-tabs { background: rgba(255, 255, 255, 0.03); }
+
+/* calmer surfaces: less blur, hairline borders */
+.lt-root .sg-panel { backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2); border-radius: 16px; }
+.lt-root .sg-pop { backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2); border-radius: 14px; }
+.lt-root .sg-ctl { border-radius: 10px; }
+.lt-root .sg-ctl-i { display: flex; justify-content: center; }
+.lt-root .sg-panel-title { font-weight: 650; letter-spacing: -0.01em; }
+.lt-root .sg-btn { border-radius: 8px; font-weight: 550; }
+
+/* motion, kept small (and off for reduced motion) */
+@keyframes lt-pop-in { from { opacity: 0; transform: translateY(4px) scale(0.99); } to { opacity: 1; transform: none; } }
+.lt-root .sg-pop.sg-show { animation: lt-pop-in 0.14s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.lt-root .sg-tabbody.sg-on { animation: sg-fade 0.12s ease-out; }

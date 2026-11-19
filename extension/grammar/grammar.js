@@ -137,7 +137,7 @@
       }
       groups = [...map.entries()].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0])).map(([n, list]) => [n, list.sort(byName)]);
     }
-    if (!items.length) nav.append(h('p', 'none', q ? 'Nothing matches.' : kind === 'word' ? 'No word guides yet: open 📖 on a word while watching.' : 'No grammar guides yet: open a form in a word\'s Guides row while watching.'));
+    if (!items.length) nav.append(h('p', 'none', q ? 'Nothing matches.' : kind === 'word' ? 'No word guides yet: open the book on a word while watching.' : 'No grammar guides yet: open a form in a word\'s Guides row while watching.'));
     for (const [name, list] of groups) {
       const sec = h('section', 'group' + (collapsed.has(name) && !q ? ' shut' : ''));
       const head = h('button', 'group-head');

@@ -17,6 +17,13 @@
     return e;
   }
 
+  function ih(tag, cls, icon, text) {
+    const el = h(tag, cls);
+    el.append(SG.icon(icon, { size: 15 }));
+    if (text) el.append(document.createTextNode(text));
+    return el;
+  }
+
   async function newLeft() {
     const log = (await browser.storage.local.get('reviewLog')).reviewLog || {};
     const today = SG.srs.dayKey(Date.now());
@@ -156,7 +163,7 @@
       ans.className = 'answer';
       ans.append(h('div', 'meaning', L.tr || ''));
       if (L.lit) ans.append(h('div', 'tr', L.lit));
-      const sayBtn = h('button', 'say', '🔊 Hear it');
+      const sayBtn = ih('button', 'say', 'volume-2', ' Hear it');
       sayBtn.addEventListener('click', () => say(card.text, card.lang));
       const center = h('div', '');
       center.style.textAlign = 'center';
@@ -212,7 +219,7 @@
           if (r) r.a.slice(0, 2).forEach((acc) => pitch.append(SG.pitch.render(r.r, acc)));
         });
       }
-      const sayBtn = h('button', 'say', '🔊 Hear it');
+      const sayBtn = ih('button', 'say', 'volume-2', ' Hear it');
       sayBtn.addEventListener('click', () => say(w.s || card.text, card.lang));
       const center = h('div', '');
       center.style.textAlign = 'center';
@@ -295,7 +302,7 @@
       ans.append(h('div', 'note', cloze.why));
       const full = parts.join(cloze.answer);
       card.recent = [full].concat(card.recent || []).slice(0, 8);
-      const sayBtn = h('button', 'say', '🔊 Hear it');
+      const sayBtn = ih('button', 'say', 'volume-2', ' Hear it');
       sayBtn.addEventListener('click', () => say(full, card.lang));
       const center = h('div', '');
       center.style.textAlign = 'center';
@@ -360,7 +367,7 @@
     done.append(h('h2', '', items.length ? 'All done for now' : 'Nothing to review yet'));
     done.append(h('p', '', items.length
       ? `${reviewedNow} reviewed this session.${upcoming ? ' Next card is due ' + new Date(upcoming).toLocaleString() + '.' : ''}`
-      : 'Save words and characters while watching (☆ in the hover popup) and they show up here.'));
+      : 'Save words and characters while watching (the star in the hover popup) and they show up here.'));
     box.append(done);
     $('controls').textContent = '';
   }

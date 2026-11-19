@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Langtitles",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "Langtitles: learn languages from what you watch. Word-by-word subtitle breakdowns with furigana and pinyin, grammar guides, a word bank, and subtitles fetched for the episode, on any streaming site. Powered by Claude with your own API key.",
   "icons": {
     "48": "icons/icon.svg",
@@ -79,6 +79,7 @@
       "run_at": "document_idle",
       "css": [
         "fonts/rounded/rounded.css",
+        "fonts/geist/geist.css",
         "content/page.css"
       ],
       "js": [
@@ -95,6 +96,7 @@
         "shared/pitch.js",
         "shared/grammar-ids.js",
         "shared/hardsubs.js",
+        "shared/icons.js",
         "content/content.js"
       ]
     }
@@ -112,6 +114,7 @@
     "content/content.css",
     "data/grammar/*",
     "data/jlpt.json",
+    "fonts/geist/*",
     "fonts/rounded/*",
     "icons/icon.svg"
   ],
