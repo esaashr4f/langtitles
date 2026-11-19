@@ -209,6 +209,16 @@ Langtitles works in Firefox for Android. With no hover on touch screens, tap a w
 - **Prepare a whole season at half price:** side panel → Find subtitles → Prepare a whole season. Langtitles downloads subtitles for each episode and sends every line through Anthropic's batch API, which costs half as much and is usually done within an hour (at most a day). Those episodes then play with every line ready. Each episode uses one subtitle download.
 - **Spending cap:** set a monthly limit in Options. Once this month's estimated spend reaches it, Langtitles stops sending requests until you raise it. The toolbar popup shows this month's spend.
 
+## Built-in dictionaries
+
+Langtitles carries its own dictionaries, so a word's card shows its dictionary entry instantly and for free, before and alongside Claude's explanation:
+
+- **Japanese:** [JMdict](https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project) (about 186,000 entries: every common word, every expression and set phrase, and the first sense of rarer words) and [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) (3,125 kanji: meanings, on and kun readings, strokes, grade), both © the Electronic Dictionary Research and Development Group, [CC BY-SA 4.0](https://www.edrdg.org/edrdg/licence.html). Conjugated words are traced back to their dictionary form (食べさせられた → 食べる). Set phrases the dictionary knows (歯切れが悪い, 店を出す, に関して) are marked as phrases in each line even when the line breakdown missed them.
+- **Korean:** English Wiktionary, extracted by [kaikki.org](https://kaikki.org/dictionary/Korean/) (about 35,500 words and 4,260 hanja), CC BY-SA 4.0 / GFDL. Conjugated forms point to their dictionary form (먹어요 → 먹다).
+- **Chinese:** [CC-CEDICT](https://cc-cedict.org/) (about 122,000 entries, simplified and traditional, pinyin with tone marks), © MDBG, CC BY-SA 4.0.
+
+Word and phrase guides are written from the dictionary entry, so readings and senses come out right. To rebuild the data from new releases: `node scripts/build-dict.mjs JMdict_e kanjidic2.xml`, `node scripts/build-kodict.mjs kaikki.org-dictionary-Korean.jsonl`, `node scripts/build-zhdict.mjs cedict_1_0_ts_utf-8_mdbg.txt`.
+
 ## Built-in data
 
 The rounded subtitle font is [M PLUS Rounded 1c](https://fonts.google.com/specimen/M+PLUS+Rounded+1c) (SIL Open Font License, extension/fonts/rounded/OFL.txt). The built-in grammar guides are written for Langtitles (scripts/grammar/, built with `node scripts/build-grammar.mjs`).

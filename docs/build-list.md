@@ -170,7 +170,7 @@ docs/pending-notes.md and get loaded in as part of item 5.
 - [x] **Consistency check on new guides:** a cheap pass that flags contradictions inside a guide (the なり guide
   says it attaches to adjectives and verbs, then lists that as a mistake) and claims it can't support, and
   fixes them before saving.
-- [ ] **Dictionary-grounded guides:** pass the dictionary's readings and meanings into guide prompts.
+- [x] **Dictionary-grounded guides:** pass the dictionary's readings and meanings into guide prompts.
 
 ## 6. Grammar as important as vocab
 
@@ -220,9 +220,9 @@ docs/pending-notes.md and get loaded in as part of item 5.
 
 ## 11. Dictionary
 
-- [ ] **Japanese:** JMdict (common words, optional full), KANJIDIC2, deinflection (頑張って -> 頑張る); instant
+- [x] **Japanese:** JMdict (common words, optional full), KANJIDIC2, deinflection (頑張って -> 頑張る); instant
   meanings and readings in the word card before the AI arrives.
-- [ ] **Chinese:** CC-CEDICT. **Korean:** later (KRDict needs another approach).
+- [x] **Chinese:** CC-CEDICT. **Korean:** Wiktionary via kaikki.org (built).
 
 ## 12. Publishing
 

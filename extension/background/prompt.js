@@ -355,9 +355,10 @@ Rules for every guide:
 
   // What the learner has already worked out (from their questions): the guide should build it in.
   function notesBlock(req) {
+    const dict = req.dictInfo ? `\n\nThe dictionary entry (use it to get readings and senses right; the guide is still yours to write):\n${req.dictInfo}` : '';
     const notes = (req.notes || []).filter((n) => n && n.text);
-    if (!notes.length) return '';
-    return '\n\nThe learner already asked about this; build these points into the guide where they belong:\n' + notes.map((n) => '- ' + n.text + (n.sentence ? ` (line: ${n.sentence})` : '')).join('\n');
+    if (!notes.length) return dict;
+    return dict + '\n\nThe learner already asked about this; build these points into the guide where they belong:\n' + notes.map((n) => '- ' + n.text + (n.sentence ? ` (line: ${n.sentence})` : '')).join('\n');
   }
 
   function wordGuideUserMessage(req) {

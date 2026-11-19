@@ -104,7 +104,26 @@
       }
     }
     await Promise.all(pending);
+    for (const a of Object.values(results)) await addDictPhrases(a).catch(() => {});
     return { results, error };
+  }
+
+  // Set phrases and compound particles the dictionary knows (歯切れが悪い, 店を出す, に関して) are added to
+  // a Japanese line's phrases when the analysis didn't list them. Local and free.
+  async function addDictPhrases(a) {
+    if (!a || !Array.isArray(a.w) || !a.w.length || !/^ja/.test(a.lang || '')) return;
+    const have = (a.phrases || []).map((p) => (p.w || []).join(','));
+    const covered = new Set((a.phrases || []).flatMap((p) => p.w || []));
+    const found = await SG.dict.expressions(a.w);
+    const add = [];
+    for (const f of found) {
+      if (have.includes(f.w.join(',')) || f.w.every((i) => covered.has(i))) continue;
+      const allParticles = f.w.every((i) => /particle|助詞/i.test(a.w[i].pos || '') || (a.w[i].s || '').length <= 2);
+      const gloss = (f.entry.s[0] || ['', ''])[1].split(';')[0].replace(/\s*\.\.\.\s*/g, ' ').trim();
+      add.push({ w: f.w, kind: allParticles ? 'compound particle' : 'set phrase', d: f.d, r: f.entry.k.length ? f.entry.r[0] : '', m: gloss, k: 'phrase.ja.' + f.d, b: [], fromDict: true });
+      f.w.forEach((i) => covered.add(i));
+    }
+    if (add.length) a.phrases = (a.phrases || []).concat(add);
   }
 
   function guideKey(k) {
@@ -204,6 +223,16 @@
       const writer = req.kind === 'wordguide' ? claude.explainWordGuide : claude.explainForm;
       const tabSettings = forTab(port.sender && port.sender.tab ? port.sender.tab.id : -1);
       const waitingNotes = await pendingNotes(req.form.k);
+      // Word and phrase guides start from what the dictionary says (readings, senses), so facts are right.
+      if (req.kind === 'wordguide') {
+        try {
+          const lang = req.lang || '';
+          const card = await SG.dict.card(lang.startsWith('ko') ? 'ko' : lang.startsWith('ja') ? 'ja' : lang.startsWith('zh') ? 'zh' : '', req.word, req.dict);
+          if (card) req.dictInfo = card.entries.map((e) => `${e.head}${e.read ? ' [' + e.read + ']' : ''}: ` + e.senses.map((x, i) => `${i + 1}. (${x[0]}) ${x[1]}`).join(' ')).join('\n') + ` (${card.source})`;
+        } catch (e) {
+          /* no dictionary entry; the guide is written from the line */
+        }
+      }
       req.notes = (prevGuide && prevGuide.notes ? prevGuide.notes : []).concat(waitingNotes);
       let text = await writer(tabSettings, req, (delta) => each((w) => w.port.postMessage({ type: 'deepDelta', reqId: w.reqId, delta })));
       // Before it's saved: no romaji, and a proofreading pass for contradictions (fixed only if found).
@@ -851,6 +880,10 @@
             },
             (err) => send(port, { type: 'askError', reqId: msg.reqId, message: err.message }),
           );
+      } else if (msg.type === 'dictCard') {
+        SG.dict.card(msg.lang, msg.s, msg.d).then((card) => send(port, { type: 'dictCard', reqId: msg.reqId, card }), () => send(port, { type: 'dictCard', reqId: msg.reqId, card: null }));
+      } else if (msg.type === 'kanjiQuick') {
+        (msg.lang === 'ko' ? SG.dict.hanjaInfo(msg.ch) : SG.dict.kanjiInfo(msg.ch)).then((info) => send(port, { type: 'dictCard', reqId: msg.reqId, info }), () => send(port, { type: 'dictCard', reqId: msg.reqId, info: null }));
       } else if (msg.type === 'pickShow') {
         SG.shows.pick(msg.show, msg.siteTitle, msg.lang).then((entry) => send(port, { type: 'showSaved', reqId: msg.reqId, entry }));
       } else if (msg.type === 'myShows') {

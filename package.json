@@ -1,6 +1,6 @@
 {
   "name": "langtitles",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "description": "Firefox extension: interlinear word-by-word subtitle breakdowns for any streaming site, powered by Claude.",
   "scripts": {
@@ -8,7 +8,8 @@
     "test": "node --test test/*.test.js",
     "lint": "web-ext lint --source-dir extension",
     "package": "npm run build:data && web-ext build --source-dir extension --artifacts-dir dist --overwrite-dest",
-    "build:data": "node scripts/build-grammar.mjs && node scripts/build-library-fixes.mjs"
+    "build:data": "node scripts/build-grammar.mjs && node scripts/build-library-fixes.mjs",
+    "build:dict": "echo \"node scripts/build-dict.mjs JMdict_e kanjidic2.xml; node scripts/build-kodict.mjs kaikki-Korean.jsonl; node scripts/build-zhdict.mjs cedict.txt (see README)\""
   },
   "license": "MIT",
   "devDependencies": {

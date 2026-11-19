@@ -309,7 +309,7 @@
       renderStatus();
     } else if (msg.type === 'askDelta' || msg.type === 'askDone' || msg.type === 'askError' || msg.type === 'askLesson') {
       onAsk(msg);
-    } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs', 'showChoice', 'qaList', 'noteAdded', 'showSaved'].includes(msg.type)) {
+    } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs', 'showChoice', 'qaList', 'noteAdded', 'showSaved', 'dictCard'].includes(msg.type)) {
       const cb = subReqs.get(msg.reqId);
       subReqs.delete(msg.reqId);
       if (cb) cb(msg);
@@ -1633,6 +1633,32 @@
     if (meta) pop.append(h('div', 'sg-pop-meta', meta));
     if (ctx.lang === 'ja' && settings.pitchAccent) pop.append(pitchBlock(w));
     pop.append(h('div', 'sg-pop-mean', w.m || ''));
+    // The built-in dictionary's entry, instantly (JMdict, Wiktionary for Korean, CC-CEDICT for Chinese).
+    if ((ctx.lang === 'ja' || ctx.lang === 'ko' || ctx.lang === 'zh') && SG.wordClass(w.pos) !== 'name') {
+      const dictBox = h('div', 'sg-pop-dict');
+      pop.append(dictBox);
+      request({ type: 'dictCard', lang: ctx.lang, s: w.s, d: w.d }).then((res) => {
+        const card = res && res.card;
+        if (!card || !dictBox.isConnected) return;
+        for (const e of card.entries.slice(0, 1)) {
+          const top = h('div', 'sg-dict-head');
+          const head = h('span', 'sg-dict-w', e.head);
+          head.lang = ctx.lang;
+          top.append(head);
+          if (e.read) top.append(h('span', 'sg-dict-r', e.read));
+          if (e.common) top.append(h('span', 'sg-jlpt', 'common'));
+          top.append(h('span', 'sg-dict-src', card.source));
+          dictBox.append(top);
+          e.senses.slice(0, 3).forEach((x, i) => {
+            const li = h('div', 'sg-dict-s');
+            li.append(h('span', 'sg-dict-n', String(i + 1)), document.createTextNode(x[1]));
+            if (x[0]) li.append(h('span', 'sg-dict-pos', x[0]));
+            dictBox.append(li);
+          });
+        }
+        placePop(tok);
+      });
+    }
 
     const parts = Array.isArray(w.p) ? w.p : [];
     if (parts.length > 1 || (parts.length === 1 && !sameText(parts[0].g, w.m))) {
@@ -2942,8 +2968,23 @@
       return;
     }
     el.classList.remove('sg-guide');
-    el.classList.add('sg-loading');
-    el.textContent = `Writing an entry for ${ch}… (saved once written)`;
+    el.textContent = '';
+    // While Claude writes the full entry, the dictionary's facts show straight away.
+    if (ctx.lang === 'ja') {
+      const quick = await request({ type: 'kanjiQuick', ch, lang: 'ja' });
+      const k2 = quick && quick.info;
+      if (k2 && !charCache.has(k)) {
+        const box = h('div', 'sg-pop-dict');
+        const top = h('div', 'sg-dict-head');
+        top.append(h('span', 'sg-dict-w', ch), h('span', 'sg-dict-r', [k2.on.join('・'), k2.kun.join('・')].filter(Boolean).join(' / ')), h('span', 'sg-dict-src', 'KANJIDIC'));
+        box.append(top, h('div', 'sg-dict-s', k2.m.join('; ')));
+        const facts = [k2.st ? `${k2.st} strokes` : '', k2.g ? (k2.g <= 6 ? `grade ${k2.g}` : 'jōyō (secondary school)') : '', k2.j ? `old JLPT ${k2.j}` : ''].filter(Boolean).join(' · ');
+        if (facts) box.append(h('div', 'sg-dict-pos', facts));
+        el.append(box);
+      }
+    }
+    const waiting = h('div', 'sg-loading', `Writing an entry for ${ch}… (saved once written)`);
+    el.append(waiting);
     const res = await request({ type: 'charInfo', ch, lang: ctx.lang, word: w.s, reading: w.r, sentence: ctx.sentence });
     if (res.error) {
       el.classList.remove('sg-loading');
