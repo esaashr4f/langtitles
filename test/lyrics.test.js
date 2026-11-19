@@ -53,3 +53,17 @@ test('chorus repeats are counted', () => {
   const r = L.repeats([{ text: 'a' }, { text: 'b' }, { text: 'a' }, { text: 'a' }]);
   assert.strictEqual(r.get('a'), 3);
 });
+
+test('MyAnimeList theme lines', () => {
+  assert.deepStrictEqual(L.parseTheme('1: "Grain" by Kuniaki Haishima (eps 1-32)'), { n: 1, track: 'Grain', trackAlt: '', artist: 'Kuniaki Haishima', artistJa: '', eps: '1-32' });
+  const k = L.parseTheme('"Kaikai Kitan (廻廻奇譚)" by Eve (eps 1-13)');
+  assert.strictEqual(k.track, '廻廻奇譚');
+  assert.strictEqual(k.trackAlt, 'Kaikai Kitan');
+  assert.strictEqual(k.artist, 'Eve');
+  const y = L.parseTheme('2: "Idol (アイドル)" by YOASOBI');
+  assert.strictEqual(y.n, 2);
+  assert.strictEqual(y.eps, '');
+  const j = L.parseTheme('"Unravel" by TK from Ling Tosite Sigure (TK from 凛として時雨) (eps 1-12)');
+  assert.strictEqual(j.artist, 'TK from Ling Tosite Sigure');
+  assert.strictEqual(j.artistJa, 'TK from 凛として時雨');
+});

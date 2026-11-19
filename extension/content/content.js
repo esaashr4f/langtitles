@@ -756,6 +756,53 @@
     }
     tick();
     pump();
+    if (listenMode()) paintSongCoverage();
+  }
+
+  // How much of the song you already know, and the words that would help most.
+  function paintSongCoverage() {
+    const el = ui && ui.panel.songCov;
+    const t = active();
+    if (!el || !el.isConnected || !t || t.source !== 'lyrics') return;
+    const lang = langCode(t.lang);
+    const counts = new Map();
+    let ready = 0;
+    const seenLine = new Set();
+    t.cues.forEach((c, i) => {
+      const a = analyses.get(t.keys[i]);
+      if (!a || seenLine.has(c.text)) return;
+      seenLine.add(c.text);
+      ready++;
+      for (const w of a.w || []) {
+        if (isTrivial(w)) continue;
+        const d = w.d || w.s;
+        const x = counts.get(d) || { d, m: w.m, r: w.r, count: 0 };
+        x.count++;
+        counts.set(d, x);
+      }
+    });
+    const lines = seenLine.size + new Set(t.cues.map((c) => c.text).filter((x) => !seenLine.has(x))).size;
+    el.textContent = '';
+    if (!ready) {
+      el.append(h('div', 'sg-note', 'Coverage appears once the lyrics are prepared.'));
+      return;
+    }
+    const list = [...counts.values()];
+    const cov = computeCoverage(list, lang);
+    const head = h('div', 'sg-scov-head');
+    head.append(h('span', 'sg-scov-pct', cov.pct + '%'), h('span', 'sg-scov-of', `of the words in this song are ones you know${ready < lines ? ` (${ready} of ${lines} lines prepared)` : ''}`));
+    el.append(head);
+    const learn = list.filter((x) => !(knownWords[lang] && knownWords[lang].has(x.d))).sort((a, b) => b.count - a.count).slice(0, 5);
+    if (learn.length) {
+      el.append(h('div', 'sg-scov-sub', 'Learn these first:'));
+      for (const x of learn) {
+        const row = h('div', 'sg-scov-w');
+        const w = h('span', 'sg-scov-d', x.d);
+        w.lang = lang;
+        row.append(w, h('span', 'sg-scov-m', x.m || ''), h('span', 'sg-scov-n', x.count > 1 ? '×' + x.count : ''));
+        el.append(row);
+      }
+    }
   }
 
   // --------------------------------------------------------------------- UI
@@ -1036,7 +1083,11 @@
     find.append(findBody);
     const songBox = h('div', 'sg-song');
     const watchOnly = h('div', 'sg-watch-only');
-    watchOnly.append(h('div', 'sg-section', 'Other sources'), sources, h('div', 'sg-section', 'Find subtitles for this episode'), find);
+    const showSongsBox = h('div', 'sg-showsongs');
+    const showSongsBtn = ih('button', 'sg-btn sg-ghost', 'music', ' Find this show\'s opening and ending songs', 15);
+    showSongsBtn.addEventListener('click', () => openShowSongs(showSongsBox, showSongsBtn));
+    showSongsBox.append(showSongsBtn);
+    watchOnly.append(h('div', 'sg-section', 'Other sources'), sources, h('div', 'sg-section', 'Find subtitles for this episode'), find, h('div', 'sg-section', 'Songs in this show'), showSongsBox);
     subsTab.append(
       modeSeg, songBox,
       h('div', 'sg-section', 'Track'), select,
@@ -1259,6 +1310,7 @@
       subsTabBtn.querySelector('.sg-tab-short').textContent = listening ? 'Song' : 'Subs';
     }
     ui.root.classList.toggle('lt-singalong', listening && Boolean(settings.singAlong));
+    ui.root.classList.toggle('lt-gaps', listening && Boolean(settings.lyricGaps));
     const nowLang = active() ? langCode(active().lang) : null;
     for (const [key, chip] of ui.panel.showChips) {
       chip.classList.toggle('sg-on', Boolean(settings[key]));
@@ -3023,7 +3075,7 @@
     coverage.set(t.id, cov);
     renderStatus();
     const head = h('div', 'sg-cov');
-    head.append(h('div', 'sg-cov-n', cov.pct + '%'), h('div', 'sg-cov-t', `of the words in this episode are ones you know (counting each time a word is used). ${cov.pct >= 90 ? 'Comfortable.' : cov.pct >= 75 ? 'A good level to learn from.' : 'Challenging: studying the words below first will help.'}`));
+    head.append(h('div', 'sg-scov-n', cov.pct + '%'), h('div', 'sg-cov-t', `of the words in this episode are ones you know (counting each time a word is used). ${cov.pct >= 90 ? 'Comfortable.' : cov.pct >= 75 ? 'A good level to learn from.' : 'Challenging: studying the words below first will help.'}`));
     body.append(head);
     const status = h('div', 'sg-find-status');
     const hideKnown = h('label', 'sg-f-check');
@@ -3639,6 +3691,12 @@
     now.append(names);
     box.append(now);
     if (listenNote) box.append(h('div', 'sg-song-note', listenNote));
+    const cov = h('div', 'sg-scov');
+    ui.panel.songCov = cov;
+    if (active() && active().source === 'lyrics') {
+      box.append(h('div', 'sg-section', 'Your coverage'), cov);
+      paintSongCoverage();
+    }
     if (ui.lyrArt) ui.lyrArt.style.backgroundImage = np && np.art ? `url("${np.art.replace(/"/g, '%22')}")` : '';
 
     // Sheet size and sing-along
@@ -3665,7 +3723,17 @@
       applySettings();
     });
     sing.append(singIn, document.createTextNode(' Sing-along view (readings only, bigger)'));
-    look.append(sizes, sing);
+    const gaps = h('label', 'sg-f-check');
+    const gapsIn = h('input');
+    gapsIn.type = 'checkbox';
+    gapsIn.checked = Boolean(settings.lyricGaps);
+    gapsIn.addEventListener('change', () => {
+      settings.lyricGaps = gapsIn.checked;
+      savePatch({ lyricGaps: gapsIn.checked });
+      applySettings();
+    });
+    gaps.append(gapsIn, document.createTextNode(' Fill the gaps: hide words you don\'t know yet; hover or tap one to check yourself'));
+    look.append(sizes, sing, gaps);
     box.append(h('div', 'sg-section', 'Lyrics view'), look);
 
     // Song guide
@@ -3752,6 +3820,48 @@
     paste.append(ta, btns);
     box.append(paste);
     box.append(h('div', 'sg-note', 'Lyrics come from LRCLIB, a free community lyrics library. They are for your own study.'));
+  }
+
+  // Watch mode: the show's opening and ending songs (MyAnimeList via Jikan), each with a song guide
+  // written from its lyrics, and a link to play it in YouTube Music, where Listen mode takes over.
+  async function openShowSongs(box, btn) {
+    const ep = await currentEpisode().catch(() => null);
+    const title = (ep && (ep.title || ep.show)) || tabTitle || document.title;
+    btn.disabled = true;
+    const note = h('div', 'sg-note', `Looking up "${title}" on MyAnimeList…`);
+    box.append(note);
+    const res = await request({ type: 'showSongs', title });
+    note.remove();
+    btn.remove();
+    if (res.error) return box.append(h('div', 'sg-note', res.error));
+    if (!res.list || !res.list.length) return box.append(h('div', 'sg-note', `MyAnimeList lists no opening or ending songs for ${res.anime ? res.anime.title : title}.`));
+    box.append(h('div', 'sg-note', `From MyAnimeList: ${res.anime.title}`));
+    for (const x of res.list) {
+      const row = h('div', 'sg-ss');
+      const top = h('div', 'sg-ss-top');
+      top.append(h('span', 'sg-ss-kind', `${x.kind}${res.list.filter((y) => y.kind === x.kind).length > 1 ? ' ' + x.n : ''}`));
+      const names = h('div', 'sg-ss-names');
+      names.append(h('div', 'sg-ss-t', x.track + (x.trackAlt ? ` · ${x.trackAlt}` : '')), h('div', 'sg-ss-a', [x.artistJa || x.artist, x.eps ? 'episodes ' + x.eps : ''].filter(Boolean).join(' · ')));
+      top.append(names);
+      row.append(top);
+      const acts = h('div', 'sg-ss-acts');
+      const play = h('a', 'sg-link', 'Listen in YouTube Music');
+      play.href = 'https://music.youtube.com/search?q=' + encodeURIComponent(`${x.artistJa || x.artist} ${x.track}`);
+      play.target = '_blank';
+      play.rel = 'noopener';
+      const guideBtn = h('button', 'sg-link', 'Song guide');
+      const body = h('div', 'sg-song-guide');
+      guideBtn.addEventListener('click', () => {
+        guideBtn.remove();
+        body.textContent = 'Finding the lyrics and writing the guide…';
+        const reqId = 'sg' + ++reqSeq;
+        songGuideTargets.set(reqId, body);
+        post({ type: 'songGuideFor', reqId, track: x.track, artist: x.artistJa || x.artist, show: res.anime.title });
+      });
+      acts.append(guideBtn, play);
+      row.append(acts, body);
+      box.append(row);
+    }
   }
 
   function rememberOffset(t, scale) {

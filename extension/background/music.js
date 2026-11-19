@@ -137,5 +137,30 @@
     return hit && hit.artworkUrl100 ? hit.artworkUrl100.replace('100x100', '300x300') : '';
   }
 
-  SG.music = { find, search, useRecord, useOwn, savePick, remember, songs, picks };
+  // A show's opening and ending songs, from MyAnimeList via Jikan (free, no key).
+  async function showSongs(title) {
+    const j = async (url) => {
+      const res = await fetch(url);
+      if (res.status === 429) throw new Error('Jikan is busy; try again in a moment');
+      if (!res.ok) throw new Error('Jikan error ' + res.status);
+      return res.json();
+    };
+    const found = (await j('https://api.jikan.moe/v4/anime?' + new URLSearchParams({ q: title, limit: '5', sfw: 'true' }))).data || [];
+    const norm = (x) => String(x || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+    const want = norm(title);
+    const anime = found.find((a) => [a.title, a.title_english, a.title_japanese].concat((a.titles || []).map((t) => t.title)).some((t) => norm(t) === want)) || found[0];
+    if (!anime) return { error: `No anime called "${title}" on MyAnimeList.` };
+    await new Promise((r) => setTimeout(r, 400)); // Jikan allows about 3 requests a second
+    const themes = (await j(`https://api.jikan.moe/v4/anime/${anime.mal_id}/themes`)).data || {};
+    const list = [];
+    for (const [kind, lines] of [['OP', themes.openings || []], ['ED', themes.endings || []]]) {
+      for (const line of lines) {
+        const t = SG.lyrics.parseTheme(line);
+        if (t) list.push(Object.assign({ kind }, t));
+      }
+    }
+    return { anime: { id: anime.mal_id, title: anime.title, art: (anime.images && anime.images.jpg && anime.images.jpg.image_url) || '' }, list };
+  }
+
+  SG.music = { showSongs, find, search, useRecord, useOwn, savePick, remember, songs, picks };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

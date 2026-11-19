@@ -267,6 +267,9 @@ Subtitle lines are fragments of spoken dialogue. A sentence may run across sever
 - Poetic and old-fashioned grammar (～ゆく, ～ぬ, ～たまえ, ～けり, dropped particles, inverted order, 君 / 僕 in songs) is deliberate: explain it as poetic, never as a mistake; start that word's n with "Poetic:".
 - If a line is figurative, add one short note (in notes) on what the image stands for, in this song.
 - Lines in English inside the lyrics: translate nothing, give words no notes.
+- Korean songs: Korean is sung as it sounds, not as spelled. When a word's pronunciation differs from its spelling (같이 → 가치, 있어 → 이써, 좋아 → 조아, 국물 → 궁물), put the pronunciation in Hangul in r and name the sound change in n (linking, nasalisation, tensing, h-dropping, palatalisation). Never romanise.
+- Korean songs: give contractions their full form in n (난 = 나는, 넌 = 너는, 뭐해 = 뭐 해, 할래, 거야 = 것이야). Note a shift between 반말 and 존댓말, or between 너 / 당신 / 그대, in notes: in songs it usually marks a change in the relationship. Explain endings like -잖아, -거든, -ㄹ게, -ㄹ래, -네 by the feeling they carry.
+- Korean words inside an English or mixed line keep their normal notes; if a line switches language for the hook or a rhyme, one short note may say so.
 - Read each line in the context of the whole song below; a line repeated in the chorus means the same each time.
 `;
     if (song.lyrics && song.lyrics.length) {
@@ -291,13 +294,13 @@ Go through the whole song in order, every line, grouped by part ("### Verse 1", 
 A repeated chorus is explained in full once; later repeats only get what has changed in meaning by then (often a lot).
 
 ## What you might not pick up
-The things a learner would miss on a first listen: double meanings and wordplay (homophones, kanji chosen for a second meaning, a reading that hides another word), cultural, literary, seasonal or religious references, set phrases used against their usual meaning, shifts in who "you" is, tense or politeness shifts that change the relationship, images that return and change, and what the title means once you've heard the song. Only what the lyrics support; say how sure each reading is ("clearly", "probably", "one reading is"). Don't invent facts about the artist.
+The things a learner would miss on a first listen: double meanings and wordplay (homophones, kanji chosen for a second meaning, a reading that hides another word), cultural, literary, seasonal or religious references, set phrases used against their usual meaning, shifts in who "you" is, tense or politeness shifts that change the relationship, images that return and change, and what the title means once you've heard the song. For Korean songs also: speech-level shifts (반말 / 존댓말, 너 / 당신 / 그대) and what they say about the relationship; why a line switches into English; Sino-Korean words whose hanja add a layer (give the hanja); sound changes that make a sung line hard to catch by ear (spelling → how it is sung, in Hangul). Only what the lyrics support; say how sure each reading is ("clearly", "probably", "one reading is"). Don't invent facts about the artist.
 
 ## How to read songs like this
 Two to five concrete habits this song teaches, for reading other lyrics: e.g. "when the subject is dropped, look for the last person named", "〜ていく here shows the change going on into the future", "an image in verse 1 usually comes back changed in the last chorus".
 
 ## Words and phrases to keep
-Ten to fifteen of the most useful words and set phrases from the song, each as "word (reading) — meaning — the line it comes from".
+Ten to fifteen of the most useful words and set phrases from the song, each as "word (reading) — meaning — the line it comes from" (for Korean: "word — meaning — the line", with the hanja for Sino-Korean words and the full form of any contraction).
 
 Depth follows the song: a light song gets a short guide; a dense, layered one gets everything it deserves. Never pad. No preamble or sign-off, no markdown other than the headings, bullet points and quotes described.`;
   }

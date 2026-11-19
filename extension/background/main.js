@@ -904,6 +904,21 @@
             },
             (err) => send(port, { type: 'askError', reqId: msg.reqId, message: err.message }),
           );
+      } else if (msg.type === 'showSongs') {
+        SG.music.showSongs(msg.title).then((body) => send(port, Object.assign({ type: 'lyrics', reqId: msg.reqId }, body)), (err) => send(port, { type: 'lyrics', reqId: msg.reqId, error: err.message }));
+      } else if (msg.type === 'songGuideFor') {
+        // A song guide for a show's opening or ending without playing it: lyrics from LRCLIB first.
+        SG.music.find({ track: msg.track, artist: msg.artist }).then(async (res) => {
+          if (!res.track) return send(port, { type: 'songGuideDone', reqId: msg.reqId, error: res.error || 'No lyrics found for this song.' });
+          const lyrics = res.track.cues.map((c) => c.text);
+          const lang = SG.lang ? SG.lang.detectLang(lyrics.join('\n')) : '';
+          const body = await songGuide({ track: msg.track, artist: msg.artist, album: msg.show || '', lyrics, lang, url: 'https://music.youtube.com/search?q=' + encodeURIComponent(msg.artist + ' ' + msg.track) }, (text) => {
+            if (Date.now() - (msg.sentAt || 0) < 400) return;
+            msg.sentAt = Date.now();
+            send(port, { type: 'songGuideText', reqId: msg.reqId, text });
+          });
+          send(port, Object.assign({ type: 'songGuideDone', reqId: msg.reqId }, body));
+        }).catch((err) => send(port, { type: 'songGuideDone', reqId: msg.reqId, error: err.message }));
       } else if (msg.type === 'songGuide') {
         let sentAt = 0;
         let pending = null;

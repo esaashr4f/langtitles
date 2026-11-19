@@ -134,5 +134,22 @@
     return ['song', (np.artist || '').toLowerCase().trim(), (np.track || '').toLowerCase().trim()].join('|');
   }
 
-  SG.lyrics = { parseLRC, plainToCues, recordToCues, pickRecord, repeats, parseVideoTitle, looksLikeSong, cleanChannel, songKey };
+  // A MyAnimeList theme line -> { n, track, trackAlt, artist, eps }.
+  // e.g. '1: "Grain" by Kuniaki Haishima (eps 1-32)', '"Kaikai Kitan (廻廻奇譚)" by Eve (eps 1-13)'
+  function parseTheme(line) {
+    const m = String(line || '').match(/^(?:#?(\d+):\s*)?"(.+?)"\s*(?:by\s+(.+?))?\s*(?:\((eps?\s*[^)]*)\))?\s*$/i);
+    if (!m) return null;
+    let track = m[2].trim();
+    let trackAlt = '';
+    const alt = track.match(/^(.*?)\s*\(([^()]+)\)$/);
+    if (alt && /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/.test(alt[2])) {
+      trackAlt = alt[1].trim();
+      track = alt[2].trim();
+    }
+    const artist = (m[3] || '').replace(/\s*\([^)]*[\u3040-\u30ff\u3400-\u9fff][^)]*\)\s*/g, ' ').trim();
+    const artistJa = ((m[3] || '').match(/\(([^)]*[\u3040-\u30ff\u3400-\u9fff][^)]*)\)/) || [])[1] || '';
+    return { n: m[1] ? Number(m[1]) : 1, track, trackAlt, artist, artistJa, eps: (m[4] || '').replace(/^eps?\s*/i, '') };
+  }
+
+  SG.lyrics = { parseTheme, parseLRC, plainToCues, recordToCues, pickRecord, repeats, parseVideoTitle, looksLikeSong, cleanChannel, songKey };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

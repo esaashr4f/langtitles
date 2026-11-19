@@ -238,17 +238,27 @@ docs/pending-notes.md and get loaded in as part of item 5.
 A separate mode of the extension for songs; the full design (UX, UI, technical, how it fits with the
 subtitles) is in docs/music-mode.md. Build in this order:
 
-- [ ] **YouTube Music and YouTube music videos:** site adapters, lyrics from the page or LRCLIB (by duration,
-  word-level timing when available), search / paste / `.lrc` by hand, choices and timing saved per track,
-  Watch | Listen switch (automatic, overridable per site). Lyrics become a normal Langtitles track.
-- [ ] **Lyrics sheet** (Strip / Sheet / Focus) on music sites, Listen-mode panel tabs (Line, Lyrics, Study,
-  Song, Display); **song-mode analysis:** whole song in context, choruses analysed once, sung readings
-  (本気 → マジ) with both shown in the card, poetic and old grammar explained with its own guides, imagery notes.
-- [ ] **Spotify web player** (its own synced lyrics and active line; progress bar fallback) and **Apple Music web**.
-- [ ] **Song guides, artist pages, Library → Music** (artwork from the page, iTunes Search, Cover Art Archive),
-  lyrics coverage ("you know 82%").
-- [ ] **Practice:** loop and slow down where possible, Fill the gaps listening quiz, sing-along view,
-  shadowing with the microphone, song coverage, review cards with artwork and "play from 1:23".
-- [ ] **Anime openings and endings:** "Learn this opening" from an episode (AnimeThemes), songs listed under
-  the show and the artist.
-- [ ] Tests for lyrics parsing, LRCLIB matching, chorus de-duplication and each site adapter.
+- [x] **YouTube Music and YouTube music videos:** site adapters, lyrics from LRCLIB (by duration), search /
+  paste / `.lrc` by hand, choices and timing saved per track, Watch | Listen switch (automatic on music sites,
+  overridable per site; a one-time offer on YouTube songs). Lyrics become a normal Langtitles track. (0.4.0)
+- [ ] Lyrics already on the page (YouTube Music's lyrics tab; Spotify's and Apple's synced views) as a source;
+  word-by-word karaoke highlight from enhanced LRC (parsed already, not drawn yet); Tap to sync unsynced lyrics.
+- [x] **Lyrics sheet** (Strip / Sheet / Focus) on music sites; Song tab; **song-mode analysis:** whole song in
+  context, sung readings, poetic grammar, imagery notes; choruses cost nothing after the first time (cached). (0.4.0)
+- [~] **Spotify web player** and **Apple Music web:** what's playing via Media Session / the now-playing bar;
+  untested on the real sites; Spotify's progress-bar clock not wired in yet.
+- [x] **Song guides** (every lyric line by line, then what you might miss and how to read the story; Opus,
+  streamed), **Library → Music** by artist, artwork (page, then iTunes Search), song coverage. (0.4.0)
+- [ ] Artist pages (recurring words and themes across an artist's songs).
+- [x] **Practice:** loop and slow down (existing controls), Fill the gaps (unknown words blanked until hovered),
+  sing-along view, song coverage with the five words to learn first. (0.4.0)
+- [ ] Shadowing with the microphone; review cards with artwork and "play from 1:23".
+- [x] **Anime openings and endings:** "Songs in this show" from MyAnimeList (Jikan; AnimeThemes was
+  unreachable), each with a song guide written from its LRCLIB lyrics and a YouTube Music link. (0.4.1)
+- [x] **K-pop / Korean songs:** sung pronunciation in Hangul with the sound change named, contractions given in
+  full, 반말 / 존댓말 and 너 / 당신 shifts, feeling-endings (-잖아, -거든, -ㄹ게), why a line switches to English,
+  hanja for Sino-Korean words in the song guide. (0.4.1)
+- [ ] K-pop, if wanted: YouTube Music's own (licensed) lyrics tab as a fallback when LRCLIB has nothing; concept
+  and era notes in song guides. Not possible: per-member line colours (no reliable free data).
+- [x] Tests for LRC / enhanced LRC parsing, LRCLIB matching, chorus counts, video titles, MAL theme lines.
+- [ ] Adapter tests against saved page snapshots.
