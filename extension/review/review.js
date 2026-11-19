@@ -86,6 +86,7 @@
     if (at >= 0) {
       box.append(document.createTextNode(c.sentence.slice(0, at)), h('mark', '', target), document.createTextNode(c.sentence.slice(at + target.length)));
     } else box.textContent = c.sentence;
+    if (c.frame) box.append(SG.frameImg(c.frame));
     return box;
   }
 

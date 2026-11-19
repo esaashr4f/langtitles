@@ -309,6 +309,51 @@ Depth follows the song: a light song gets a short guide; a dense, layered one ge
     return `Song: "${req.track || '?'}"${req.artist ? ' by ' + req.artist : ''}${req.album ? ', from ' + req.album : ''}\nLanguage: ${req.lang || 'unknown'}\n\nLyrics:\n${(req.lyrics || []).slice(0, 120).join('\n')}`;
   }
 
+  // ---- shows: episode recap, episode lesson, whole-show vocabulary ---------------------------
+
+  function episodeSystemPrompt(nativeLang, kind) {
+    if (kind === 'recap') {
+      return `A language learner watched an episode of a show with subtitles in the language they are learning. Write a short recap in ${nativeLang} of what happened, using ONLY the subtitle lines given (they stop where the learner stopped watching). Never mention anything from later episodes or from outside knowledge of the show: no spoilers. Name characters only as the lines name them.
+
+Write 120-220 words in short paragraphs, plain text, no headings. Then one line starting "Left off:" saying where the episode had got to.`;
+    }
+    return `A language learner watched an episode of a show with subtitles in the language they are learning. Write a language lesson in ${nativeLang} built from this episode's lines only (they stop where the learner stopped; never use anything later: no spoilers).
+
+Use these sections, each as a "## " heading, leaving out any with nothing worth saying:
+## Words to keep
+Ten to fifteen of the most useful words from the episode: "word (reading in kana) — meaning — the line it came from".
+## Set phrases
+Expressions and phrases worth learning whole, each with its line.
+## Grammar it leans on
+The forms this episode uses most or that trip learners up, each briefly explained with its line.
+## How the characters speak
+Speech styles worth noticing: politeness levels, rough or gendered speech, dialect, slang, how someone's speech changes with who they talk to. Quote lines.
+## Lines worth studying
+Five lines that pack the most into them, each with a translation and one sentence on why it's worth studying.
+
+Readings in kana, never romaji. No preamble or sign-off.`;
+  }
+
+  function episodeUserMessage(e, lines, kind) {
+    return `Show: ${e.show}\nSeason ${e.season}, episode ${e.episode}\nLanguage: ${e.lang || 'unknown'}\n\nSubtitle lines (in order, up to where the learner stopped):\n${lines.join('\n')}`;
+  }
+
+  function showVocabSystemPrompt(nativeLang) {
+    return `A language learner is watching a show in the language they are learning. From the subtitle lines of the episodes they have watched (and only those: never mention later events), write a vocabulary guide to the show in ${nativeLang}.
+
+Use these sections, each as a "## " heading:
+## The show's own words
+Words that keep coming up in this show (its setting, job, world, relationships), most frequent first: "word (reading in kana) — meaning — an example line".
+## Phrases characters keep using
+Catchphrases, set phrases and habits of speech, with who says them.
+## Grammar the show leans on
+The forms that come up again and again, each with an example line.
+## Learn these first
+The fifteen words that would help most with the next episode.
+
+Readings in kana, never romaji. No preamble or sign-off.`;
+  }
+
   function deepSystemPrompt(nativeLang) {
     return `A language learner watching a show has paused on one word in a subtitle line and wants to understand it properly. They read ${nativeLang}; answer in ${nativeLang}.
 
@@ -653,6 +698,12 @@ Answer the question they actually asked, directly, then give the reasoning a goo
       msgs.push({ role: 'assistant', content: turn.a });
     });
     msgs.push({ role: 'user', content: (history.length ? '' : ctx + '\n') + req.question });
+    // The scene, when the learner allows it: attached to the first question about the line.
+    const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(req.image || '');
+    if (m) {
+      const first = msgs[0];
+      first.content = [{ type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } }, { type: 'text', text: 'This is the scene on screen when the line was said.\n\n' + first.content }];
+    }
     return msgs;
   }
 
@@ -686,5 +737,5 @@ Write one natural, everyday sentence in the target language with the part that s
     return msg;
   }
 
-  SG.prompt = { songBlock, songGuideSystemPrompt, songGuideUserMessage, LESSON_SCHEMA, lessonSystemPrompt, MATCH_SCHEMA, matchSystemPrompt, CHECK_SCHEMA, checkSystemPrompt, reviseSystemPrompt, askSystemPrompt, askMessages, CLOZE_SCHEMA, clozeSystemPrompt, clozeUserMessage, wordGuideSystemPrompt, wordGuideUserMessage, WORDS_VERSION, WORDS_SCHEMA, wordsSystemPrompt, PROMPT_VERSION, GUIDE_VERSION, CHAR_VERSION, CHAR_SCHEMA, charSystemPrompt, charUserMessage, guideSystemPrompt, guideUserMessage, ROLES, ANALYSIS_SCHEMA, systemPrompt, userMessage, deepSystemPrompt, deepUserMessage };
+  SG.prompt = { episodeSystemPrompt, episodeUserMessage, showVocabSystemPrompt, songBlock, songGuideSystemPrompt, songGuideUserMessage, LESSON_SCHEMA, lessonSystemPrompt, MATCH_SCHEMA, matchSystemPrompt, CHECK_SCHEMA, checkSystemPrompt, reviseSystemPrompt, askSystemPrompt, askMessages, CLOZE_SCHEMA, clozeSystemPrompt, clozeUserMessage, wordGuideSystemPrompt, wordGuideUserMessage, WORDS_VERSION, WORDS_SCHEMA, wordsSystemPrompt, PROMPT_VERSION, GUIDE_VERSION, CHAR_VERSION, CHAR_SCHEMA, charSystemPrompt, charUserMessage, guideSystemPrompt, guideUserMessage, ROLES, ANALYSIS_SCHEMA, systemPrompt, userMessage, deepSystemPrompt, deepUserMessage };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

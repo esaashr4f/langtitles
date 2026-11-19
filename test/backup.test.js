@@ -15,9 +15,9 @@ function env() {
   };
   globalThis.SG = globalThis.SG || {};
   SG.cache = {
-    entries: async (n) => Array.from(stores[n].entries()),
-    putMany: async (n, list) => { for (const [k, v] of list) stores[n].set(k, v); },
-    clearStore: async (n) => stores[n].clear(),
+    entries: async (n) => Array.from((stores[n] || (stores[n] = new Map())).entries()),
+    putMany: async (n, list) => { stores[n] = stores[n] || new Map(); for (const [k, v] of list) stores[n].set(k, v); },
+    clearStore: async (n) => stores[n] && stores[n].clear(),
   };
   return { stores, get storage() { return storage; }, set storage(v) { storage = v; } };
 }

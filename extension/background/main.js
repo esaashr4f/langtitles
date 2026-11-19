@@ -726,7 +726,7 @@
     const item = {
       id, line: questionKey(msg.sentence), sentence: msg.sentence || '', translation: msg.translation || '',
       q: msg.question, a: answer, show: msg.show || '', episode: msg.episode || null, lang: msg.lang || '',
-      url: msg.url || '', time: msg.time == null ? null : msg.time, model: settings.model, savedAt: Date.now(),
+      url: msg.url || '', time: msg.time == null ? null : msg.time, model: settings.model, savedAt: Date.now(), frame: msg.frame || undefined,
     };
     await cache.putMany('questions', [[id, item]]);
     return item;
@@ -904,6 +904,12 @@
             },
             (err) => send(port, { type: 'askError', reqId: msg.reqId, message: err.message }),
           );
+      } else if (msg.type === 'frameSave') {
+        SG.episodes.saveFrame(msg.id, msg.data).then((ok) => send(port, { type: 'lyrics', reqId: msg.reqId, ok }));
+      } else if (msg.type === 'frameCapture') {
+        SG.episodes.captureTab(port.sender.tab, msg.rect, msg.dpr).then((data) => send(port, { type: 'lyrics', reqId: msg.reqId, data }), (err) => send(port, { type: 'lyrics', reqId: msg.reqId, error: err.message }));
+      } else if (msg.type === 'episodeSeen') {
+        SG.episodes.seen(msg).catch(() => {});
       } else if (msg.type === 'showSongs') {
         SG.music.showSongs(msg.title).then((body) => send(port, Object.assign({ type: 'lyrics', reqId: msg.reqId }, body)), (err) => send(port, { type: 'lyrics', reqId: msg.reqId, error: err.message }));
       } else if (msg.type === 'songGuideFor') {
@@ -1093,6 +1099,10 @@
       }));
     }
     if (msg.type === 'rewriteGuide') return ready.then(() => rewriteGuide(msg.key, msg.model));
+    if (msg.type === 'episodesAll') return SG.episodes.all();
+    if (msg.type === 'framesGet') return SG.episodes.getFrames(msg.ids || []);
+    if (msg.type === 'episodeWrite') return ready.then(() => SG.episodes.write(msg.key, msg.kind, settings, msg.again)).catch((err) => ({ error: err.message }));
+    if (msg.type === 'showVocab') return ready.then(() => SG.episodes.showVocab(msg.showKey, settings, msg.again)).catch((err) => ({ error: err.message }));
     if (msg.type === 'spendLog') return browser.storage.local.get('spendLog').then((r) => r.spendLog || { days: {}, shows: {}, top: [] });
     if (msg.type === 'backupNow') return SG.autobackup.check(true);
     if (msg.type === 'backupStatus') return SG.autobackup.status();

@@ -223,6 +223,11 @@
     }
   }
 
+  // Plain text with nothing to stream to (recaps, lessons written from a page).
+  function streamPlain(settings, system, user, maxTokens) {
+    return streamText(settings, system, user, maxTokens, null, () => {});
+  }
+
   // A guide to a whole song: what it's about, imagery, sung readings, grammar and key words.
   function songGuide(settings, req, onText) {
     settings = Object.assign({}, settings, { costFeature: 'music', model: req.model || SG.modelFor(settings, 'songGuides') });
@@ -465,5 +470,5 @@
     }
   }
 
-  SG.claude = { songGuide, checkGuide, matchGuide, extractLesson, onCost: (fn) => costListeners.add(fn), lineModelOf, spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
+  SG.claude = { streamPlain, songGuide, checkGuide, matchGuide, extractLesson, onCost: (fn) => costListeners.add(fn), lineModelOf, spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

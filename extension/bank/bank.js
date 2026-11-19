@@ -127,6 +127,7 @@
     card.append(h('div', 'section', item.contexts.length > 1 ? `Seen in ${item.contexts.length} lines` : 'Seen in'));
     for (const c of item.contexts) {
       const row = h('div', 'ctx');
+      if (c.frame) row.append(SG.frameImg(c.frame));
       const s = h('div', 's', c.sentence);
       s.lang = item.lang;
       row.append(s);

@@ -62,3 +62,8 @@ table, .stat, .num, .n { font-variant-numeric: tabular-nums; }
 svg { flex: 0 0 auto; }
 a { color: var(--accent); text-underline-offset: 3px; }
 .seg button { white-space: nowrap; }
+
+/* Scene frames next to saved lines, review examples and questions. */
+img.scene { float: right; width: 144px; aspect-ratio: 16 / 9; object-fit: cover; margin: 2px 0 8px 14px; border-radius: 8px; background: #000; }
+.ctx::after, .qa::after, .example::after { content: ""; display: block; clear: both; }
+.example img.scene { float: none; display: block; width: min(320px, 100%); margin: 12px auto 0; }

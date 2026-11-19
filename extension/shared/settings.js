@@ -30,6 +30,8 @@
     siteMode: {}, // host -> 'watch' | 'listen', set with the panel's switch
     lyricsSize: 'sheet', // Listen mode on music sites: 'strip' | 'sheet' | 'focus'
     singAlong: false, // Listen mode: readings only, bigger
+    sceneFrames: true, // keep a small picture of the scene with saved lines, words and questions
+    sceneToClaude: false, // also send that picture to Claude with a question (Use the scene)
     lyricGaps: false, // Listen mode: words you don't know yet are blanked until you hover them
     lineModel: 'claude-haiku-5-5', // line-by-line breakdowns and episode word lists: almost all of the cost
     effort: 'low',

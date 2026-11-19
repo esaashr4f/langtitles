@@ -47,7 +47,7 @@
     return 'Words';
   }
   const WORD_ORDER = ['Set phrases and expressions', 'JLPT N5', 'JLPT N4', 'JLPT N3', 'JLPT N2', 'JLPT N1', 'Beyond the JLPT lists', 'Words', 'Names'];
-  const kindOf = (g) => (g.kind === 'song' ? 'song' : g.kind === 'name' || g.group === 'phrase' || String(g.k).startsWith('phrase.') ? 'word' : g.kind || (String(g.k).startsWith('word.') ? 'word' : 'grammar'));
+  const kindOf = (g) => (g.kind === 'show' ? 'show' : g.kind === 'song' ? 'song' : g.kind === 'name' || g.group === 'phrase' || String(g.k).startsWith('phrase.') ? 'word' : g.kind || (String(g.k).startsWith('word.') ? 'word' : 'grammar'));
 
   function h(tag, cls, text) {
     const e = document.createElement(tag);
@@ -61,6 +61,18 @@
     // Songs listened to in Listen mode that have no guide yet still appear under Music.
     const played = Object.values((await browser.storage.local.get('songs')).songs || {});
     const withGuide = new Set(guides.filter((g) => g.kind === 'song').map((g) => g.k));
+    // Shows watched with subtitles: one entry per show, its episodes inside.
+    const eps = (await SG.cache.getAll('episodes').catch(() => [])).filter((e) => !e.meta);
+    const byShow = new Map();
+    for (const e of eps) {
+      if (!byShow.has(e.showKey)) byShow.set(e.showKey, []);
+      byShow.get(e.showKey).push(e);
+    }
+    for (const [showKey, list] of byShow) {
+      list.sort((a, b) => a.season - b.season || a.episode - b.episode);
+      const last = Math.max(...list.map((e) => e.last || 0));
+      guides.push({ key: 'show:' + showKey, k: 'show:' + showKey, kind: 'show', name: list[0].show, lang: list[0].lang || '', text: '', savedAt: last, showKey, eps: list, poster: (list.find((e) => e.poster) || {}).poster || '' });
+    }
     for (const x of played) {
       const k = 'song.' + x.key;
       if (withGuide.has(k)) continue;
@@ -83,11 +95,13 @@
     }
     const nWords = guides.filter((g) => kindOf(g) === 'word').length;
     const nSongs = guides.filter((g) => kindOf(g) === 'song').length;
-    const nGrammar = guides.length - nWords - nSongs;
+    const nShows = guides.filter((g) => kindOf(g) === 'show').length;
+    const nGrammar = guides.length - nWords - nSongs - nShows;
     $('count').textContent = `${nWords} word${nWords === 1 ? '' : 's'} · ${nGrammar} grammar form${nGrammar === 1 ? '' : 's'}` + (nSongs ? ` · ${nSongs} song${nSongs === 1 ? '' : 's'}` : '');
     const kinds = $('kinds');
     kinds.textContent = '';
     const kindTabs = [['grammar', `Grammar · ${nGrammar}`], ['word', `Words · ${nWords}`]];
+    if (nShows) kindTabs.push(['show', `Shows · ${nShows}`]);
     if (nSongs) kindTabs.push(['song', `Music · ${nSongs}`]);
     for (const [code, name] of kindTabs) {
       const b = h('button', code === kind ? 'on' : '', name);
@@ -140,10 +154,10 @@
     if (sort === 'recent') groups = [['Most recent first', items]];
     else if (sort === 'az') groups = [['A to Z', items.slice().sort(byName)]];
     else {
-      const order = kind === 'word' ? WORD_ORDER : kind === 'song' ? [] : GROUP_ORDER;
+      const order = kind === 'word' ? WORD_ORDER : kind === 'song' || kind === 'show' ? [] : GROUP_ORDER;
       const map = new Map();
       for (const g of items) {
-        const name = kind === 'word' ? wordGroup(g) : kind === 'song' ? (g.song && g.song.artist) || 'Unknown artist' : grammarGroup(g);
+        const name = kind === 'word' ? wordGroup(g) : kind === 'song' ? (g.song && g.song.artist) || 'Unknown artist' : kind === 'show' ? SG.lang.langName(langOf(g)) : grammarGroup(g);
         if (!map.has(name)) map.set(name, []);
         map.get(name).push(g);
       }
@@ -184,6 +198,84 @@
       for (const x of document.querySelectorAll('#sort button')) x.classList.toggle('on', x === b);
       renderList();
     });
+  }
+
+  // A show: poster, a vocabulary guide from the episodes watched, and each episode with its frame,
+  // a recap (that episode's lines only, so no spoilers) and a language lesson.
+  function showShow(g, view) {
+    const head = h('div', 'head song-head');
+    if (g.poster) {
+      const img = h('img', 'show-poster');
+      img.src = g.poster;
+      img.alt = '';
+      img.referrerPolicy = 'no-referrer';
+      head.append(img);
+    }
+    const names = h('div', 'song-names');
+    names.append(h('h2', '', g.name), h('div', 'meta', `${SG.lang.langName(langOf(g))} · ${g.eps.length} episode${g.eps.length === 1 ? '' : 's'} watched with subtitles`));
+    head.append(names);
+    view.append(head);
+
+    const vocab = h('section', 'show-block');
+    const vBtn = h('button', 'primary', 'Vocabulary guide to this show');
+    vBtn.title = 'Written from the episodes you have watched only, and updated as you watch more';
+    const vBody = h('article', 'guide');
+    vBtn.addEventListener('click', async () => {
+      vBtn.disabled = true;
+      vBody.textContent = 'Writing… (from the episodes you have watched only)';
+      const res = await browser.runtime.sendMessage({ type: 'showVocab', showKey: g.showKey });
+      vBtn.remove();
+      vBody.textContent = '';
+      if (!res || res.error) vBody.textContent = (res && res.error) || 'Could not write the guide.';
+      else {
+        SG.renderGuide(vBody, res.text, { known: new Set(), plain: false });
+        vBody.append(h('p', 'model', SG.modelLabel(res.model) + (res.cached ? ' · saved earlier' : '')));
+      }
+    });
+    vocab.append(vBtn, vBody);
+    view.append(vocab);
+
+    const list = h('div', 'eps');
+    for (const e of g.eps) {
+      const row = h('section', 'ep');
+      const top = h('div', 'ep-top');
+      if (e.frame) top.append(SG.frameImg(e.frame, 'ep-frame'));
+      else top.append(h('div', 'ep-frame ep-frame-none'));
+      const info = h('div', 'ep-info');
+      info.append(h('div', 'ep-title', e.type === 'movie' ? 'Film' : `Season ${e.season}, episode ${e.episode}`));
+      const pct = e.lines && e.lines.length ? Math.round(((e.reached || 0) / e.lines.length) * 100) : 0;
+      info.append(h('div', 'meta', `Last watched ${new Date(e.last).toLocaleDateString()}${pct ? ` · ${Math.min(100, pct)}% of the lines` : ''}`));
+      const acts = h('div', 'ep-acts');
+      const body = h('article', 'guide');
+      for (const [kindName, label] of [['recap', 'Recap'], ['lesson', 'Lesson']]) {
+        const b = h('button', '', label);
+        if (e[kindName]) b.classList.add('done');
+        b.addEventListener('click', async () => {
+          for (const x of acts.children) x.classList.toggle('on', x === b);
+          body.textContent = e[kindName] ? '' : 'Writing…';
+          const res = e[kindName] ? { text: e[kindName].text, model: e[kindName].model, cached: true } : await browser.runtime.sendMessage({ type: 'episodeWrite', key: e.key, kind: kindName });
+          body.textContent = '';
+          if (!res || res.error) return (body.textContent = (res && res.error) || 'Could not write it.');
+          e[kindName] = { text: res.text, model: res.model };
+          if (kindName === 'recap') res.text.split(/\n\s*\n/).forEach((para) => body.append(h('p', '', para)));
+          else SG.renderGuide(body, res.text, { known: new Set(), plain: false });
+          body.append(h('p', 'model', SG.modelLabel(res.model)));
+        });
+        acts.append(b);
+      }
+      if (e.url) {
+        const a = h('a', '', 'Watch');
+        a.href = e.url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        acts.append(a);
+      }
+      info.append(acts);
+      top.append(info);
+      row.append(top, body);
+      list.append(row);
+    }
+    view.append(list);
   }
 
   // A song: artwork, where to play it again, and its guide (or how to get one).
@@ -236,6 +328,7 @@
     view.textContent = '';
     const head = h('div', 'head');
     if (kindOf(g) === 'song') return showSong(g, view);
+    if (kindOf(g) === 'show') return showShow(g, view);
     head.append(h('div', 'eyebrow', kindOf(g) === 'word' ? 'Word guide · ' + wordGroup(g) : 'Grammar · ' + grammarGroup(g)));
     head.append(h('h2', '', g.name || g.k));
     const meta = h('div', 'meta');

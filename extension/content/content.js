@@ -109,6 +109,7 @@
   let listenWaitSince = 0;
   let listenNote = '';
   let listenAsked = false; // the one-time "this looks like a song" offer on YouTube
+  const askImages = new Map(); // line key -> the scene's picture, for Use the scene
   const songGuideTargets = new Map(); // reqId -> element the song guide streams into
 
   // ---------------------------------------------------------------- helpers
@@ -3168,9 +3169,10 @@
     } catch (e) {
       /* the line is still worth saving without the show's name */
     }
+    const frame = await saveFrame();
     return {
       sentence: ctx.sentence, translation: ctx.translation || '', show, url: tabUrl || location.href,
-      time: Math.max(0, Math.round((ctx.time || 0) * 10) / 10), savedAt: Date.now(),
+      time: Math.max(0, Math.round((ctx.time || 0) * 10) / 10), savedAt: Date.now(), frame: frame ? frame.id : undefined,
     };
   }
 
@@ -3441,9 +3443,13 @@
     input.addEventListener('focus', () => wrap.classList.add('sg-ask-open'));
     input.addEventListener('blur', () => setTimeout(grow, 0));
     const go = h('button', 'sg-btn sg-go', 'Ask');
-    const send = () => {
+    const send = async () => {
       const question = input.value.trim();
       if (!question) return;
+      // The scene goes with the first question about a line (kept with it; sent to Claude only if allowed).
+      const firstTurn = !(askThreads.get(key) || []).length;
+      const frame = firstTurn ? await saveFrame() : null;
+      if (frame) askImages.set(key, frame.data);
       input.value = '';
       const t = active();
       const idx = shownIndex;
@@ -3469,6 +3475,8 @@
         lang: a.lang || '',
         url: tabUrl || location.href,
         time: video ? Math.round(video.currentTime * 10) / 10 : null,
+        frame: frame ? frame.id : undefined,
+        image: settings.sceneToClaude ? askImages.get(key) : undefined,
       });
     };
     go.addEventListener('click', send);
@@ -3527,12 +3535,69 @@
   let watchedSecs = 0;
   let watchedLast = null;
 
+  // A small picture of the scene: straight from the video where the page allows it, else a screenshot of
+  // the tab cropped to the video (copy-protected video comes out black either way).
+  async function captureFrame() {
+    if (!video || settings.sceneFrames === false || video.tagName !== 'VIDEO') return null;
+    try {
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      if (vw && vh) {
+        const c = document.createElement('canvas');
+        c.width = 360;
+        c.height = Math.round((360 * vh) / vw);
+        c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
+        return c.toDataURL('image/jpeg', 0.65); // throws when the video comes from another site
+      }
+    } catch (e) {
+      /* fall back to a screenshot of the tab */
+    }
+    const rect = window === window.top ? video.getBoundingClientRect() : null;
+    const was = ui ? ui.host.style.visibility : '';
+    if (ui) ui.host.style.visibility = 'hidden';
+    await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
+    const got = await request({ type: 'frameCapture', rect: rect && { left: rect.left, top: rect.top, width: rect.width, height: rect.height }, dpr: devicePixelRatio || 1 });
+    if (ui) ui.host.style.visibility = was;
+    return got && got.data ? got.data : null;
+  }
+  async function saveFrame() {
+    const data = await captureFrame().catch(() => null);
+    if (!data) return null;
+    const id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    post({ type: 'frameSave', id, data });
+    return { id, data };
+  }
+
+  // Each minute of watching with subtitles in a language you're learning, the episode is noted with the
+  // lines seen so far (for the Library's recap and lesson) and, once, a frame from a few minutes in.
+  let episodeNoteAt = 0;
+  const episodeFramed = new Set();
+  async function noteEpisode(t) {
+    if (Date.now() - episodeNoteAt < 60000 || t.source === 'lyrics' || listenMode()) return;
+    if (t.lang === langCode(settings.nativeLang)) return;
+    episodeNoteAt = Date.now();
+    const ep = await currentEpisode().catch(() => null);
+    if (!ep || !ep.title || !SG.episode.confident(ep)) return;
+    const reachedIndex = findCue(t.cues, video.currentTime - t.offset);
+    let frame = null;
+    const fk = SG.episode.key(ep, '');
+    if (!episodeFramed.has(fk) && video.currentTime > 150) {
+      episodeFramed.add(fk);
+      frame = await captureFrame().catch(() => null);
+    }
+    post({
+      type: 'episodeSeen', episode: ep, lang: t.lang, url: tabUrl || location.href, watched: Math.round(video.currentTime),
+      lines: t.cues.map((c) => c.text), reachedIndex: reachedIndex >= 0 ? reachedIndex : t.cues.findIndex((c) => c.start > video.currentTime - t.offset) - 1, frame,
+    });
+  }
+
   function trackWatching() {
     const t = active();
     if (!video || video.paused || !t) {
       watchedLast = null;
       return;
     }
+    noteEpisode(t);
     const now = video.currentTime;
     if (watchedLast != null && now > watchedLast && now - watchedLast < 3) watchedSecs += now - watchedLast;
     watchedLast = now;

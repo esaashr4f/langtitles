@@ -4,7 +4,7 @@
   const $ = (id) => document.getElementById(id);
   let settings = await SG.loadSettings();
 
-  const CHECKS = ['hideKnownGlosses', 'toneColors', 'hanja', 'pitchAccent', 'addGrammarToReview', 'highlightNew', 'pauseOnePlus', 'slowReplay', 'autoKnownFromReview', 'autoFind', 'enabled', 'showMeaning', 'showParts', 'furigana', 'pinyin', 'hideKnownPinyin', 'showRoles', 'showTranslation', 'hideNative', 'hoverPause', 'resumeOnLeave', 'autoDeep', 'autoBackup', 'backupCaches', 'backupKeys'];
+  const CHECKS = ['sceneFrames', 'sceneToClaude', 'hideKnownGlosses', 'toneColors', 'hanja', 'pitchAccent', 'addGrammarToReview', 'highlightNew', 'pauseOnePlus', 'slowReplay', 'autoKnownFromReview', 'autoFind', 'enabled', 'showMeaning', 'showParts', 'furigana', 'pinyin', 'hideKnownPinyin', 'showRoles', 'showTranslation', 'hideNative', 'hoverPause', 'resumeOnLeave', 'autoDeep', 'autoBackup', 'backupCaches', 'backupKeys'];
   const TEXTS = ['apiKey', 'baseURL', 'nativeLang', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey', 'backupPassphrase', 'tmdbKey'];
 
   const modelSel = $('model');

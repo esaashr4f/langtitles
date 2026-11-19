@@ -9,7 +9,7 @@
   const FORMAT = 'langtitles-backup';
   const VERSION = 1;
   // What a backup holds. Caches can be rebuilt (at a cost), so they're optional.
-  const KEEP = ['bank', 'guides', 'questions', 'picks', 'chars', 'strokes', 'history'];
+  const KEEP = ['bank', 'guides', 'questions', 'picks', 'chars', 'strokes', 'history', 'episodes', 'frames'];
   const CACHES = ['lines', 'deep', 'subs'];
   const SECRETS = ['apiKey', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey', 'backupPassphrase'];
   // Storage keys that are only working state, not worth backing up.

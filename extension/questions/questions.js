@@ -69,6 +69,7 @@
     view.append(head);
     for (const x of pick.list) {
       const box = h('div', 'qa');
+      if (x.frame) box.append(SG.frameImg(x.frame));
       const line = h('div', 'qa-line', x.sentence);
       if (x.lang) line.lang = x.lang;
       box.append(line);

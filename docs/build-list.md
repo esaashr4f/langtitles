@@ -188,11 +188,12 @@ docs/pending-notes.md and get loaded in as part of item 5.
 
 ## 8. Scene frames and shows
 
-- [ ] **Scene frames:** keep a small frame when you save a line, ask a question or first meet a word (from the
+- [x] **Scene frames** (0.5.0; kept when you save a line or word and with your first question on a line, not on
+  every first meeting, which would be hundreds a night): keep a small frame when you save a line, ask a question or first meet a word (from the
   video, falling back to a tab screenshot; copy-protected video comes out black). Shown next to "Where
   you met it", on Questions and on review cards. Opt-in "Use the scene" to send the frame to Claude in
   Ask and for guides where the situation matters.
-- [ ] **Shows in the Library:** language -> poster grid -> a show's episodes, each with a frame -> an episode
+- [x] **Shows in the Library** (0.5.0; posters from AniList / TVmaze / TMDB; batch at half price not done): language -> poster grid -> a show's episodes, each with a frame -> an episode
   gives a recap (from that episode's subtitles only, no spoilers) and a language lesson (key vocab, set
   phrases, grammar it leans on, how characters speak, lines worth studying, linked to the scene).
   A whole-show vocabulary guide built only from watched episodes, updated as you go. Batch option at

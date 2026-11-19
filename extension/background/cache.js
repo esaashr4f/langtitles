@@ -4,14 +4,14 @@
   const SG = (root.SG = root.SG || {});
 
   const DB_NAME = 'langtitles';
-  const STORES = ['lines', 'deep', 'guides', 'subs', 'picks', 'bank', 'chars', 'strokes', 'questions', 'history'];
-  const memory = { lines: new Map(), deep: new Map(), guides: new Map(), subs: new Map(), picks: new Map(), bank: new Map(), chars: new Map(), strokes: new Map(), questions: new Map(), history: new Map() };
+  const STORES = ['lines', 'deep', 'guides', 'subs', 'picks', 'bank', 'chars', 'strokes', 'questions', 'history', 'episodes', 'frames'];
+  const memory = { lines: new Map(), deep: new Map(), guides: new Map(), subs: new Map(), picks: new Map(), bank: new Map(), chars: new Map(), strokes: new Map(), questions: new Map(), history: new Map(), episodes: new Map(), frames: new Map() };
   let dbPromise = null;
 
   function open() {
     if (!dbPromise) {
       dbPromise = new Promise((resolve, reject) => {
-        const req = indexedDB.open(DB_NAME, 6);
+        const req = indexedDB.open(DB_NAME, 7);
         req.onupgradeneeded = () => {
           for (const name of STORES) {
             if (!req.result.objectStoreNames.contains(name)) req.result.createObjectStore(name);
