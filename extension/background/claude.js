@@ -232,7 +232,7 @@
 
   // A complete, reusable guide to a grammar form. Written once per form, so it gets more care.
   function explainForm(settings, req, onText) {
-    settings = Object.assign({}, settings, { costFeature: 'grammar guides' });
+    settings = Object.assign({}, settings, { costFeature: 'grammar guides', model: req.model || SG.modelFor(settings, 'grammarGuides') });
     const { prompt } = SG;
     const effort = settings.effort === 'low' ? 'medium' : settings.effort;
     return streamText(settings, prompt.guideSystemPrompt(settings.nativeLang), prompt.guideUserMessage(req), 12000, effort, onText);
@@ -240,7 +240,7 @@
 
   // A complete, reusable guide to one word: meanings, how it is built, where it fits and where it doesn't.
   function explainWordGuide(settings, req, onText) {
-    settings = Object.assign({}, settings, { costFeature: 'word guides' });
+    settings = Object.assign({}, settings, { costFeature: 'word guides', model: req.model || SG.modelFor(settings, 'wordGuides') });
     const { prompt } = SG;
     const effort = settings.effort === 'low' ? 'medium' : settings.effort;
     return streamText(settings, prompt.wordGuideSystemPrompt(settings.nativeLang), prompt.wordGuideUserMessage(req), 12000, effort, onText);
@@ -248,6 +248,7 @@
 
   // A structured dictionary entry for one kanji or hanzi.
   async function charEntry(settings, req) {
+    settings = Object.assign({}, settings, { model: SG.modelFor(settings, 'kanji') });
     const { prompt } = SG;
     await capGuard(settings);
     let message;
@@ -301,8 +302,37 @@
     }
   }
 
+  // The reusable lesson in an Ask answer, where it belongs, and whether to offer a guide (cheap model).
+  async function extractLesson(settings, req, answer) {
+    const { prompt } = SG;
+    const params = baseParams(settings, 2000, 'claude-haiku-5-5');
+    params.output_config.effort = 'low';
+    params.system = prompt.lessonSystemPrompt(settings.nativeLang);
+    params.messages = [{ role: 'user', content: `Line: ${req.sentence || ''}\nWords: ${req.words || ''}\nPhrases: ${req.phrases || ''}\nGrammar forms (identifier = name): ${req.forms || ''}\n\nQuestion: ${req.question}\n\nAnswer: ${answer}` }];
+    params.output_config.format = { type: 'json_schema', schema: prompt.LESSON_SCHEMA };
+    const message = await getClient(settings).beta.messages.stream(params).finalMessage();
+    recordUsage(message.model || 'claude-haiku-5-5', message.usage, false, settings.costTag, 'ask', settings.costShow).catch(() => {});
+    return JSON.parse(textOf(message));
+  }
+
+  // Checks a saved guide against a new line. The cheap model by default; the guide model when forced.
+  async function matchGuide(settings, req, guideText, strong) {
+    const { prompt } = SG;
+    const model = strong ? SG.modelFor(settings, req.kind === 'wordguide' ? 'wordGuides' : 'grammarGuides') : 'claude-haiku-5-5';
+    const params = baseParams(settings, 3000, model);
+    params.output_config.effort = 'low';
+    params.system = prompt.matchSystemPrompt(settings.nativeLang);
+    const what = (req.form && (req.form.name || req.form.k)) || req.word;
+    params.messages = [{ role: 'user', content: `Item: ${what}\nNew line: ${req.sentence || ''}\nMeaning there (from the line breakdown): ${req.meaning || ''}\n\nThe saved guide:\n${guideText}` }];
+    params.output_config.format = { type: 'json_schema', schema: prompt.MATCH_SCHEMA };
+    const message = await getClient(settings).beta.messages.stream(params).finalMessage();
+    recordUsage(message.model || model, message.usage, false, settings.costTag, 'guide checks', settings.costShow).catch(() => {});
+    return JSON.parse(textOf(message));
+  }
+
   // A vocabulary list for a whole episode, from its numbered lines.
   async function episodeWords(settings, lines) {
+    settings = Object.assign({}, settings, { model: SG.modelFor(settings, 'episodeWords') });
     const { prompt } = SG;
     await capGuard(settings);
     let message;
@@ -327,6 +357,7 @@
 
   // A tutor's answer to a question about one line, with the conversation so far.
   async function askLine(settings, req, onText) {
+    settings = Object.assign({}, settings, { model: SG.modelFor(settings, 'ask') });
     const { prompt } = SG;
     await capGuard(settings);
     try {
@@ -346,6 +377,7 @@
 
   // A fresh fill-in-the-blank question for reviewing a grammar form.
   async function grammarCloze(settings, req) {
+    settings = Object.assign({}, settings, { model: SG.modelFor(settings, 'review') });
     const { prompt } = SG;
     await capGuard(settings);
     let message;
@@ -425,5 +457,5 @@
     }
   }
 
-  SG.claude = { checkGuide, onCost: (fn) => costListeners.add(fn), lineModelOf, spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
+  SG.claude = { checkGuide, matchGuide, extractLesson, onCost: (fn) => costListeners.add(fn), lineModelOf, spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

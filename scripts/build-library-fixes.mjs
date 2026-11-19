@@ -31,11 +31,14 @@ for (const file of readdirSync(dir).filter((f) => /^library-fixes-.+\.txt$/.test
     } else if (verb === 'name') {
       const [k, entry] = arg.split('|').map((s) => s.trim());
       ops.push({ op: 'name', k, text: entry });
+    } else if (verb === 'note') {
+      const [k, sentence] = arg.split('|').map((x) => x.trim());
+      ops.push({ op: 'note', k, sentence, text: body });
     } else {
       throw new Error(`${file}: unknown directive ${verb}`);
     }
   }
-  const version = 2; // 2: version 1 lost the guides' headings in the build
+  const version = 3; // 2: version 1 lost the guides' headings; 3: notes from questions
   writeFileSync(new URL(`../extension/data/library-fixes-${lang}.json`, import.meta.url), JSON.stringify({ lang, version, ops }) + '\n');
   console.log(lang, ops.length, 'fixes');
 }

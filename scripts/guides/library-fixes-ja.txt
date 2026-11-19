@@ -547,3 +547,19 @@ Neutral. Several stacked clauses make sentences dense, which is common in formal
 === name word.ja.ハンス | ハンス: Hans, a man's given name (German).
 === name word.ja.ゲオルグ | ゲオルグ: Georg, a man's given name (German).
 === name word.ja.シューバルト | シューバルト: Schuwald, a family name (German).
+
+# Notes from your questions (docs/pending-notes.md), added to the guides they belong to
+=== note ja.noun_modifying_clause | 自分などまだ吸血鬼を取り巻くコウモリ程度でしかないと
+How 取り巻く modifies コウモリ: the modifier goes before the noun, and a plain verb is enough, with no "that" or "which". 吸血鬼を取り巻くコウモリ is "vampires-OBJECT surround bat", a bat that surrounds vampires, like 本を読む人, a person who reads books. The を stays with the verb inside the clause.
+
+=== note word.ja.取り巻く | 自分などまだ吸血鬼を取り巻くコウモリ程度でしかないと
+In 吸血鬼を取り巻くコウモリ, the plain verb 取り巻く describes コウモリ: "bats that circle the vampires". The を belongs to 取り巻く inside the clause.
+
+=== note word.ja.程度 | 自分などまだ吸血鬼を取り巻くコウモリ程度でしかないと
+程度 on its own is neutral ("degree, level, about": 一時間程度). Here it belittles because of でしかない ("nothing but"), 自分など (self-deprecation), the image (bats are lesser followers of vampires) and まだ ("still"). Without しかない, コウモリ程度だ still leans dismissive, less strongly.
+
+=== note ja.particle_shika | 自分などまだ吸血鬼を取り巻くコウモリ程度でしかないと
+でしかない = で + しか + ない: "is nothing but". It's the noun version of しか…ない ("only"), and it makes the sentence explicitly limiting.
+
+=== note ja.past_ta | 俺が殺した連中は要らない連中なんだよ
+A plain past verb before a noun describes it: 俺が殺した連中, "the guys I killed". Inside such a clause the subject takes が, not は. 要らない連中 is the same pattern with a negative.

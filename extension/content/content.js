@@ -56,6 +56,12 @@
   let deepTimer = null;
   let deepReq = 0;
   const deepModels = new Map(); // cache key -> the model that wrote it
+  const deepPayloads = new Map(); // cache key -> the request that writes it (for Improve with Opus)
+  const deepSentences = new Map(); // cache key -> the line the saved guide was written for
+  const deepNotesList = new Map(); // cache key -> notes from your questions
+  const deepNotes = new Map(); // cache key|line -> { why, added } when this line uses it differently
+  const deepNoteFor = new Map(); // reqId -> target, for notes that arrive after the guide
+  const sameLineKey = (t) => String(t || '').replace(/\s+/g, '');
   const deepTexts = new Map(); // cache key -> finished text (word explanations and grammar guides)
   const deepByReq = new Map(); // reqId -> { el, cacheKey, text, guide }
   const deepByKey = new Map(); // cache key -> the same object, while its text is still streaming
@@ -296,14 +302,14 @@
       addTrack(msg.track);
     } else if (msg.type === 'analyzed') {
       onAnalyzed(msg);
-    } else if (msg.type === 'deepDelta' || msg.type === 'deepDone' || msg.type === 'deepError') {
+    } else if (msg.type === 'deepDelta' || msg.type === 'deepDone' || msg.type === 'deepError' || msg.type === 'deepNote') {
       onDeep(msg);
     } else if (msg.type === 'cost') {
       episodeCost += Number(msg.cost) || 0;
       renderStatus();
-    } else if (msg.type === 'askDelta' || msg.type === 'askDone' || msg.type === 'askError') {
+    } else if (msg.type === 'askDelta' || msg.type === 'askDone' || msg.type === 'askError' || msg.type === 'askLesson') {
       onAsk(msg);
-    } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs', 'showChoice', 'qaList'].includes(msg.type)) {
+    } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs', 'showChoice', 'qaList', 'noteAdded', 'showSaved'].includes(msg.type)) {
       const cb = subReqs.get(msg.reqId);
       subReqs.delete(msg.reqId);
       if (cb) cb(msg);
@@ -1808,17 +1814,84 @@
   function paintDeep(target) {
     if (target.guide) SG.renderGuide(target.el, target.text, { known: known.ja, plain: !settings.furigana });
     else target.el.textContent = target.text;
+    const pl = target.guide && target.cacheKey ? deepPayloads.get(target.cacheKey) : null;
+    const written = target.cacheKey ? deepSentences.get(target.cacheKey) : null;
+    if (pl && pl.sentence && written != null && sameLineKey(written) !== sameLineKey(pl.sentence)) {
+      // The guide was written for another line: say what it means in this one, and flag a mismatch.
+      const box = h('div', 'sg-inline');
+      box.append(h('div', 'sg-g-h', 'In this line'));
+      const line = h('div', 'sg-g-p sg-g-ex', pl.sentence);
+      line.lang = pl.lang || '';
+      box.append(line);
+      if (pl.meaning) box.append(h('div', 'sg-g-p', `${pl.word || pl.dict || ''}: ${pl.meaning}`));
+      const note = deepNotes.get(target.cacheKey + '|' + sameLineKey(pl.sentence));
+      if (note && note.why) {
+        box.append(h('div', 'sg-g-h', 'Why it means something different here'), h('div', 'sg-g-p', note.why));
+        if (note.added) box.append(h('div', 'sg-g-p sg-g-ext', 'This use has been added to the guide (under "Other uses you\'ve met").'));
+      } else if (settings.hasKey) {
+        const odd = h('button', 'sg-btn sg-ghost sg-improve', "This doesn't match");
+        odd.title = 'Have Claude check this guide against this line and explain the difference';
+        odd.addEventListener('click', (e) => {
+          e.stopPropagation();
+          odd.textContent = 'Checking…';
+          const reqId = ++deepReq;
+          deepByReq.set(reqId, Object.assign({}, target, { quiet: true }));
+          post(Object.assign({ type: 'deep', reqId }, pl, { force: true }));
+        });
+        box.append(odd);
+      }
+      target.el.prepend(box);
+    }
+    const notes = target.guide && target.cacheKey ? deepNotesList.get(target.cacheKey) || [] : [];
+    if (notes.length) {
+      const nb = h('div', 'sg-notes');
+      nb.append(h('div', 'sg-g-h', 'From your questions'));
+      for (const n of notes) {
+        const one = h('div', 'sg-g-li', n.text);
+        if (n.sentence) {
+          const src = h('div', 'sg-g-ext', n.sentence);
+          src.lang = (deepPayloads.get(target.cacheKey) || {}).lang || '';
+          one.append(src);
+        }
+        nb.append(one);
+      }
+      target.el.append(nb);
+    }
     const model = target.cacheKey ? deepModels.get(target.cacheKey) : target.model;
-    if (target.guide && model) target.el.append(h('div', 'sg-guide-by', SG.modelLabel(model)));
+    if (target.guide && model) {
+      const by = h('div', 'sg-guide-by', SG.modelLabel(model));
+      // Not happy with it? Have the strongest model rewrite it (the old one is kept in history).
+      const payload = deepPayloads.get(target.cacheKey);
+      if (payload && model !== 'claude-opus-5-5' && model !== 'claude-fable-5-2' && settings.hasKey) {
+        const better = h('button', 'sg-btn sg-ghost sg-improve', 'Improve with Opus');
+        better.title = 'Rewrite this guide with Claude Opus 5.5 (about 5–10¢); your notes are kept and the old version can be restored';
+        better.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deepTexts.delete(target.cacheKey);
+          deepModels.delete(target.cacheKey);
+          startDeep(target.el, target.cacheKey, true, Object.assign({}, payload, { improve: true, model: 'claude-opus-5-5' }));
+        });
+        by.append(better);
+      }
+      target.el.append(by);
+    }
   }
 
   // Shows cached text at once, attaches to a request already streaming, or starts a new one.
   function startDeep(el, cacheKey, guide, payload) {
+    if (payload && !payload.improve) deepPayloads.set(cacheKey, payload);
     el.classList.add('sg-show');
     el.classList.toggle('sg-guide', guide);
     if (deepTexts.has(cacheKey)) {
       el.classList.remove('sg-loading');
       paintDeep({ el, text: deepTexts.get(cacheKey), guide, cacheKey });
+      // Opened on a different line than it was written for: ask for the line check (the saved
+      // guide comes back as is, plus a note if this line uses it differently).
+      if (guide && payload && payload.sentence && sameLineKey(payload.sentence) !== sameLineKey(deepSentences.get(cacheKey))) {
+        const reqId = ++deepReq;
+        deepByReq.set(reqId, { el, cacheKey, text: deepTexts.get(cacheKey), guide, quiet: true });
+        post(Object.assign({ type: 'deep', reqId }, payload));
+      }
       return;
     }
     const running = deepByKey.get(cacheKey);
@@ -1937,11 +2010,23 @@
 
   function showGuide(el, form, ctx, w) {
     startDeep(el, guideCacheKey(form), true, {
-      kind: 'guide', form: { k: form.k, name: form.name }, lang: ctx.lang, sentence: ctx.sentence, word: w.s,
+      kind: 'guide', form: { k: form.k, name: form.name }, lang: ctx.lang, sentence: ctx.sentence, word: w.s, meaning: w.m || '',
     });
   }
 
   function onDeep(msg) {
+    if (msg.type === 'deepNote') {
+      const t = deepNoteFor.get(msg.reqId);
+      if (!t) return;
+      const payload = deepPayloads.get(t.cacheKey);
+      if (payload) deepNotes.set(t.cacheKey + '|' + sameLineKey(payload.sentence), { why: msg.why, added: msg.added });
+      if (msg.text) {
+        deepTexts.set(t.cacheKey, msg.text);
+        t.text = msg.text;
+      }
+      if (t.el.isConnected) paintDeep(t);
+      return;
+    }
     const target = deepByReq.get(msg.reqId);
     if (!target) return;
     target.el.classList.remove('sg-loading');
@@ -1955,7 +2040,11 @@
     if (msg.type === 'deepDone') {
       deepTexts.set(target.cacheKey, msg.text);
       if (msg.model) deepModels.set(target.cacheKey, msg.model);
+      if (msg.sentence != null) deepSentences.set(target.cacheKey, msg.sentence);
+      if (msg.notes) deepNotesList.set(target.cacheKey, msg.notes);
       target.text = msg.text;
+      // A note about this line may follow (see deepNote).
+      deepNoteFor.set(msg.reqId, target);
       paintDeep(target);
     } else {
       target.el.textContent = msg.message;
@@ -2919,6 +3008,47 @@
   const askThreads = new Map(); // line key -> [{ q, a }]
   const askTargets = new Map(); // reqId -> { el, text, turn }
 
+  const lessonTargets = new Map(); // reqId -> { el, turn } for the lesson that follows an answer
+
+  // Under an answer: the lesson in it, with one click to add it to the guides it belongs to, and an
+  // offer to write a guide when one is missing or was asked for.
+  function showLesson(t, msg) {
+    const ctx = t.ctx || {};
+    if (!msg.lesson && !msg.guide) return;
+    const box = h('div', 'sg-lesson');
+    if (msg.lesson) box.append(h('div', 'sg-lesson-t', msg.lesson));
+    const row = h('div', 'sg-d-forms');
+    for (const target of msg.targets || []) {
+      const chip = h('button', 'sg-form', 'Add to ' + (target.name || target.d) + ' guide');
+      chip.title = 'Keep this point in that guide, under "From your questions"';
+      const add = async () => {
+        chip.disabled = true;
+        const res = await request({ type: 'addNote', k: target.key, note: { text: msg.lesson, sentence: ctx.sentence || '', q: t.turn ? t.turn.q : '' } });
+        chip.textContent = (res.where === 'guide' ? 'Added to ' : 'Saved for ') + (target.name || target.d) + ' ✓';
+        chip.classList.add('sg-saved');
+        deepTexts.delete(guideCacheKey({ k: target.key }));
+      };
+      chip.addEventListener('click', add);
+      row.append(chip);
+      if (settings.autoAddNotes && msg.lesson) add();
+    }
+    if (msg.guide && msg.guide.key) {
+      const g = msg.guide;
+      const make = h('button', 'sg-form sg-form-word', (g.kind === 'grammar' ? 'Guide to ' : '📖 Make a guide for ') + (g.name || g.d));
+      make.addEventListener('click', () => {
+        const lang = ctx.lang || 'ja';
+        if (g.kind === 'grammar') openPanelGuide({ k: g.key, name: g.name || g.d }, ctx, { s: g.d, m: '' });
+        else if (g.kind === 'phrase') {
+          const p = { d: g.d, r: '', kind: 'set phrase', m: '', k: g.key };
+          openPanelGuide(phraseGuideForm(p, lang), ctx, phraseAsWord(p), true);
+        } else openPanelGuide(wordGuideForm({ s: g.d, d: g.d }, lang), ctx, { s: g.d, d: g.d, m: '' }, true);
+      });
+      row.append(make);
+    }
+    if (row.childElementCount) box.append(row);
+    t.el.after(box);
+  }
+
   function askBox(cue, a) {
     const key = shownKey;
     const wrap = h('div', 'sg-ask');
@@ -2962,11 +3092,13 @@
       const ansEl = addTurn(turn);
       ansEl.classList.add('sg-loading');
       const reqId = 'q' + ++reqSeq;
-      askTargets.set(reqId, { el: ansEl, text: '', turn });
+      askTargets.set(reqId, { el: ansEl, text: '', turn, ctx: { sentence: cue.text, lang: langCode(a.lang), translation: a.tr } });
       post({
         type: 'ask', reqId, question, history,
         sentence: cue.text, translation: a.tr,
         words: (a.w || []).map((w) => `${w.s} = ${w.m}`).join('; '),
+        phrases: (a.phrases || []).filter((p) => p && p.d).map((p) => `${p.d} = ${p.m}`).join('; '),
+        forms: (a.w || []).flatMap((w) => formsOf(w)).map((f) => `${f.k} = ${f.name}`).join('; '),
         before: t ? t.cues.slice(Math.max(0, idx - 3), idx).map((c) => c.text) : [],
         after: t ? t.cues.slice(idx + 1, idx + 3).map((c) => c.text) : [],
         show: tabTitle || '',
@@ -2990,8 +3122,14 @@
   }
 
   function onAsk(msg) {
+    if (msg.type === 'askLesson') {
+      const t = lessonTargets.get(msg.reqId);
+      if (t) showLesson(t, msg);
+      return;
+    }
     const t = askTargets.get(msg.reqId);
     if (!t) return;
+    if (msg.type === 'askDone') lessonTargets.set(msg.reqId, t);
     t.el.classList.remove('sg-loading');
     if (msg.type === 'askDelta') {
       t.text += msg.delta;
@@ -3074,6 +3212,16 @@
     const og = document.querySelector('meta[property="og:title"]');
     if (og && og.content) sources.push({ url: '', title: og.content });
     const ep = SG.episode.detect(sources);
+    lastSiteTitle = ep.title || '';
+    // A show you've saved, recognised by the name this site gives it (Monster on animepahe -> your Monster).
+    if (!ep.tmdbId && !ep.imdbId && !ep.jimakuId) {
+      const saved = (await request({ type: 'matchShow', episode: ep })).entry;
+      if (saved) {
+        for (const k of ['tmdbId', 'imdbId', 'jimakuId', 'type', 'year']) if (saved[k] && !ep[k]) ep[k] = saved[k];
+        ep.title = saved.title || ep.title;
+        if (ep.type === 'tv' && ep.episode != null && ep.season == null) ep.season = 1;
+      }
+    }
     // A show picked by hand on this page fills in what the addresses do not say.
     const pick = await showPickFor();
     if (pick) {
@@ -3109,7 +3257,9 @@
     return (r.showPicks || {})[k] || null;
   }
 
+  let lastSiteTitle = '';
   async function saveShowPick(show) {
+    request({ type: 'pickShow', show, siteTitle: lastSiteTitle, lang: wantedLangs()[0] });
     const k = pageKey();
     if (!k) return;
     const r = await browser.storage.local.get('showPicks');
@@ -3350,7 +3500,39 @@
     status.textContent = SG.episode.confident(ep) ? `Detected ${SG.episode.describe(ep)}.` : 'Check the title, season and episode, then search.';
     const results = h('div', 'sg-results');
     const usual = h('div', 'sg-usual');
-    body.append(usual, form, go, status, shows, results);
+    const mine = h('div', 'sg-myshows');
+    body.append(mine, usual, form, go, status, shows, results);
+    request({ type: 'myShows' }).then((res) => {
+      const list = (res && res.list) || [];
+      if (!list.length) return;
+      mine.append(h('div', 'sg-section', 'My shows'));
+      const row = h('div', 'sg-myshows-row');
+      for (const sh of list.slice(0, 12)) {
+        const b = h('button', 'sg-myshow');
+        b.title = sh.title + (sh.year ? ` (${sh.year})` : '') + (sh.subs ? ' · subtitles: ' + sh.subs : '');
+        if (sh.poster) {
+          const img = h('img', 'sg-myshow-img');
+          img.src = sh.poster;
+          img.alt = '';
+          img.referrerPolicy = 'no-referrer';
+          b.append(img);
+        } else b.append(h('span', 'sg-myshow-ph', (sh.title || '?').slice(0, 1)));
+        b.append(h('span', 'sg-myshow-t', sh.title));
+        b.addEventListener('click', () => {
+          picked = sh;
+          title.value = sh.title;
+          type.value = sh.type || 'tv';
+          id.value = sh.tmdbId || sh.imdbId || '';
+          idTitle = id.value ? title.value.trim().toLowerCase() : null;
+          toggleSeason();
+          if (type.value === 'tv' && !season.value) season.value = '1';
+          saveShowPick(sh);
+          run();
+        });
+        row.append(b);
+      }
+      mine.append(row);
+    });
     request({ type: 'showChoice', episode: ep, langs: wantedLangs() }).then((res) => {
       const c = res && res.choice;
       if (!c) {
@@ -3431,7 +3613,16 @@
         if (r.downloads) meta.push(`${r.downloads.toLocaleString()} downloads`);
         if (r.hi) meta.push('includes sound descriptions');
         if (r.trusted) meta.push('trusted uploader');
-        row.append(top, h('div', 'sg-result-meta', meta.join(' · ')));
+        const every = h('span', 'sg-every', 'Use for every episode');
+        every.title = "Make this site and group this show's subtitles: later episodes load from them by themselves";
+        every.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          every.textContent = 'Saving…';
+          const res = await request({ type: 'useForShow', result: r, episode: query });
+          every.textContent = '✓ ' + (res.label || 'Saved') + ' for every episode';
+          row.click();
+        });
+        row.append(top, h('div', 'sg-result-meta', meta.join(' · ')), every);
         row.addEventListener('click', async () => {
           for (const other of results.children) other.classList.remove('sg-on');
           row.classList.add('sg-on', 'sg-loading');

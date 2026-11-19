@@ -158,6 +158,17 @@ donkey.to and similar sites play the video in an embedded player from another do
 - **Saved words lead with the dictionary form** and its reading, with every form you met them in ("Met as 食べさせられた — was made to eat").
 - **Guides fit what they're about:** particles, suffixes and endings (なり, では, とおり) get grammar guides; phrases get phrase guides. Every new guide opens with your line and the core idea, runs only as long as it needs, has no romaji, and is proofread by the cheap model (fixed by the guide model only if something is wrong).
 
+## Guides that learn with you
+
+- **Model per feature** (Options): Sonnet by default for word and phrase guides, Ask, kanji, episode words and review questions; Opus for new grammar guides. Every guide says which model wrote it, and **Improve with Opus** rewrites any guide (the old version is kept).
+- **A saved guide opened on a new line** shows "In this line" with what the word means there. A cheap check compares the line with the guide; if the guide doesn't cover this use, you get "Why it means something different here" (another sense, a bigger phrase or pattern, or a plain error), and the new use is added to the guide for good. "This doesn't match" asks the stronger model to look. The Library lists every line you've met a guide in.
+- **Your questions feed your guides.** Under each Ask answer, the lesson in it is pulled out with **Add to … guide** buttons (or automatically, in Options); notes appear in the guide under "From your questions", and are built into guides written later. Ask can write a guide on request ("write a guide on 店を出す"), and offers one when an answer reveals a set phrase with no guide.
+- **Check my guides** (Library) finds guides that need rewriting (grammar written up as a word, a phrase filed under one word, romaji, missing furigana, missing sections, a free built-in version available) and rewrites the ones you tick.
+
+## My shows
+
+Pick a show once in Subtitles → Find the show and it's saved with its poster (AniList for anime and TVmaze for TV without a key; a free TMDB key in Options for the best film and TV posters). Langtitles remembers the name each site uses for it, so the next episode is recognised by itself. **My shows** appear first in the subtitle search, and **Use for every episode** on a subtitle result makes that site and group the show's subtitles.
+
 ## Your data: questions, backups, spending
 
 - **Questions are kept.** Everything you ask about a line, with the answer, is saved and shown again under that line when you come back to it. Toolbar popup → **Questions** lists them all by show and episode, searchable.

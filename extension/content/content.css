@@ -1116,3 +1116,20 @@
 .lt-root .sg-study { display: flex; flex-direction: column; }
 .lt-root .sg-study .sg-wl-top .sg-form { margin-right: auto; }
 .lt-root [hidden] { display: none !important; }
+.lt-root .sg-guide-by { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; } .lt-root .sg-improve { font-size: 11.5px; padding: 3px 9px; }
+.lt-root .sg-inline { margin-bottom: 1em; padding: 0.6em 0.8em; border-radius: 10px; background: rgba(143, 211, 255, 0.07); border: 1px solid rgba(143, 211, 255, 0.25); }
+.lt-root .sg-inline .sg-g-h:first-child { margin-top: 0; color: var(--sg-read); }
+.lt-root .sg-lesson { margin: -2px 0 6px; padding: 8px 10px; border-radius: 10px; background: rgba(255, 210, 122, 0.06); border: 1px dashed rgba(255, 210, 122, 0.3); }
+.lt-root .sg-lesson-t { color: var(--sg-soft); font-size: 12.5px; }
+.lt-root .sg-lesson .sg-d-forms { margin-top: 6px; }
+.lt-root .sg-notes { margin-top: 1.1em; padding: 0.5em 0.8em; border-radius: 10px; background: rgba(255, 210, 122, 0.06); border: 1px solid rgba(255, 210, 122, 0.2); }
+.lt-root .sg-notes .sg-g-h { margin-top: 0; }
+
+/* My shows */
+.lt-root .sg-myshows-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
+.lt-root .sg-myshow { all: unset; flex: 0 0 76px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; }
+.lt-root .sg-myshow-img, .lt-root .sg-myshow-ph { width: 76px; height: 108px; border-radius: 8px; object-fit: cover; background: var(--sg-fill); border: 1px solid var(--sg-line); display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--sg-dim); }
+.lt-root .sg-myshow:hover .sg-myshow-img { outline: 2px solid var(--sg-gloss); }
+.lt-root .sg-myshow-t { font-size: 11px; line-height: 1.25; color: var(--sg-soft); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.lt-root .sg-every { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--sg-line-strong); color: var(--sg-soft); font-size: 11px; cursor: pointer; }
+.lt-root .sg-every:hover { border-color: var(--sg-gloss); color: #fff; }

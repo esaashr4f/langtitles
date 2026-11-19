@@ -25,12 +25,12 @@ docs/pending-notes.md and get loaded in as part of item 5.
 
 ## 2. Shows and subtitles
 
-- [ ] **Saved shows / show presets** (the "Monster preset"): pick "Monster (2004)" once, with its poster;
+- [x] **Saved shows / show presets** (the "Monster preset"): pick "Monster (2004)" once, with its poster;
   save the show, subtitle site, subtitle group and timing. "My shows" appear first in Find subtitles;
   one click loads them. A "Use for every episode" button on each subtitle result. Remember that a
   site's title ("Monster Ep. 62" on animepahe) is this saved show, so later episodes load with no
   searching. Show what is saved; Forget button.
-- [ ] **Posters for every kind of show:** AniList for anime (no key), TVmaze for TV series (no key),
+- [x] **Posters for every kind of show:** AniList for anime (no key), TVmaze for TV series (no key),
   OpenSubtitles' catalogue for films (existing key), optional TMDB key for best quality; fall back to
   a frame from your own viewing; let the poster be swapped.
 
@@ -100,25 +100,25 @@ docs/pending-notes.md and get loaded in as part of item 5.
 
 - [x] **Model label on every guide** (Library header line, word card, panel, full-screen reader:
   "Written by Opus 5.5", "Built in"); existing guides already store their model.
-- [ ] **Model per feature** in Options: Sonnet by default for word guides, kanji entries, Episode words and
+- [x] **Model per feature** in Options: Sonnet by default for word guides, kanji entries, Episode words and
   review questions; Opus for new grammar forms.
-- [ ] **"Improve with Opus" button** on every guide: rewrites it, replaces it in the Library, label updates,
+- [x] **"Improve with Opus" button** on every guide: rewrites it, replaces it in the Library, label updates,
   Library notes it was rewritten, folds in your question notes.
 - [ ] **Advisor experiment:** Sonnet writes, consulting Opus on hard parts; default only if measurably better
   than Sonnet and cheaper than Opus.
 - [ ] **Sonnet vs Opus comparison:** about ten guides from each model, side by side, for you to judge
   (under £1; ask before spending).
-- [ ] **When a line doesn't match the guide:** "In this line" at the top of a saved guide (free); a cheap
+- [x] **When a line doesn't match the guide:** "In this line" at the top of a saved guide (free); a cheap
   Haiku check compares the line's meaning with the guide's senses; on a mismatch, "Why it means
   something different here" (another sense, part of a bigger expression, or an error, said plainly);
   new senses added to the guide permanently; "Where you met it" becomes a list of every encounter;
   a "This doesn't match" button. A は guide opened on a では line points to the では guide.
-- [ ] **Your questions update guides:** after each Ask answer, pull out the main lesson and suggest
+- [x] **Your questions update guides:** after each Ask answer, pull out the main lesson and suggest
   "Add to X guide" chips (a setting to add automatically); a "From your questions" section with the line
   and date; corrections marked next to the part they fix; notes kept for guides not written yet and built
   in when they are; searchable in the Library with a filter; shown on review cards.
   Load docs/pending-notes.md (取り巻く / noun-modifying clauses; 程度 / でしかない).
-- [ ] **Ask can write guides:** "write a guide on 店を出す" creates a vocab or grammar guide (root form),
+- [x] **Ask can write guides:** "write a guide on 店を出す" creates a vocab or grammar guide (root form),
   saved to the Library; Ask offers "Make a guide for X" when an answer reveals a missing set phrase.
   Write 店を出す first.
 - [x] **"Set phrases and expressions" group** in the Library's Words section; set phrases detected
@@ -138,7 +138,7 @@ docs/pending-notes.md and get loaded in as part of item 5.
   update, add the 17 rewritten / new guides, retire the 16 replaced ones (kept for undo, notes and
   encounters moved over), patch the こと and もの sections, relink 殺害に関しては from the に guide, strip romaji
   from 6 old guides, turn the 4 name guides into one-line entries. Once only, with a summary in the Library.
-- [ ] **Prevent every problem found in the audit from happening again** (each gets a regression test built from
+- [x] **Prevent every problem found in the audit from happening again** (each gets a regression test built from
   the real lines in docs/guide-audit.md):
   - phrases filed under one word (関する for に関して, 歯切れ for 歯切れが悪い, 店 for 店を出す…) → phrases as real units
     (section 4b), detected by the analysis and the dictionary; guides and saving use the phrase;
@@ -157,7 +157,7 @@ docs/pending-notes.md and get loaded in as part of item 5.
   - over-long guides on basic words → length scales with the item; basic words get a short guide;
   - self-contradictions (なり) → the consistency check;
   - missing uses that the line needs (past ～た before a noun) → the "doesn't match this line" check adds them.
-- [ ] **Guide check-up for guides already saved:** a "Check my guides" button in the Library that scans every
+- [x] **Guide check-up for guides already saved:** a "Check my guides" button in the Library that scans every
   saved guide and lists the ones that need rewriting, each with the reason:
   - a word guide for something that is grammar (particle, suffix, auxiliary: なり, では);
   - a word guide for the head word of a phrase (関する where the line had に関して; 歯切れ alone);

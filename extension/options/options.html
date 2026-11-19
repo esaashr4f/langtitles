@@ -28,10 +28,15 @@
         <small>Every subtitle line goes through this one, so it is almost all of the cost. Claude Haiku 5.5 is by far the cheapest; try an episode and compare with a stronger model.</small>
       </label>
       <label class="field">
-        <span>Model for guides, questions and character entries</span>
+        <span>Main model (used for anything not chosen below)</span>
         <select id="model"></select>
         <small id="modelNote"></small>
       </label>
+      <div class="field">
+        <span>Model for each feature</span>
+        <div id="featureModels" class="feature-models"></div>
+        <small>Guides are written once and saved, so they cost only the first time. Sonnet costs half as much as Opus; any guide can be rewritten later with "Improve with Opus".</small>
+      </div>
       <label class="field">
         <span>Thinking effort for breakdowns</span>
         <select id="effort">
@@ -90,6 +95,12 @@
         <span>API key</span>
         <input id="jimakuKey" type="password" autocomplete="off" spellcheck="false">
         <small>Japanese subtitles for anime, often taken from the original broadcast. Sign up at jimaku.cc and create a key on <a href="https://jimaku.cc/account" target="_blank" rel="noopener">your account page</a>.</small>
+      </label>
+      <h3>Posters (optional)</h3>
+      <label class="field">
+        <span>TMDB API key</span>
+        <input id="tmdbKey" type="password" autocomplete="off" spellcheck="false">
+        <small>Posters for My shows come from AniList (anime) and TVmaze (TV) without a key. A free TMDB key (themoviedb.org → Settings → API) adds the best posters for films and TV in every language.</small>
       </label>
     </section>
 

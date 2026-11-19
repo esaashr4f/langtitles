@@ -125,6 +125,34 @@
     return data && data.forms && data.forms[k] ? data.forms[k] : null;
   }
 
+  // A saved guide opened on a new line: remember the line, and (once per line) check the guide covers
+  // this use. If not, explain what's going on and add the new use to the guide for good.
+  const norm = (t) => String(t || '').replace(/\s+/g, '');
+  async function checkEncounter(req, key, guide, port, force) {
+    if (!req.sentence) return;
+    const line = norm(req.sentence);
+    const encounters = Array.isArray(guide.encounters) ? guide.encounters.slice() : [];
+    const seen = encounters.find((e) => e.line === line) || (norm(guide.sentence) === line ? { line, covered: true } : null);
+    if (seen && !force) {
+      if (seen.why) send(port, { type: 'deepNote', reqId: req.reqId, why: seen.why, added: Boolean(seen.added) });
+      return;
+    }
+    if (!settings.apiKey || settings.matchCheck === false) return;
+    const res = await claude.matchGuide(forTab(port.sender && port.sender.tab ? port.sender.tab.id : -1), req, guide.text, force);
+    const entry = { line, sentence: req.sentence, meaning: req.meaning || '', at: Date.now(), covered: Boolean(res.covered), why: res.covered ? '' : res.why || '' };
+    const updated = Object.assign({}, guide);
+    if (!res.covered && res.addition && /^-\s/.test(res.addition.trim())) {
+      const heading = 'Other uses you\'ve met';
+      const prev = SG.guideText.section(updated.text, heading);
+      updated.text = SG.guideText.replaceSection(updated.text, heading, (prev ? prev + '\n' : '') + SG.guideText.stripRomaji(res.addition.trim()));
+      entry.added = true;
+    }
+    updated.encounters = encounters.filter((e) => e.line !== line).concat(entry).slice(-30);
+    updated.updatedAt = Date.now();
+    await cache.putMany('guides', [[key, updated]]);
+    if (!res.covered) send(port, { type: 'deepNote', reqId: req.reqId, why: entry.why, added: Boolean(entry.added), text: entry.added ? updated.text : '' });
+  }
+
   async function explainGuide(req, port) {
     await ready;
     if (req.kind !== 'wordguide') req.form = Object.assign({}, req.form, { k: SG.canonicalForm(req.form.k) });
@@ -137,8 +165,10 @@
     }
     const key = guideKey(req.form.k);
     const hit = (await cache.getMany('guides', [key])).get(key);
-    if (hit) {
-      port.postMessage({ type: 'deepDone', reqId: req.reqId, text: hit.text, model: hit.model || '' });
+    const prevGuide = hit || null;
+    if (hit && !req.improve) {
+      port.postMessage({ type: 'deepDone', reqId: req.reqId, text: hit.text, model: hit.model || '', sentence: hit.sentence || '', notes: hit.notes || [] });
+      checkEncounter(req, key, hit, port, Boolean(req.force)).catch(() => {});
       return;
     }
     // The same form can be hovered in several places at once; write its guide only once.
@@ -146,7 +176,7 @@
       guidesInflight.get(key).push({ port, reqId: req.reqId });
       return;
     }
-    const built = req.kind === 'wordguide' ? null : await builtinGuide(req.form.k);
+    const built = req.kind === 'wordguide' || req.improve ? null : await builtinGuide(req.form.k);
     if (built) {
       // Keep a copy with the guides you've met, so it shows in the Library.
       cache.putMany('guides', [[key, {
@@ -173,19 +203,32 @@
     try {
       const writer = req.kind === 'wordguide' ? claude.explainWordGuide : claude.explainForm;
       const tabSettings = forTab(port.sender && port.sender.tab ? port.sender.tab.id : -1);
+      const waitingNotes = await pendingNotes(req.form.k);
+      req.notes = (prevGuide && prevGuide.notes ? prevGuide.notes : []).concat(waitingNotes);
       let text = await writer(tabSettings, req, (delta) => each((w) => w.port.postMessage({ type: 'deepDelta', reqId: w.reqId, delta })));
       // Before it's saved: no romaji, and a proofreading pass for contradictions (fixed only if found).
       text = SG.guideText.stripRomaji(text);
       if (settings.checkGuides !== false) text = (await claude.checkGuide(tabSettings, text)).text;
       const entry = {
         key, k: req.form.k, name: req.form.name || req.form.k, kind: req.kind === 'wordguide' ? 'word' : 'grammar', lang: req.lang || '', nativeLang: settings.nativeLang,
-        text, sentence: req.sentence || '', word: req.word || '', model: settings.model, savedAt: Date.now(),
+        text, sentence: req.sentence || '', word: req.word || '', model: req.model || SG.modelFor(settings, req.kind === 'wordguide' ? 'wordGuides' : 'grammarGuides'), savedAt: Date.now(),
       };
+      if (req.phrase || String(req.form.k).startsWith('phrase.')) entry.group = 'phrase';
+      if (req.notes.length) entry.notes = req.notes;
+      if (waitingNotes.length) clearPendingNotes(req.form.k).catch(() => {});
+      if (req.improve && prevGuide) {
+        // Rewritten on request: the old version goes to history, and the guide keeps its first line.
+        cache.putMany('history', [[key + '|' + Date.now(), Object.assign({}, prevGuide, { retiredAt: Date.now() })]]).catch(() => {});
+        entry.savedAt = prevGuide.savedAt || entry.savedAt;
+        entry.sentence = prevGuide.sentence || entry.sentence;
+        entry.rewritten = true;
+        entry.updatedAt = Date.now();
+      }
       cache.putMany('guides', [[key, entry]]).catch(() => {});
       if (req.kind !== 'wordguide' && settings.addGrammarToReview) {
         bankSave({ kind: 'grammar', lang: req.lang || '', text: req.form.k, name: req.form.name || req.form.k, context: req.sentence ? { sentence: req.sentence, savedAt: Date.now() } : null }).catch(() => {});
       }
-      each((w) => w.port.postMessage({ type: 'deepDone', reqId: w.reqId, text, model: entry.model }));
+      each((w) => w.port.postMessage({ type: 'deepDone', reqId: w.reqId, text, model: entry.model, notes: entry.notes || [] }));
     } catch (err) {
       each((w) => w.port.postMessage({ type: 'deepError', reqId: w.reqId, message: err.message }));
     } finally {
@@ -560,6 +603,67 @@
     return { track: trackFrom(result, sub), note };
   }
 
+  // Rewrites a saved guide (Library → Check my guides). The old version goes to history; notes are kept.
+  async function rewriteGuide(key, model) {
+    const g = (await cache.getMany('guides', [key])).get(key);
+    if (!g) return { error: 'Guide not found.' };
+    const built = g.kind === 'grammar' ? await builtinGuide(g.k) : null;
+    let text;
+    let usedModel;
+    if (built) {
+      text = built.text;
+      usedModel = 'built-in';
+    } else {
+      const s = Object.assign({}, settings, { costTag: -1, costShow: '' });
+      const parts = String(g.k).split('.');
+      const d = parts.slice(2).join('.') || g.name;
+      const req = { form: { k: g.k, name: g.name }, lang: g.lang || (parts[0] === 'word' || parts[0] === 'phrase' ? parts[1] : parts[0]), sentence: g.sentence || '', word: g.word || d, dict: d, notes: g.notes || [], model, phrase: g.group === 'phrase' || parts[0] === 'phrase', pos: g.group === 'phrase' ? 'set phrase' : '' };
+      const writer = g.kind === 'grammar' ? claude.explainForm : claude.explainWordGuide;
+      text = SG.guideText.stripRomaji(await writer(s, req, () => {}));
+      if (settings.checkGuides !== false) text = (await claude.checkGuide(s, text)).text;
+      usedModel = model || SG.modelFor(settings, g.kind === 'grammar' ? 'grammarGuides' : 'wordGuides');
+    }
+    await cache.putMany('history', [[key + '|' + Date.now(), Object.assign({}, g, { retiredAt: Date.now() })]]);
+    const entry = Object.assign({}, g, { text, model: usedModel, rewritten: true, updatedAt: Date.now() });
+    await cache.putMany('guides', [[key, entry]]);
+    return { ok: true, model: usedModel };
+  }
+
+  // ---- notes from your questions, kept with the guide they belong to
+  function noteKey(t, lang) {
+    const l = lang || 'ja';
+    if (!t || !t.d && !t.k) return '';
+    if (t.kind === 'grammar') return SG.canonicalForm(t.k && t.k.includes('.') ? t.k : `${l}.${t.k || 'fn_' + t.d}`);
+    if (t.kind === 'phrase') return `phrase.${l}.${t.d}`;
+    return `word.${l}.${t.d}`;
+  }
+  async function addNote(k, note) {
+    const aliases = (await browser.storage.local.get('guideAliases')).guideAliases || {};
+    k = aliases[k] || k;
+    const key = guideKey(k);
+    const entry = (await cache.getMany('guides', [key])).get(key);
+    const item = { text: note.text, sentence: note.sentence || '', q: note.q || '', at: Date.now() };
+    if (entry) {
+      entry.notes = (entry.notes || []).concat(item).slice(-20);
+      entry.updatedAt = Date.now();
+      await cache.putMany('guides', [[key, entry]]);
+      return 'guide';
+    }
+    const pending = (await browser.storage.local.get('guideNotes')).guideNotes || {};
+    pending[k] = (pending[k] || []).concat(item).slice(-20);
+    await browser.storage.local.set({ guideNotes: pending });
+    return 'pending';
+  }
+  async function pendingNotes(k) {
+    return ((await browser.storage.local.get('guideNotes')).guideNotes || {})[k] || [];
+  }
+  async function clearPendingNotes(k) {
+    const pending = (await browser.storage.local.get('guideNotes')).guideNotes || {};
+    if (!pending[k]) return;
+    delete pending[k];
+    await browser.storage.local.set({ guideNotes: pending });
+  }
+
   // ---- questions asked about lines: kept for good, shown again under the same line
   function questionKey(sentence) {
     return String(sentence || '').replace(/\s+/g, '');
@@ -740,9 +844,30 @@
             (text) => {
               send(port, { type: 'askDone', reqId: msg.reqId, text });
               saveQuestion(msg, text).catch(() => {});
+              claude.extractLesson(forTab(tabId), msg, text).then((res) => {
+                const targets = (res.targets || []).map((t) => Object.assign(t, { key: noteKey(t, msg.lang) })).filter((t) => t.key);
+                send(port, { type: 'askLesson', reqId: msg.reqId, lesson: res.lesson || '', targets, guide: res.guide && res.guide.make ? Object.assign(res.guide, { key: noteKey(res.guide, msg.lang) }) : null });
+              }).catch(() => {});
             },
             (err) => send(port, { type: 'askError', reqId: msg.reqId, message: err.message }),
           );
+      } else if (msg.type === 'pickShow') {
+        SG.shows.pick(msg.show, msg.siteTitle, msg.lang).then((entry) => send(port, { type: 'showSaved', reqId: msg.reqId, entry }));
+      } else if (msg.type === 'myShows') {
+        SG.shows.all().then((list) => send(port, { type: 'showSaved', reqId: msg.reqId, list }));
+      } else if (msg.type === 'matchShow') {
+        SG.shows.match(msg.episode).then((entry) => send(port, { type: 'showSaved', reqId: msg.reqId, entry }));
+      } else if (msg.type === 'useForShow') {
+        // "Use for every episode": this site and group become the show's subtitles, ahead of any search order.
+        rememberShowChoice(msg.episode, msg.result, msg.offset).then(async () => {
+          const entry = await SG.shows.match(msg.episode);
+          const group = SG.episode.releaseGroup(msg.result.name);
+          const label = ({ opensubtitles: 'OpenSubtitles', subdl: 'SubDL', jimaku: 'Jimaku' }[msg.result.provider] || msg.result.provider) + (group ? ' · ' + group : '');
+          if (entry) await SG.shows.update(entry.id, { subs: label });
+          send(port, { type: 'showSaved', reqId: msg.reqId, label });
+        });
+      } else if (msg.type === 'addNote') {
+        addNote(msg.k, msg.note).then((where) => send(port, { type: 'noteAdded', reqId: msg.reqId, where }));
       } else if (msg.type === 'qaForLine') {
         questionsFor(msg.sentence).then((list) => send(port, { type: 'qaList', reqId: msg.reqId, list }));
       } else if (msg.type === 'watched') {
@@ -861,6 +986,7 @@
         usage: (await browser.storage.local.get('usage')).usage || {},
       }));
     }
+    if (msg.type === 'rewriteGuide') return ready.then(() => rewriteGuide(msg.key, msg.model));
     if (msg.type === 'spendLog') return browser.storage.local.get('spendLog').then((r) => r.spendLog || { days: {}, shows: {}, top: [] });
     if (msg.type === 'backupNow') return SG.autobackup.check(true);
     if (msg.type === 'backupStatus') return SG.autobackup.status();

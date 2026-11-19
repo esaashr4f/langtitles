@@ -17,6 +17,7 @@
     const remove = new Set();
     const history = [];
     const aliases = {};
+    const pendingNotes = {};
     const current = (k) => (put.has(keyFor(k)) ? [keyFor(k), put.get(keyFor(k))] : byK.get(k));
     const keep = (key, g) => {
       history.push([key + '|' + now, Object.assign({}, g, { retiredAt: now })]);
@@ -50,6 +51,16 @@
           const moved = Object.assign({}, old[1], { k: op.to, key: keyFor(op.to), updatedAt: now, renamedFrom: op.from });
           put.set(moved.key, moved);
         }
+      } else if (op.op === 'note') {
+        const note = { text: op.text, sentence: op.sentence || '', at: now, source: 'question' };
+        const cur = current(op.k);
+        if (cur) {
+          const g = Object.assign({}, cur[1]);
+          if (!(g.notes || []).some((n) => n.text === op.text)) g.notes = (g.notes || []).concat(note);
+          put.set(cur[0], g);
+        } else {
+          (pendingNotes[op.k] = pendingNotes[op.k] || []).push(note);
+        }
       } else if (op.op === 'section' || op.op === 'romaji' || op.op === 'name' || op.op === 'relink') {
         const cur = current(op.k);
         if (!cur) continue;
@@ -67,7 +78,7 @@
       }
     }
     for (const key of put.keys()) remove.delete(key);
-    return { put: Array.from(put.entries()), remove: Array.from(remove), history, aliases };
+    return { put: Array.from(put.entries()), remove: Array.from(remove), history, aliases, pendingNotes };
   }
 
   async function applyAll(cache, keyFor) {
@@ -88,7 +99,12 @@
       for (const key of p.remove) await cache.remove('guides', key);
       const stored = (await browser.storage.local.get('guideAliases')).guideAliases || {};
       done[lang] = data.version;
-      await browser.storage.local.set({ guideAliases: Object.assign(stored, p.aliases), libraryFixes: done });
+      const waiting = (await browser.storage.local.get('guideNotes')).guideNotes || {};
+      for (const [k, list] of Object.entries(p.pendingNotes)) {
+        const have = waiting[k] || [];
+        waiting[k] = have.concat(list.filter((n) => !have.some((x) => x.text === n.text)));
+      }
+      await browser.storage.local.set({ guideAliases: Object.assign(stored, p.aliases), libraryFixes: done, guideNotes: waiting });
       summary.push({ lang, added: data.ops.filter((o) => o.op === 'add').length, retired: p.remove.length, changed: p.put.length });
     }
     if (summary.length) {

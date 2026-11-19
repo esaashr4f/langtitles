@@ -5,7 +5,7 @@
   let settings = await SG.loadSettings();
 
   const CHECKS = ['hideKnownGlosses', 'toneColors', 'hanja', 'pitchAccent', 'addGrammarToReview', 'highlightNew', 'pauseOnePlus', 'slowReplay', 'autoKnownFromReview', 'autoFind', 'enabled', 'showMeaning', 'showParts', 'furigana', 'pinyin', 'hideKnownPinyin', 'showRoles', 'showTranslation', 'hideNative', 'hoverPause', 'resumeOnLeave', 'autoDeep', 'autoBackup', 'backupCaches', 'backupKeys'];
-  const TEXTS = ['apiKey', 'baseURL', 'nativeLang', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey', 'backupPassphrase'];
+  const TEXTS = ['apiKey', 'baseURL', 'nativeLang', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey', 'backupPassphrase', 'tmdbKey'];
 
   const modelSel = $('model');
   for (const m of SG.MODELS) modelSel.append(new Option(m.name, m.id));
@@ -35,6 +35,21 @@
     const m = SG.MODELS.find((x) => x.id === settings.model);
     $('modelNote').textContent = m ? `${m.note} $${m.inPrice} / $${m.outPrice} per million input / output tokens.` : '';
     renderHosts();
+    const fm = $('featureModels');
+    fm.textContent = '';
+    for (const f of SG.FEATURES) {
+      const row = document.createElement('label');
+      row.className = 'feature-row';
+      const name = document.createElement('span');
+      name.textContent = f.label;
+      const sel = document.createElement('select');
+      sel.append(new Option('Main model', ''));
+      for (const m of SG.MODELS) sel.append(new Option(m.name, m.id));
+      sel.value = (settings.featureModels || {})[f.key] || '';
+      sel.addEventListener('change', () => save({ featureModels: Object.assign({}, settings.featureModels, { [f.key]: sel.value }) }));
+      row.append(name, sel);
+      fm.append(row);
+    }
     const gc = $('glossClasses');
     gc.textContent = '';
     const on = new Set(settings.glossClasses || []);

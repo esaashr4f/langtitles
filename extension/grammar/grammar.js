@@ -201,12 +201,101 @@
       load();
     });
     tools.append(del);
+    // Every line you've met it in, with what it meant there.
+    let enc = null;
+    if (Array.isArray(g.encounters) && g.encounters.length) {
+      enc = h('details', 'encounters');
+      enc.append(h('summary', '', `Met in ${g.encounters.length + (g.sentence ? 1 : 0)} lines`));
+      const ul = h('ul');
+      for (const e of [{ sentence: g.sentence, meaning: '' }].concat(g.encounters).filter((x) => x.sentence)) {
+        const li = h('li');
+        const q = h('q', '', e.sentence);
+        if (g.lang) q.lang = g.lang;
+        li.append(q);
+        if (e.meaning) li.append(document.createTextNode(' — ' + e.meaning));
+        if (e.why) li.append(h('div', 'why', e.why));
+        ul.append(li);
+      }
+      enc.append(ul);
+    }
     const body = h('div', 'guide');
     if (g.lang) body.lang = g.lang;
     SG.renderGuide(body, g.text, { known: knownKanji });
-    view.append(head, tools, body);
+    view.append(head, tools, ...(enc ? [enc] : []), body);
     window.scrollTo(0, 0);
   }
+
+  // ---- Check my guides: finds guides that need rewriting, with the reason, and rewrites the ones ticked.
+  async function checkup() {
+    const view = $('view');
+    view.textContent = '';
+    view.append(h('h2', '', 'Check my guides'), h('p', 'sub', 'Looking through your guides…'));
+    let builtin = {};
+    try {
+      builtin = (await (await fetch('../data/grammar/ja.json')).json()).forms || {};
+    } catch (e) {
+      /* no built-in guides */
+    }
+    const problems = [];
+    for (const g of guides) {
+      const why = [];
+      const parts = String(g.k || '').split('.');
+      const isWord = parts[0] === 'word';
+      const d = parts.slice(2).join('.');
+      const text = g.text || '';
+      if (g.kind === 'name') continue;
+      if (isWord && SG.canonicalForm(`${parts[1]}.fn_${d}`) !== `${parts[1]}.fn_${d}`) why.push('Grammar written up as a word: it should be a grammar guide.');
+      if (isWord && /(set phrase|fixed expression|idiom|compound particle|part of the (?:pattern|phrase|expression))/i.test(SG.guideText.section(text, 'What it means').slice(0, 600))) why.push('Probably filed under one word of a phrase: check whether the phrase has its own guide.');
+      if (SG.guideText.hasRomaji(text)) why.push('Contains romaji.');
+      if (/garbled|can't say for sure|probably not the word/i.test(text)) why.push('Calls something a subtitle error or isn\'t sure: worth a second look.');
+      const heads = (text.match(/^## /gm) || []).length;
+      if (heads < 4) why.push('Missing sections.');
+      if (g.kind === 'grammar' && builtin[g.k] && g.model !== 'built-in' && g.model !== 'rewrite') why.push('A built-in guide exists for this (free to swap in).');
+      if (!text.includes('{') && /[\u4e00-\u9fff]/.test(text)) why.push('No furigana.');
+      if (why.length) problems.push({ g, why });
+    }
+    view.textContent = '';
+    view.append(h('h2', '', 'Check my guides'));
+    if (!problems.length) {
+      view.append(h('p', '', 'Everything looks fine.'));
+      return;
+    }
+    const paid = problems.filter((p) => !(p.g.kind === 'grammar' && builtin[p.g.k])).length;
+    view.append(h('p', 'sub', `${problems.length} guides could be better. Rewriting costs roughly 3¢ each with Sonnet or 6¢ with Opus (${paid} would cost anything; guides with a built-in version are swapped for free). Old versions are kept and your notes stay.`));
+    const list = h('div', 'checkup');
+    const boxes = [];
+    for (const p of problems) {
+      const row = h('label', 'checkup-row');
+      const box = h('input');
+      box.type = 'checkbox';
+      box.checked = true;
+      boxes.push([box, p]);
+      const info = h('div');
+      info.append(h('b', '', p.g.name || p.g.k));
+      for (const w of p.why) info.append(h('div', 'sub', w));
+      row.append(box, info);
+      list.append(row);
+    }
+    const model = h('select');
+    model.append(new Option('Rewrite with Sonnet', 'claude-sonnet-5-5'), new Option('Rewrite with Opus', 'claude-opus-5-5'));
+    const go = h('button', 'checkup-btn', 'Rewrite ticked guides');
+    const status = h('p', 'sub');
+    go.addEventListener('click', async () => {
+      go.disabled = true;
+      const todo = boxes.filter(([b]) => b.checked).map(([, p]) => p);
+      let n = 0;
+      for (const p of todo) {
+        status.textContent = `Rewriting ${++n} of ${todo.length}: ${p.g.name || p.g.k}…`;
+        const res = await browser.runtime.sendMessage({ type: 'rewriteGuide', key: p.g.key, model: model.value });
+        if (res && res.error) status.textContent = res.error;
+      }
+      status.textContent = `Done: ${todo.length} rewritten.`;
+      go.disabled = false;
+      await load();
+    });
+    view.append(list, model, go, status);
+  }
+  $('checkup').addEventListener('click', checkup);
 
   $('search').addEventListener('input', renderList);
   // Guides written while this tab is open show up when you come back to it.

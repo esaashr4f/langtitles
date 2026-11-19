@@ -353,6 +353,13 @@ Rules for every guide:
 - No romanization anywhere (no romaji, no Korean romanization).`;
   }
 
+  // What the learner has already worked out (from their questions): the guide should build it in.
+  function notesBlock(req) {
+    const notes = (req.notes || []).filter((n) => n && n.text);
+    if (!notes.length) return '';
+    return '\n\nThe learner already asked about this; build these points into the guide where they belong:\n' + notes.map((n) => '- ' + n.text + (n.sentence ? ` (line: ${n.sentence})` : '')).join('\n');
+  }
+
   function wordGuideUserMessage(req) {
     if (req.phrase) {
       return `This is a multi-word unit (${req.pos || 'set phrase'}), not a single word. Write the guide about the unit as a whole: what it means as a unit, why its parts add up to that (or don't), and how it is used. Don't write about any one of its words on its own.
@@ -360,7 +367,7 @@ Unit: ${req.dict || req.word || ''}
 Reading: ${req.reading || ''}
 Meaning there: ${req.meaning || ''}
 Language: ${req.lang || 'unknown'}
-Line where the learner met it: ${req.sentence || ''}`;
+Line where the learner met it: ${req.sentence || ''}${notesBlock(req)}`;
     }
     return `Word as it appeared: ${req.word || ''}
 Dictionary form: ${req.dict || req.word || ''}
@@ -368,7 +375,7 @@ Reading: ${req.reading || ''}
 Part of speech: ${req.pos || ''}
 Meaning there: ${req.meaning || ''}
 Language: ${req.lang || 'unknown'}
-Line where the learner met it: ${req.sentence || ''}`;
+Line where the learner met it: ${req.sentence || ''}${notesBlock(req)}`;
   }
 
   function guideUserMessage(req) {
@@ -377,7 +384,7 @@ Line where the learner met it: ${req.sentence || ''}`;
 Identifier: ${f.k}
 Language: ${req.lang || 'unknown'}
 Line where the learner met it: ${req.sentence || ''}
-Word that carries it there: ${req.word || ''}`;
+Word that carries it there: ${req.word || ''}${notesBlock(req)}`;
   }
 
   // A cheap check of a freshly written guide for contradictions and claims it can't back up.
@@ -406,6 +413,62 @@ Word that carries it there: ${req.word || ''}`;
   }
   function reviseSystemPrompt(nativeLang) {
     return `You revise a language guide for a learner who reads ${nativeLang}. Fix exactly the problems listed and nothing else. Keep the headings, the formatting, the {kanji|reading} markup and everything that is right. Return the whole corrected guide and nothing else.`;
+  }
+
+  // After an answer in Ask: the lesson in it, which guides it belongs in, and whether to write a guide.
+  const LESSON_SCHEMA = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['lesson', 'targets', 'guide'],
+    properties: {
+      lesson: { type: 'string', description: 'What the learner really wanted to learn, in one to three sentences, standing on its own (name the word or form). Empty if the answer teaches nothing reusable.' },
+      targets: {
+        type: 'array',
+        description: 'The words, phrases or grammar forms the lesson is about (at most three), chosen from the lists given when possible.',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['kind', 'd', 'k', 'name'],
+          properties: {
+            kind: { type: 'string', enum: ['word', 'phrase', 'grammar'] },
+            d: { type: 'string', description: 'Dictionary form of the word or phrase, or the form itself for grammar.' },
+            k: { type: 'string', description: 'For grammar: the identifier from the list (or a new one in the same style). Otherwise empty.' },
+            name: { type: 'string', description: 'Short label.' },
+          },
+        },
+      },
+      guide: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['make', 'kind', 'd', 'k', 'name'],
+        description: 'Whether to offer a new guide: make is true when the learner asked for a guide, or the answer revealed a set phrase or pattern worth one.',
+        properties: {
+          make: { type: 'boolean' },
+          kind: { type: 'string', enum: ['word', 'phrase', 'grammar', ''] },
+          d: { type: 'string' },
+          k: { type: 'string' },
+          name: { type: 'string' },
+        },
+      },
+    },
+  };
+  function lessonSystemPrompt(nativeLang) {
+    return `A learner asked a question about a subtitle line and got an answer. Pull out the lesson they will want to keep, in ${nativeLang}, and say which word, phrase or grammar form it belongs to so it can be added to that guide. Multi-word units (に関して, 歯切れが悪い, 店を出す) are phrases; particles, endings and patterns are grammar. If the learner asked for a guide on something ("write a guide on X", "make me a guide for this phrase"), set guide.make with X. No romanization.`;
+  }
+
+  // Does a saved guide cover the way the word or form is used in a new line?
+  const MATCH_SCHEMA = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['covered', 'why', 'addition'],
+    properties: {
+      covered: { type: 'boolean', description: 'True when the guide already explains this use.' },
+      why: { type: 'string', description: 'When not covered: two to four sentences on what is really going on here — another sense, part of a bigger expression or pattern (name it), or an error in the line or the guide (say so plainly). Empty when covered.' },
+      addition: { type: 'string', description: 'When not covered and this is a real use the guide should teach: one list item to add to the guide ("- " + the use, then an example line with " — " and its translation, using {kanji|reading} markup). Empty otherwise.' },
+    },
+  };
+  function matchSystemPrompt(nativeLang) {
+    return `A learner opened a saved guide for a word, phrase or grammar form while watching a show, on a line other than the one the guide was written for. Decide whether the guide already explains how it is used in this new line. Answer in ${nativeLang}. Be strict: if the guide's explanation would mislead the learner about this line, it is not covered. No romanization.`;
   }
 
   // Single kanji / hanzi entries are cached by character, separately from line analyses.
@@ -571,5 +634,5 @@ Write one natural, everyday sentence in the target language with the part that s
     return msg;
   }
 
-  SG.prompt = { CHECK_SCHEMA, checkSystemPrompt, reviseSystemPrompt, askSystemPrompt, askMessages, CLOZE_SCHEMA, clozeSystemPrompt, clozeUserMessage, wordGuideSystemPrompt, wordGuideUserMessage, WORDS_VERSION, WORDS_SCHEMA, wordsSystemPrompt, PROMPT_VERSION, GUIDE_VERSION, CHAR_VERSION, CHAR_SCHEMA, charSystemPrompt, charUserMessage, guideSystemPrompt, guideUserMessage, ROLES, ANALYSIS_SCHEMA, systemPrompt, userMessage, deepSystemPrompt, deepUserMessage };
+  SG.prompt = { LESSON_SCHEMA, lessonSystemPrompt, MATCH_SCHEMA, matchSystemPrompt, CHECK_SCHEMA, checkSystemPrompt, reviseSystemPrompt, askSystemPrompt, askMessages, CLOZE_SCHEMA, clozeSystemPrompt, clozeUserMessage, wordGuideSystemPrompt, wordGuideUserMessage, WORDS_VERSION, WORDS_SCHEMA, wordsSystemPrompt, PROMPT_VERSION, GUIDE_VERSION, CHAR_VERSION, CHAR_SCHEMA, charSystemPrompt, charUserMessage, guideSystemPrompt, guideUserMessage, ROLES, ANALYSIS_SCHEMA, systemPrompt, userMessage, deepSystemPrompt, deepUserMessage };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -16,7 +16,16 @@
     disabledHosts: [],
     apiKey: '',
     baseURL: '', // advanced: an API-compatible proxy; empty means api.anthropic.com
-    model: 'claude-opus-5-5', // guides, questions, character entries, review questions
+    model: 'claude-opus-5-5', // the main model: anything without its own choice below
+    // A model per feature ('' = the main model). Sonnet for most of the writing, Opus for new grammar forms.
+    featureModels: {
+      grammarGuides: 'claude-opus-5-5',
+      wordGuides: 'claude-sonnet-5-5',
+      kanji: 'claude-sonnet-5-5',
+      episodeWords: 'claude-sonnet-5-5',
+      review: 'claude-sonnet-5-5',
+      ask: 'claude-sonnet-5-5',
+    },
     lineModel: 'claude-haiku-5-5', // line-by-line breakdowns and episode word lists: almost all of the cost
     effort: 'low',
     nativeLang: 'English',
@@ -34,6 +43,8 @@
     hideKnownPinyin: true, // also hide pinyin over hanzi marked as known
     showRoles: true,
     showPhrases: true,
+    autoAddNotes: false, // add the lesson from each Ask answer to its guides without asking
+    matchCheck: true, // check saved guides against new lines (cheap model)
     checkGuides: true, // proofread new guides with the cheap model before saving
     showTranslation: true,
     fontScale: 1,
@@ -58,6 +69,7 @@
     osPass: '',
     subdlKey: '',
     jimakuKey: '',
+    tmdbKey: '', // optional: best posters for films and TV
     hanja: true, // hanja over Sino-Korean words
     toneColors: true, // pinyin coloured by tone
     pitchAccent: true, // Japanese pitch accent in the hover popup, word lists and review
@@ -146,6 +158,19 @@
     return 'Written by ' + (m ? m.name.replace(/^Claude /, '') : id);
   };
 
+  SG.FEATURES = [
+    { key: 'grammarGuides', label: 'Grammar guides' },
+    { key: 'wordGuides', label: 'Word and phrase guides' },
+    { key: 'ask', label: 'Ask about a line' },
+    { key: 'kanji', label: 'Kanji and character entries' },
+    { key: 'episodeWords', label: 'Episode words' },
+    { key: 'review', label: 'Review questions' },
+  ];
+  SG.modelFor = function (s, feature) {
+    const m = (s.featureModels || {})[feature];
+    return m || s.model;
+  };
+
   SG.LOOK_KEYS = ['subFont', 'subColor', 'subBg', 'fontScale', 'subBottom', 'coverHardsubs', 'coverBottom', 'coverHeight', 'showTranslation', 'followHardsubs', 'peekHardsubs'];
 
   SG.SUB_COLOURS = [
@@ -185,7 +210,7 @@
     const out = Object.assign({}, s);
     out.hasKey = Boolean(s.apiKey);
     out.subProviders = [s.osApiKey && 'opensubtitles', s.subdlKey && 'subdl', s.jimakuKey && 'jimaku'].filter(Boolean);
-    for (const secret of ['apiKey', 'baseURL', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey', 'backupPassphrase']) delete out[secret];
+    for (const secret of ['apiKey', 'baseURL', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey', 'backupPassphrase', 'tmdbKey']) delete out[secret];
     return out;
   };
 

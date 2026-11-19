@@ -53,3 +53,4 @@ kbd { padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; backg
 .saved.show { opacity: 1; }
 .restore { margin-top: 10px; padding: 12px 14px; border: 1px solid var(--line, #ddd); border-radius: 10px; }
 section h3 { margin: 16px 0 4px; font-size: 14px; }
+.feature-models { display: grid; gap: 6px; margin: 6px 0; } .feature-row { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 10px; }
