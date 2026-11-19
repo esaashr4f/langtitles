@@ -207,17 +207,26 @@ docs/pending-notes.md and get loaded in as part of item 5.
 
 ## 10. Redesign
 
-- [ ] **Remove the "AI-generated" look:** proper icon set instead of emoji, a typeface with character, fewer
-  tiny all-caps headings, no orange gradient buttons, less generic glass.
-- [ ] **Use the requested libraries where they help** (evaluate each, note the decision):
-  - Overlay: Vercel web design guidelines and the taste skill as checklists, shadcn's approach, GSAP for small
-    motion, components from React Bits, Skiper UI, fancycomponents.dev, Componentry, Awesome Design and
-    Kitchen (dqnamo) where they fit; check Animaster.
-  - Full pages (Library, Progress, Word bank, Review, Options): shadcn components, Lenis, Shader Gradient /
-    Liquid Logo for the fox on Options or a welcome page, Cobe only if meaningful.
-  - liquid-glass-js: test in Firefox (expect an imitation).
-  - Not over the video: Vanta, React Three Fiber, ThreeUI, Shader Gradient (WebGL hurts playback).
-- [ ] Test the redesign at real sizes before sending.
+- [x] **Remove the "AI-generated" look** (0.3.0–0.3.1): Lucide icons instead of emoji, Geist for the interface,
+  sentence-case labels, one flat accent instead of orange gradients, less blur; then a spacing and declutter
+  pass on the panel and word card (one primary thing per view, rows instead of boxes, quiet secondary actions,
+  a slim pinned playback bar, language-specific switches only for that language).
+- [x] **Libraries, the decision for each** (the overlay is plain DOM inside a shadow root on other people's
+  video pages, so anything heavy costs playback smoothness and page compatibility):
+  - Used: **Lucide** icons (via the icon set), **Geist** (Vercel's typeface), the **Vercel web interface
+    guidelines**, **Impeccable**'s rules (≤4 actions per view, tight groups with generous gaps, no cards in
+    cards, no coloured side borders, no emoji as icons) and **Emil Kowalski**'s motion rules (under 200 ms,
+    ease-out, never from scale 0, exits faster, reduced-motion respected) as checklists.
+  - Taken as ideas, not code: **shadcn** (segmented controls, quiet ghost buttons, tokens), **React Bits / Skiper
+    UI / fancycomponents.dev / Componentry / Kitchen / Awesome Design** (they are React components; the overlay
+    has no React, so the patterns were rebuilt in a few lines of CSS: segmented tabs, sticky toolbars, row lists).
+  - **taste-skill**: aimed at marketing websites (photography, hero sections); only its spacing ideas apply.
+  - Not used: **GSAP** and **Animaster** (CSS transitions cover every animation here, without 70 KB of script on
+    every page), **Lenis** (smooth scrolling fights the panel's own scroll areas and reduced-motion users),
+    **liquid-glass-js** (needs SVG filters Firefox renders slowly over video), **Vanta, React Three Fiber,
+    ThreeUI, Shader Gradient, Liquid Logo, Cobe** (WebGL: costs video playback; nowhere meaningful to put a
+    globe). Focus mode's blurred artwork gives the one "rich" background, in plain CSS.
+- [x] Tested at 1280×720 (panel, word card, every tab, lyrics sheet sizes) and the narrow panel; pages in light and dark.
 
 ## 11. Dictionary
 
