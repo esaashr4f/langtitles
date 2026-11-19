@@ -243,9 +243,10 @@ Subtitle lines are fragments of spoken dialogue. A sentence may run across sever
     return Object.keys(ids).map((lang) => ids[lang].map((id) => lang + '.' + id).join(' ')).join('\n  ');
   }
 
-  function userMessage(lines, context, langHint) {
+  function userMessage(lines, context, langHint, song) {
     let msg = '';
     if (langHint && langHint !== 'und') msg += `Language of the subtitles (detected automatically, may be wrong): ${langHint}\n\n`;
+    if (song) msg += songBlock(song);
     if (context && context.length) {
       msg += 'Context (the lines just before these, not to be annotated):\n';
       for (const c of context) msg += `- ${c}\n`;
@@ -256,6 +257,53 @@ Subtitle lines are fragments of spoken dialogue. A sentence may run across sever
       msg += `${i}: ${l}\n`;
     });
     return msg;
+  }
+
+  // Extra rules when the lines are song lyrics (Listen mode). Sent in the user message so the cached
+  // system prompt stays the same for subtitles and songs.
+  function songBlock(song) {
+    let msg = `These lines are song lyrics: "${song.track || '?'}"${song.artist ? ' by ' + song.artist : ''}. Annotate them as lyrics:
+- Sung readings: if a word is sung with a different reading from its usual one (本気 sung まじ, 運命 さだめ, 地球 ほし, 未来 あした), put the SUNG reading in r, and in n say "written ほんき, sung まじ" with a few words on why the artist chose it. A reading printed in the lyrics, such as 本気(マジ), is the sung reading.
+- Poetic and old-fashioned grammar (～ゆく, ～ぬ, ～たまえ, ～けり, dropped particles, inverted order, 君 / 僕 in songs) is deliberate: explain it as poetic, never as a mistake; start that word's n with "Poetic:".
+- If a line is figurative, add one short note (in notes) on what the image stands for, in this song.
+- Lines in English inside the lyrics: translate nothing, give words no notes.
+- Read each line in the context of the whole song below; a line repeated in the chorus means the same each time.
+`;
+    if (song.lyrics && song.lyrics.length) {
+      msg += '\nThe whole song, for context (not to be annotated):\n' + song.lyrics.slice(0, 80).map((l) => '  ' + l).join('\n') + '\n';
+    }
+    return msg + '\n';
+  }
+
+  function songGuideSystemPrompt(nativeLang) {
+    return `A language learner wants to truly understand a song in the language they are learning: every lyric, and the story underneath it. They read ${nativeLang}; write in ${nativeLang}. Your job is to draw as much out of the lyrics as they hold, and to teach the learner how to read them for themselves.
+
+Use these sections, each as a "## " heading:
+
+## The story in brief
+Who is speaking, to whom, where and when, and what happens or has happened. Three to six sentences. Say plainly what is stated and what is only implied.
+
+## Line by line
+Go through the whole song in order, every line, grouped by part ("### Verse 1", "### Pre-chorus", "### Chorus", "### Verse 2", "### Bridge", ...). For each line or pair of lines:
+- quote it on its own line, then its translation;
+- break down what a learner needs to read it: the words and grammar that carry it (readings in kana, never romaji), any sung reading that differs from the written one, dropped subjects or particles and who or what they must be, poetic or old-fashioned forms (marked as poetic);
+- then what it means here: the subtext, the tone, why this word and not the obvious one, what it echoes from earlier in the song.
+A repeated chorus is explained in full once; later repeats only get what has changed in meaning by then (often a lot).
+
+## What you might not pick up
+The things a learner would miss on a first listen: double meanings and wordplay (homophones, kanji chosen for a second meaning, a reading that hides another word), cultural, literary, seasonal or religious references, set phrases used against their usual meaning, shifts in who "you" is, tense or politeness shifts that change the relationship, images that return and change, and what the title means once you've heard the song. Only what the lyrics support; say how sure each reading is ("clearly", "probably", "one reading is"). Don't invent facts about the artist.
+
+## How to read songs like this
+Two to five concrete habits this song teaches, for reading other lyrics: e.g. "when the subject is dropped, look for the last person named", "〜ていく here shows the change going on into the future", "an image in verse 1 usually comes back changed in the last chorus".
+
+## Words and phrases to keep
+Ten to fifteen of the most useful words and set phrases from the song, each as "word (reading) — meaning — the line it comes from".
+
+Depth follows the song: a light song gets a short guide; a dense, layered one gets everything it deserves. Never pad. No preamble or sign-off, no markdown other than the headings, bullet points and quotes described.`;
+  }
+
+  function songGuideUserMessage(req) {
+    return `Song: "${req.track || '?'}"${req.artist ? ' by ' + req.artist : ''}${req.album ? ', from ' + req.album : ''}\nLanguage: ${req.lang || 'unknown'}\n\nLyrics:\n${(req.lyrics || []).slice(0, 120).join('\n')}`;
   }
 
   function deepSystemPrompt(nativeLang) {
@@ -635,5 +683,5 @@ Write one natural, everyday sentence in the target language with the part that s
     return msg;
   }
 
-  SG.prompt = { LESSON_SCHEMA, lessonSystemPrompt, MATCH_SCHEMA, matchSystemPrompt, CHECK_SCHEMA, checkSystemPrompt, reviseSystemPrompt, askSystemPrompt, askMessages, CLOZE_SCHEMA, clozeSystemPrompt, clozeUserMessage, wordGuideSystemPrompt, wordGuideUserMessage, WORDS_VERSION, WORDS_SCHEMA, wordsSystemPrompt, PROMPT_VERSION, GUIDE_VERSION, CHAR_VERSION, CHAR_SCHEMA, charSystemPrompt, charUserMessage, guideSystemPrompt, guideUserMessage, ROLES, ANALYSIS_SCHEMA, systemPrompt, userMessage, deepSystemPrompt, deepUserMessage };
+  SG.prompt = { songBlock, songGuideSystemPrompt, songGuideUserMessage, LESSON_SCHEMA, lessonSystemPrompt, MATCH_SCHEMA, matchSystemPrompt, CHECK_SCHEMA, checkSystemPrompt, reviseSystemPrompt, askSystemPrompt, askMessages, CLOZE_SCHEMA, clozeSystemPrompt, clozeUserMessage, wordGuideSystemPrompt, wordGuideUserMessage, WORDS_VERSION, WORDS_SCHEMA, wordsSystemPrompt, PROMPT_VERSION, GUIDE_VERSION, CHAR_VERSION, CHAR_SCHEMA, charSystemPrompt, charUserMessage, guideSystemPrompt, guideUserMessage, ROLES, ANALYSIS_SCHEMA, systemPrompt, userMessage, deepSystemPrompt, deepUserMessage };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

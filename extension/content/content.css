@@ -1359,3 +1359,108 @@
 .lt-root .sg-pop-t-char { cursor: pointer; border-radius: 6px; padding: 0 0.15em; margin: 0 -0.15em; text-decoration: underline dotted rgba(255, 255, 255, 0.25); text-underline-offset: 0.25em; }
 .lt-root .sg-pop-t-char:hover, .lt-root .sg-pop-t-char.sg-on { background: var(--sg-fill-hover); }
 .lt-root .sg-pop-t-char:focus-visible { outline: 2px solid var(--lt-accent); }
+
+/* =====================================================================================
+   Listen mode: the lyrics sheet on music sites (Strip / Sheet / Focus) and the Song section
+   ===================================================================================== */
+.lt-root .lt-lyr-art, .lt-root .lt-lyr-prev, .lt-root .lt-lyr-next { display: none; }
+.lt-root.lt-sheet {
+  pointer-events: auto;
+  border-radius: 18px;
+  background: #111216;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  overflow: visible;
+}
+.lt-root.lt-sheet .sg-cover { display: none !important; }
+.lt-root.lt-sheet .sg-sub {
+  left: 6%;
+  right: 6%;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  text-shadow: none;
+}
+.lt-root.lt-sheet.sg-panel-open .sg-sub { right: 6%; }
+.lt-root.lt-sheet .sg-grip { display: none; }
+.lt-root.lt-sheet .lt-lyr-prev, .lt-root.lt-sheet .lt-lyr-next {
+  display: block;
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  text-align: center;
+  font-family: var(--lt-sub-font);
+  color: rgba(255, 255, 255, 0.34);
+  font-size: 0.72em;
+  line-height: 1.5;
+  pointer-events: none;
+}
+.lt-root.lt-sheet .lt-lyr-prev { top: 9%; }
+.lt-root.lt-sheet .lt-lyr-next { bottom: 9%; }
+.lt-root.lt-sheet .lt-lyr-line + .lt-lyr-line { margin-top: 0.5em; opacity: 0.6; }
+@media (prefers-reduced-motion: no-preference) {
+  .lt-root.lt-sheet .sg-line { animation: lt-lyr-in 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+}
+@keyframes lt-lyr-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+/* Strip: one line along the bottom; no lines around it. */
+.lt-root.lt-sheet.lt-size-strip .lt-lyr-prev, .lt-root.lt-sheet.lt-size-strip .lt-lyr-next { display: none; }
+.lt-root.lt-sheet.lt-size-strip .sg-tr { display: none; }
+/* Focus: big lyrics over the whole page, artwork blurred behind. */
+.lt-root.lt-sheet.lt-size-focus { border-radius: 0; background: #0c0d10; }
+.lt-root.lt-sheet.lt-size-focus .lt-lyr-art {
+  display: block;
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(60px) saturate(1.3) brightness(0.45);
+  opacity: 0.8;
+  pointer-events: none;
+}
+.lt-root.lt-sheet.lt-size-focus .sg-sub { left: 12%; right: 12%; }
+/* The panel sits beside the sheet, not on top of it. */
+.lt-root.lt-sheet.lt-size-sheet .sg-panel { right: calc(100% + 12px); top: 0; bottom: 0; }
+.lt-root.lt-sheet.lt-size-strip .sg-panel { bottom: calc(100% + 12px); top: auto; height: min(70vh, 640px); }
+.lt-root.lt-sheet.lt-size-strip .sg-toggle { top: 50%; transform: translateY(-50%); }
+/* Sing-along: readings and the words, bigger; no meanings, roles or translation. */
+.lt-root.lt-singalong .sg-mean, .lt-root.lt-singalong .sg-parts, .lt-root.lt-singalong .sg-role, .lt-root.lt-singalong .sg-tr,
+.lt-root.lt-singalong .sg-phr { display: none !important; }
+.lt-root.lt-singalong .sg-sub { font-size: 1.25em; }
+
+/* Watch | Listen */
+.lt-root .sg-mode { display: flex; gap: 2px; margin: 16px 0 0; padding: 3px; border-radius: 10px; background: rgba(255, 255, 255, 0.04); }
+.lt-root .sg-mode[hidden] { display: none !important; }
+.lt-root .sg-mode-b { all: unset; flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 8px; border-radius: 8px; color: var(--sg-dim); font-size: 12.5px; font-weight: 550; cursor: pointer; }
+.lt-root .sg-mode-b:hover { color: var(--sg-text); }
+.lt-root .sg-mode-b.sg-on { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.lt-root .sg-mode-b:focus-visible { outline: 2px solid var(--lt-accent); }
+.lt-root.lt-listen .sg-watch-only { display: none; }
+.lt-root:not(.lt-listen) .sg-song { display: none; }
+
+/* Song section */
+.lt-root .sg-song-now { display: flex; align-items: center; gap: 14px; margin-top: 20px; }
+.lt-root .sg-song-art { width: 56px; height: 56px; border-radius: 8px; object-fit: cover; flex: 0 0 auto; }
+.lt-root .sg-song-names { min-width: 0; }
+.lt-root .sg-song-track { font-size: 16px; font-weight: 600; line-height: 1.3; }
+.lt-root .sg-song-artist { margin-top: 2px; color: var(--sg-soft); font-size: 12.5px; }
+.lt-root .sg-song-note { margin-top: 10px; color: var(--sg-dim); font-size: 12.5px; }
+.lt-root .sg-song-look { display: flex; flex-direction: column; gap: 12px; }
+.lt-root .sg-song-guide-btn { width: 100%; justify-content: flex-start; text-align: left; white-space: normal; line-height: 1.4; padding: 10px 12px; }
+.lt-root .sg-song-guide { margin-top: 4px; line-height: 1.6; }
+.lt-root .sg-song-guide:empty { display: none; }
+.lt-root .sg-song-search { display: flex; gap: 8px; }
+.lt-root .sg-song-search .sg-in { flex: 1; min-width: 0; }
+.lt-root .sg-song-results { margin-top: 8px; display: flex; flex-direction: column; }
+.lt-root .sg-song-hit { all: unset; display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 10px 4px; border-bottom: 1px solid var(--sg-line); cursor: pointer; }
+.lt-root .sg-song-hit:hover { background: var(--sg-fill); }
+.lt-root .sg-song-hit:focus-visible { outline: 2px solid var(--lt-accent); }
+.lt-root .sg-song-hit-t { font-weight: 550; }
+.lt-root .sg-song-hit-a { grid-column: 1; color: var(--sg-dim); font-size: 12px; }
+.lt-root .sg-song-hit-b { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: var(--sg-soft); font-size: 11.5px; }
+.lt-root .sg-song-hit.sg-near .sg-song-hit-b { color: var(--lt-accent); }
+.lt-root .sg-song-paste { margin-top: 20px; }
+.lt-root .sg-song-paste summary { cursor: pointer; color: var(--sg-soft); font-size: 12.5px; }
+.lt-root .sg-song-paste textarea { width: 100%; margin: 10px 0 8px; box-sizing: border-box; font-family: ui-monospace, monospace; font-size: 12px; }
+.lt-root .sg-song-guide-btn { width: auto; }
+.lt-root .sg-song-guide-about { margin: 0 0 12px; }
+.lt-root.lt-sheet .sg-panel { width: 380px; }
+.lt-root.lt-sheet.lt-size-focus .sg-panel { right: 12px; }

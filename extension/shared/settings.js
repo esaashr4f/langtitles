@@ -25,7 +25,11 @@
       episodeWords: 'claude-sonnet-5-5',
       review: 'claude-sonnet-5-5',
       ask: 'claude-sonnet-5-5',
+      songGuides: 'claude-opus-5-5',
     },
+    siteMode: {}, // host -> 'watch' | 'listen', set with the panel's switch
+    lyricsSize: 'sheet', // Listen mode on music sites: 'strip' | 'sheet' | 'focus'
+    singAlong: false, // Listen mode: readings only, bigger
     lineModel: 'claude-haiku-5-5', // line-by-line breakdowns and episode word lists: almost all of the cost
     effort: 'low',
     nativeLang: 'English',
@@ -162,13 +166,14 @@
     { key: 'grammarGuides', label: 'Grammar guides' },
     { key: 'wordGuides', label: 'Word and phrase guides' },
     { key: 'ask', label: 'Ask about a line' },
+    { key: 'songGuides', label: 'Song guides (every lyric, line by line)' },
     { key: 'kanji', label: 'Kanji and character entries' },
     { key: 'episodeWords', label: 'Episode words' },
     { key: 'review', label: 'Review questions' },
   ];
   SG.modelFor = function (s, feature) {
     const m = (s.featureModels || {})[feature];
-    return m || s.model;
+    return m || (SG.DEFAULTS && SG.DEFAULTS.featureModels && SG.DEFAULTS.featureModels[feature]) || s.model;
   };
 
   SG.LOOK_KEYS = ['subFont', 'subColor', 'subBg', 'fontScale', 'subBottom', 'coverHardsubs', 'coverBottom', 'coverHeight', 'showTranslation', 'followHardsubs', 'peekHardsubs'];

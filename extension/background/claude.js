@@ -159,13 +159,13 @@
   // lines: array of strings. Resolves to { lang, lines: analysis[] } aligned with the input
   // (an entry is null when the model returned nothing usable for that line).
   // The request for one batch of lines; also used for batch (season) jobs.
-  function analysisParams(settings, lines, context, langHint) {
+  function analysisParams(settings, lines, context, langHint, song) {
     const { prompt } = SG;
     const params = baseParams(settings, 32000, lineModelOf(settings));
     params.system = [
       { type: 'text', text: prompt.systemPrompt(settings.nativeLang), cache_control: { type: 'ephemeral' } },
     ];
-    params.messages = [{ role: 'user', content: prompt.userMessage(lines, context, langHint) }];
+    params.messages = [{ role: 'user', content: prompt.userMessage(lines, context, langHint, song) }];
     params.output_config.format = { type: 'json_schema', schema: prompt.ANALYSIS_SCHEMA };
     return params;
   }
@@ -182,11 +182,11 @@
     return out;
   }
 
-  async function analyzeLines(settings, lines, context, langHint) {
+  async function analyzeLines(settings, lines, context, langHint, song) {
     await capGuard(settings);
     let message;
     try {
-      message = await getClient(settings).beta.messages.stream(analysisParams(settings, lines, context, langHint)).finalMessage();
+      message = await getClient(settings).beta.messages.stream(analysisParams(settings, lines, context, langHint, song)).finalMessage();
     } catch (err) {
       throw describeError(err);
     }
@@ -221,6 +221,14 @@
     } catch (err) {
       throw describeError(err);
     }
+  }
+
+  // A guide to a whole song: what it's about, imagery, sung readings, grammar and key words.
+  function songGuide(settings, req, onText) {
+    settings = Object.assign({}, settings, { costFeature: 'music', model: req.model || SG.modelFor(settings, 'songGuides') });
+    const { prompt } = SG;
+    // A whole song line by line can run long; the depth follows the song.
+    return streamText(settings, prompt.songGuideSystemPrompt(settings.nativeLang), prompt.songGuideUserMessage(req), 32000, settings.effort === 'low' ? 'medium' : settings.effort, onText);
   }
 
   // A longer explanation of one word in its sentence.
@@ -457,5 +465,5 @@
     }
   }
 
-  SG.claude = { checkGuide, matchGuide, extractLesson, onCost: (fn) => costListeners.add(fn), lineModelOf, spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
+  SG.claude = { songGuide, checkGuide, matchGuide, extractLesson, onCost: (fn) => costListeners.add(fn), lineModelOf, spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

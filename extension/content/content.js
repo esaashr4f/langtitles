@@ -102,6 +102,15 @@
   let onePlusDone = null; // key of the last line paused for
   let replay = null; // { idx, end, rate, loop }
 
+  // Listen mode (songs): what's playing, its lyrics and the song guide
+  let listenNp = null; // { track, artist, album, duration, art, isSong, url }
+  let listenKey = null;
+  let listenBusy = false;
+  let listenWaitSince = 0;
+  let listenNote = '';
+  let listenAsked = false; // the one-time "this looks like a song" offer on YouTube
+  const songGuideTargets = new Map(); // reqId -> element the song guide streams into
+
   // ---------------------------------------------------------------- helpers
 
   function h(tag, cls, text) {
@@ -160,6 +169,138 @@
     return el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
   }
 
+  // ------------------------------------------------------------- listen mode
+
+  // Watch mode annotates subtitles on video; Listen mode annotates song lyrics. Music sites start in
+  // Listen mode, everything else in Watch mode; the switch in the panel overrides it per site.
+  function listenMode() {
+    if (!SG.listen) return false;
+    const pick = (settings.siteMode || {})[location.hostname];
+    if (pick) return pick === 'listen';
+    return SG.listen.musicSite();
+  }
+
+  function setMode(mode) {
+    const siteMode = Object.assign({}, settings.siteMode, { [location.hostname]: mode });
+    settings.siteMode = siteMode;
+    savePatch({ siteMode });
+    if (mode !== 'listen') {
+      for (const [id, t] of tracks) if (t.source === 'lyrics') tracks.delete(id);
+      listenKey = null;
+      listenNp = null;
+    }
+    lastSrc = '';
+    video = null;
+    scan();
+    if (ui) {
+      applySettings();
+      renderSong();
+      renderTrackList();
+    }
+    chooseActive();
+    place();
+  }
+
+  // Where the lyrics sheet goes on a music site (no video to draw on): Strip, Sheet or Focus.
+  function sheetRect() {
+    const W = document.documentElement.clientWidth || innerWidth;
+    const H = innerHeight;
+    const k = SG.listen.kind();
+    const bar = k === 'ytmusic' ? 72 : k === 'spotify' ? 88 : 0;
+    const top = k === 'ytmusic' ? 64 : 12;
+    const size = settings.lyricsSize || 'sheet';
+    if (size === 'strip') return { left: 12, top: H - bar - 132, width: W - 24, height: 120 };
+    if (size === 'focus') return { left: 0, top, width: W, height: H - bar - top };
+    const w = Math.round(Math.min(620, Math.max(380, W * 0.4)));
+    return { left: W - w - 16, top: top + 8, width: w, height: H - bar - top - 24 };
+  }
+
+  // Lyrics for the song playing, fetched when the song changes.
+  async function maybeListen() {
+    if (listenBusy || !video || !SG.listen) return;
+    const np = SG.listen.nowPlaying(video);
+    if (!np) return;
+    if (SG.listen.kind() === 'youtube' && !listenMode()) {
+      // On YouTube, offer Listen mode once for a video that's clearly a song.
+      if (np.isSong && !listenAsked && !(settings.siteMode || {})[location.hostname] && !hasLearningTrack()) {
+        listenAsked = true;
+        showToast('This looks like a song. Press G → Listen to show its lyrics instead of subtitles.');
+      }
+      return;
+    }
+    if (!listenMode()) return;
+    const key = SG.lyrics.songKey(np);
+    if (key === listenKey) {
+      if (listenNp && !listenNp.duration && np.duration) listenNp.duration = np.duration;
+      return;
+    }
+    // Wait a moment for the song's length: LRCLIB matches on it, which avoids the wrong version.
+    if (!np.duration) {
+      if (!listenWaitSince) listenWaitSince = Date.now();
+      if (Date.now() - listenWaitSince < 3000) return;
+    }
+    listenWaitSince = 0;
+    listenKey = key;
+    listenNp = np;
+    listenBusy = true;
+    listenNote = 'Looking for lyrics…';
+    for (const [id, t] of tracks) if (t.source === 'lyrics') tracks.delete(id);
+    manualPick = null;
+    activeId = null;
+    chooseActive();
+    renderSong();
+    try {
+      const res = await request({ type: 'lyricsFind', np });
+      if (listenKey !== key) return;
+      if (res.track) useLyrics(res, 'auto');
+      else {
+        listenNote = res.error || 'No lyrics found.';
+        showToast(`${listenNote} Press G → Song to search for them or paste them.`);
+      }
+      request({ type: 'songPlayed', np: Object.assign({}, np, { lang: res.track ? detectLang(res.track.cues.slice(0, 30).map((c) => c.text).join('\n')) : '' }) });
+    } finally {
+      listenBusy = false;
+      renderSong();
+    }
+  }
+
+  function useLyrics(res, how) {
+    const tr = Object.assign({}, res.track, { offset: res.offset || 0, userOffset: Boolean(res.offset) });
+    for (const [id, t] of tracks) if (t.source === 'lyrics' && id !== tr.id) tracks.delete(id);
+    tracks.delete(tr.id);
+    addTrack(tr);
+    const t = tracks.get(tr.id);
+    if (!t) return;
+    if (how === 'manual') {
+      manualPick = t.id;
+      activeId = null;
+      chooseActive();
+    }
+    const from = res.track.provider === 'own' ? 'your lyrics' : 'LRCLIB';
+    listenNote = `Lyrics from ${from}${res.track.synced ? '' : ', not timed yet'}${t.offset ? `, timing ${t.offset > 0 ? '+' : ''}${t.offset.toFixed(2)} s` : ''}`;
+    showToast(`${listenNp ? listenNp.track : 'Song'}: ${listenNote}.`);
+    renderSong();
+  }
+
+  // The lines around the current one, for the lyrics sheet (one above, two below).
+  function paintLyricsAround(t, idx, now) {
+    if (!ui || !ui.lyrPrev) return;
+    if (!t || t.source !== 'lyrics' || !ui.root.classList.contains('lt-sheet')) {
+      ui.lyrPrev.textContent = '';
+      ui.lyrNext.textContent = '';
+      return;
+    }
+    let at = idx;
+    if (at < 0) {
+      at = t.cues.findIndex((c) => c.start > now) - 1;
+      if (at < -1) at = t.cues.length - 1;
+    }
+    const prev = t.cues[at - (idx < 0 ? 0 : 1)];
+    ui.lyrPrev.textContent = prev && idx >= 0 ? prev.text : idx < 0 && t.cues[at] ? t.cues[at].text : '';
+    ui.lyrNext.textContent = '';
+    for (const c of t.cues.slice(at + 1, at + 3)) ui.lyrNext.append(h('div', 'lt-lyr-line', c.text));
+  }
+
   // ------------------------------------------------------------------ video
 
   function allVideos(rootNode, out, depth) {
@@ -188,7 +329,10 @@
   }
 
   function scan() {
-    const v = bestVideo();
+    const media = SG.listen ? SG.listen.mediaElement() : null;
+    // A page with only audio (or a hidden video) may be in Listen mode; settings arrive once connected.
+    if (media && !port) connect();
+    const v = bestVideo() || (listenMode() ? media : null);
     if (v !== video) {
       video = v;
       if (video) {
@@ -222,6 +366,7 @@
     }
     readTextTracks();
     findCaptionElement();
+    if (SG.listen && (SG.listen.kind() || listenMode())) maybeListen();
   }
 
   // ------------------------------------------------------------- background
@@ -317,7 +462,17 @@
       renderStatus();
     } else if (msg.type === 'askDelta' || msg.type === 'askDone' || msg.type === 'askError' || msg.type === 'askLesson') {
       onAsk(msg);
-    } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs', 'showChoice', 'qaList', 'noteAdded', 'showSaved', 'dictCard'].includes(msg.type)) {
+    } else if (msg.type === 'songGuideText' || msg.type === 'songGuideDone') {
+      const el = songGuideTargets.get(msg.reqId);
+      if (!el || !el.isConnected) return;
+      if (msg.type === 'songGuideDone') songGuideTargets.delete(msg.reqId);
+      if (msg.error) el.textContent = msg.error;
+      else if (msg.text) {
+        el.textContent = '';
+        SG.renderGuide(el, msg.text, { known: known.ja, plain: !settings.furigana });
+        if (msg.type === 'songGuideDone' && msg.model) el.append(h('div', 'sg-note', `Written by ${SG.modelLabel(msg.model)}${msg.cached ? ' (saved earlier)' : ''}.`));
+      }
+    } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs', 'showChoice', 'qaList', 'noteAdded', 'showSaved', 'dictCard', 'lyrics'].includes(msg.type)) {
       const cb = subReqs.get(msg.reqId);
       subReqs.delete(msg.reqId);
       if (cb) cb(msg);
@@ -367,6 +522,7 @@
 
   function trackScore(t) {
     if (t.source === 'file') return 10000;
+    if (t.source === 'lyrics') return listenMode() ? 5000 : 0;
     const native = langCode(settings.nativeLang);
     if (t.lang === native) return -1;
     // The site's own subtitles are timed to its video, so they beat a downloaded file in the same language.
@@ -555,7 +711,8 @@
       if (!lines.length) break;
       const context = t.cues.slice(Math.max(0, first - 3), first).map((c) => c.text);
       const reqId = ++reqSeq;
-      if (!post({ type: 'analyze', reqId, lang: t.lang, context, lines })) break;
+      const song = t.source === 'lyrics' && listenNp ? { track: listenNp.track, artist: listenNp.artist, lyrics: Array.from(new Set(t.cues.map((c) => c.text))) } : undefined;
+      if (!post({ type: 'analyze', reqId, lang: t.lang, context, lines, song })) break;
       for (const l of lines) requested.add(l.key);
       pendingReqs.set(reqId, lines.map((l) => l.key));
       inflight++;
@@ -662,8 +819,11 @@
     toggle.title = 'Langtitles panel (G)';
     const toast = h('div', 'sg-toast');
     const panel = buildPanel();
-    root.append(cover, sub, pop, toggle, toast, panel.el);
-    ui = { host, root, cover, sub, line, tr, pop, toggle, toast, panel };
+    const lyrArt = h('div', 'lt-lyr-art');
+    const lyrPrev = h('div', 'lt-lyr-prev');
+    const lyrNext = h('div', 'lt-lyr-next');
+    root.append(lyrArt, cover, lyrPrev, sub, lyrNext, pop, toggle, toast, panel.el);
+    ui = { host, root, cover, sub, line, tr, pop, toggle, toast, panel, lyrArt, lyrPrev, lyrNext };
 
     const stop = (e) => e.stopPropagation();
     for (const el of [sub, pop, toggle, panel.el]) {
@@ -734,6 +894,15 @@
     const close = ih('button', 'sg-icon-btn sg-close', 'x');
     close.title = 'Close panel (G)';
     close.addEventListener('click', () => setPanel(false));
+    const modeSeg = h('div', 'sg-mode');
+    const modeBtns = {};
+    for (const [m, label, icon] of [['watch', 'Watch', 'eye'], ['listen', 'Listen', 'music']]) {
+      const b = ih('button', 'sg-mode-b', icon, label, 14);
+      b.title = m === 'watch' ? 'Watch mode: subtitles on video' : 'Listen mode: song lyrics';
+      b.addEventListener('click', () => setMode(m));
+      modeBtns[m] = b;
+      modeSeg.append(b);
+    }
     head.append(logo, titles, hideBtn, readBtn, bankBtn, close);
 
     // ---- tabs
@@ -865,11 +1034,14 @@
     const find = h('div', 'sg-pane');
     const findBody = h('div', 'sg-pane-body');
     find.append(findBody);
+    const songBox = h('div', 'sg-song');
+    const watchOnly = h('div', 'sg-watch-only');
+    watchOnly.append(h('div', 'sg-section', 'Other sources'), sources, h('div', 'sg-section', 'Find subtitles for this episode'), find);
     subsTab.append(
+      modeSeg, songBox,
       h('div', 'sg-section', 'Track'), select,
       h('div', 'sg-section', 'Timing'), timing,
-      h('div', 'sg-section', 'Other sources'), sources,
-      h('div', 'sg-section', 'Find subtitles for this episode'), find,
+      watchOnly,
     );
 
     // ---- Display: what is shown, and how the subtitles look
@@ -1003,7 +1175,7 @@
     el.append(head, tabBar, ...tabBodies.values());
     setTab('line');
     return {
-      el, status, select, offset, hint, showChips, hideBtn, loopBtn, siteBox, classChips, jlptChips, look, setTab,
+      modeSeg, modeBtns, songBox, el, status, select, offset, hint, showChips, hideBtn, loopBtn, siteBox, classChips, jlptChips, look, setTab,
       find, findBody, words, wordsBody, studyBody, studyBtns, guide, guideTitle, guideBody, detail, list, rows: new Map(),
     };
   }
@@ -1039,8 +1211,18 @@
         }
       }
     }
-    const r = video.getBoundingClientRect();
-    const visible = r.width >= 200 && r.height >= 110 && video.isConnected;
+    let r = video.getBoundingClientRect();
+    let visible = r.width >= 200 && r.height >= 110 && video.isConnected;
+    // On a music site (or when the song has no picture to draw on) the lyrics get their own sheet.
+    const listen = listenMode();
+    const sheet = listen && Boolean(SG.listen) && (SG.listen.musicSite() || !visible) && !fs;
+    ui.root.classList.toggle('lt-listen', listen);
+    ui.root.classList.toggle('lt-sheet', sheet);
+    for (const size of ['strip', 'sheet', 'focus']) ui.root.classList.toggle('lt-size-' + size, sheet && (settings.lyricsSize || 'sheet') === size);
+    if (sheet) {
+      r = sheetRect();
+      visible = Boolean(active() || listenNp);
+    }
     const s = ui.host.style;
     s.display = visible && enabled() ? 'block' : 'none';
     if (!visible) return;
@@ -1048,7 +1230,8 @@
     s.top = r.top + 'px';
     s.width = r.width + 'px';
     s.height = r.height + 'px';
-    const size = Math.max(14, Math.min(38, r.height / 24)) * (settings.fontScale || 1);
+    const base = sheet ? ({ strip: 24, focus: 38 }[settings.lyricsSize] || 28) : Math.max(14, Math.min(38, r.height / 24));
+    const size = base * (settings.fontScale || 1);
     s.fontSize = size.toFixed(1) + 'px';
   }
 
@@ -1065,6 +1248,17 @@
     ui.panel.hideBtn.classList.toggle('sg-on', !overlayHidden);
     ui.panel.hideBtn.setAttribute('aria-pressed', String(!overlayHidden));
     applyLook();
+    const listening = listenMode();
+    for (const [m, b] of Object.entries(ui.panel.modeBtns)) b.classList.toggle('sg-on', (m === 'listen') === listening);
+    // Only where Listen mode makes sense (music sites, YouTube, or once it's been switched on here).
+    ui.panel.modeSeg.hidden = !(SG.listen && (SG.listen.kind() || listening));
+    const subsTabBtn = ui.panel.el.querySelector('.sg-tab[title="Subtitles"], .sg-tab[title="Song"]');
+    if (subsTabBtn) {
+      subsTabBtn.title = listening ? 'Song' : 'Subtitles';
+      subsTabBtn.querySelector('.sg-tab-long').textContent = listening ? 'Song' : 'Subtitles';
+      subsTabBtn.querySelector('.sg-tab-short').textContent = listening ? 'Song' : 'Subs';
+    }
+    ui.root.classList.toggle('lt-singalong', listening && Boolean(settings.singAlong));
     const nowLang = active() ? langCode(active().lang) : null;
     for (const [key, chip] of ui.panel.showChips) {
       chip.classList.toggle('sg-on', Boolean(settings[key]));
@@ -1539,6 +1733,7 @@
   }
 
   // The main loop: decide which line is on screen and draw it when that changes.
+  let lyrIdx = -2;
   function tick() {
     if (!ui || !video) return;
     readDomCaption();
@@ -1555,6 +1750,10 @@
     let idx = findCue(t.cues, now);
     // Captions read from the page disappear when the page clears them, not at a guessed end time.
     if (t.source === 'dom' && !domText && !video.paused) idx = -1;
+    if (t.source === 'lyrics' && idx !== lyrIdx) {
+      lyrIdx = idx;
+      paintLyricsAround(t, idx, now);
+    }
     if (idx === -1) {
       // Stay on the line while the viewer is studying it.
       if (popFor || (autoPaused && video.paused)) return;
@@ -2612,7 +2811,7 @@
         stopReplay(); // the viewer jumped elsewhere
       }
     }
-    if (!settings.pauseOnePlus || !lineNew || video.paused || replay || popFor) return;
+    if (!settings.pauseOnePlus || listenMode() || !lineNew || video.paused || replay || popFor) return;
     const cue = t.cues[lineNew.idx];
     if (!cue || lineNew.words.length !== 1 || onePlusDone === lineNew.key) return;
     if (now >= cue.end - 0.25 && now < cue.end + 0.6) {
@@ -3419,7 +3618,148 @@
     return true;
   }
 
+  // The Song section (Listen mode): what's playing, where the lyrics came from, finding other lyrics,
+  // pasting your own, the lyrics-sheet size, sing-along view and the song guide.
+  function renderSong() {
+    if (!ui) return;
+    const box = ui.panel.songBox;
+    box.textContent = '';
+    if (!listenMode()) return;
+    const np = listenNp;
+    const now = h('div', 'sg-song-now');
+    if (np && np.art) {
+      const img = h('img', 'sg-song-art');
+      img.src = np.art;
+      img.alt = '';
+      img.referrerPolicy = 'no-referrer';
+      now.append(img);
+    }
+    const names = h('div', 'sg-song-names');
+    names.append(h('div', 'sg-song-track', np ? np.track : 'Nothing playing yet'), h('div', 'sg-song-artist', np ? [np.artist, np.album].filter(Boolean).join(' · ') : 'Play a song and its lyrics load here.'));
+    now.append(names);
+    box.append(now);
+    if (listenNote) box.append(h('div', 'sg-song-note', listenNote));
+    if (ui.lyrArt) ui.lyrArt.style.backgroundImage = np && np.art ? `url("${np.art.replace(/"/g, '%22')}")` : '';
+
+    // Sheet size and sing-along
+    const look = h('div', 'sg-song-look');
+    const sizes = h('div', 'sg-studyseg');
+    for (const [k, label] of [['strip', 'Strip'], ['sheet', 'Sheet'], ['focus', 'Focus']]) {
+      const b = h('button', 'sg-seg-b' + ((settings.lyricsSize || 'sheet') === k ? ' sg-on' : ''), label);
+      b.title = { strip: 'One line along the bottom of the page', sheet: 'Lyrics docked at the side', focus: 'Big lyrics over the whole page' }[k];
+      b.addEventListener('click', () => {
+        settings.lyricsSize = k;
+        savePatch({ lyricsSize: k });
+        place();
+        renderSong();
+      });
+      sizes.append(b);
+    }
+    const sing = h('label', 'sg-f-check');
+    const singIn = h('input');
+    singIn.type = 'checkbox';
+    singIn.checked = Boolean(settings.singAlong);
+    singIn.addEventListener('change', () => {
+      settings.singAlong = singIn.checked;
+      savePatch({ singAlong: singIn.checked });
+      applySettings();
+    });
+    sing.append(singIn, document.createTextNode(' Sing-along view (readings only, bigger)'));
+    look.append(sizes, sing);
+    box.append(h('div', 'sg-section', 'Lyrics view'), look);
+
+    // Song guide
+    const t = active();
+    if (np && t && t.source === 'lyrics') {
+      box.append(h('div', 'sg-section', 'Song guide'));
+      const gBody = h('div', 'sg-song-guide');
+      const gBtn = ih('button', 'sg-btn', 'book-open', ' Write the song guide', 15);
+      gBtn.classList.add('sg-song-guide-btn');
+      box.append(h('div', 'sg-note sg-song-guide-about', 'Every lyric, line by line, then what you might miss: subtext, wordplay, references and how to read the story. Written once, kept in your Library.'));
+      gBtn.addEventListener('click', () => {
+        gBtn.remove();
+        gBody.textContent = 'Writing the guide… It goes through every line, so a long or layered song takes a minute or two. It is written once and kept in your Library.';
+        const reqId = 'sg' + ++reqSeq;
+        songGuideTargets.set(reqId, gBody);
+        // Every line in order (repeats included, so the guide can say what a returning chorus means by then).
+        post({ type: 'songGuide', reqId, track: np.track, artist: np.artist, album: np.album, art: np.art, url: np.url, lang: t.lang, lyrics: t.cues.map((c) => c.text) });
+      });
+      box.append(gBtn, gBody);
+    }
+
+    // Find other lyrics
+    box.append(h('div', 'sg-section', 'Find lyrics'));
+    const q = h('input', 'sg-in');
+    q.type = 'search';
+    q.placeholder = 'Artist and song';
+    q.value = np ? [np.artist, np.track].filter(Boolean).join(' ') : '';
+    q.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (e.key === 'Enter') go.click();
+    });
+    const go = h('button', 'sg-btn', 'Search');
+    const row = h('div', 'sg-song-search');
+    row.append(q, go);
+    const results = h('div', 'sg-song-results');
+    go.addEventListener('click', async () => {
+      if (!q.value.trim()) return;
+      results.textContent = 'Searching LRCLIB…';
+      const res = await request({ type: 'lyricsSearch', q: q.value.trim(), np: np || {} });
+      results.textContent = '';
+      if (res.error) return results.append(h('div', 'sg-note', res.error));
+      if (!res.list || !res.list.length) return results.append(h('div', 'sg-note', 'Nothing found. Try fewer words, or paste the lyrics below.'));
+      for (const x of res.list) {
+        const b = h('button', 'sg-song-hit' + (x.near ? ' sg-near' : ''));
+        const len = x.duration ? `${Math.floor(x.duration / 60)}:${String(Math.round(x.duration % 60)).padStart(2, '0')}` : '';
+        b.append(h('span', 'sg-song-hit-t', x.track), h('span', 'sg-song-hit-a', [x.artist, x.album, len].filter(Boolean).join(' · ')), h('span', 'sg-song-hit-b', x.instrumental ? 'instrumental' : x.synced ? 'timed' : x.plain ? 'not timed' : ''));
+        b.title = x.near ? 'Same length as the song playing' : '';
+        b.addEventListener('click', async () => {
+          const got = await request({ type: 'lyricsUse', id: x.id, np: np || { track: x.track, artist: x.artist } });
+          if (got.track) useLyrics(got, 'manual');
+          else showToast(got.error || 'Could not load those lyrics.');
+        });
+        results.append(b);
+      }
+    });
+    box.append(row, results);
+
+    // Paste your own (LRC with timings, or plain text)
+    const paste = h('details', 'sg-song-paste');
+    paste.append(h('summary', '', 'Paste lyrics or load an .lrc file'));
+    const ta = h('textarea', 'sg-in');
+    ta.rows = 5;
+    ta.placeholder = '[00:12.30] first line\n[00:15.80] second line\n\n(or plain lyrics without times)';
+    ta.addEventListener('keydown', (e) => e.stopPropagation());
+    const use = h('button', 'sg-btn sg-go', 'Use these lyrics');
+    use.addEventListener('click', async () => {
+      if (!ta.value.trim() || !np) return;
+      const got = await request({ type: 'lyricsOwn', text: ta.value, np });
+      if (got.track) useLyrics(got, 'manual');
+      else showToast(got.error || 'Could not read those lyrics.');
+    });
+    const lrc = h('input');
+    lrc.type = 'file';
+    lrc.accept = '.lrc,.txt';
+    lrc.style.display = 'none';
+    lrc.addEventListener('change', async () => {
+      const f = lrc.files[0];
+      if (f) ta.value = await f.text();
+    });
+    const lrcBtn = h('button', 'sg-btn sg-ghost', 'Load .lrc');
+    lrcBtn.addEventListener('click', () => lrc.click());
+    const btns = h('div', 'sg-row-btns');
+    btns.append(use, lrcBtn, lrc);
+    paste.append(ta, btns);
+    box.append(paste);
+    box.append(h('div', 'sg-note', 'Lyrics come from LRCLIB, a free community lyrics library. They are for your own study.'));
+  }
+
   function rememberOffset(t, scale) {
+    if (t.source === 'lyrics' && listenNp) {
+      clearTimeout(offsetSaveTimer);
+      offsetSaveTimer = setTimeout(() => request({ type: 'lyricsOffset', np: listenNp, offset: t.offset }), 800);
+      return;
+    }
     if (t.source !== 'remote' || !t.episode) return;
     clearTimeout(offsetSaveTimer);
     offsetSaveTimer = setTimeout(() => {

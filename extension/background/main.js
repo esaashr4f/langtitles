@@ -51,18 +51,41 @@
     return Object.assign({}, settings, { costTag: tabId, costShow: tabShows.get(tabId) || '' });
   }
 
-  async function analyzeBatch(texts, context, langHint, s) {
+  async function analyzeBatch(texts, context, langHint, s, song) {
     try {
-      return await withSlot(() => claude.analyzeLines(s || settings, texts, context, langHint));
+      return await withSlot(() => claude.analyzeLines(s || settings, texts, context, langHint, song));
     } catch (err) {
       if (err.code === 'truncated' && texts.length > 1) {
         const mid = Math.ceil(texts.length / 2);
-        const first = await analyzeBatch(texts.slice(0, mid), context, langHint, s);
-        const second = await analyzeBatch(texts.slice(mid), context.concat(texts.slice(0, mid)).slice(-3), langHint, s);
+        const first = await analyzeBatch(texts.slice(0, mid), context, langHint, s, song);
+        const second = await analyzeBatch(texts.slice(mid), context.concat(texts.slice(0, mid)).slice(-3), langHint, s, song);
         return first.concat(second);
       }
       throw err;
     }
+  }
+
+  // A guide to a whole song, written once and kept with the other guides (kind 'song').
+  async function songGuide(req, onPart) {
+    await ready;
+    const key = 'song.' + SG.lyrics.songKey(req);
+    if (!req.again) {
+      const have = (await cache.getMany('guides', [key])).get(key);
+      if (have && have.text) return { text: have.text, model: have.model, cached: true };
+    }
+    if (!settings.apiKey) return { error: 'Add your Anthropic API key in Options first.' };
+    const model = SG.modelFor(settings, 'songGuides');
+    let sofar = '';
+    const raw = await claude.songGuide(forTab(null), Object.assign({ model }, req), (d) => {
+      sofar += d;
+      if (onPart) onPart(sofar);
+    });
+    const text = SG.guideText ? SG.guideText.stripRomaji(raw) : raw;
+    await cache.putMany('guides', [[key, {
+      key, k: key, name: `${req.track}${req.artist ? ' — ' + req.artist : ''}`, kind: 'song', lang: req.lang || '', nativeLang: settings.nativeLang,
+      text, sentence: '', word: '', model, savedAt: Date.now(), song: { track: req.track, artist: req.artist || '', album: req.album || '', art: req.art || '', url: req.url || '' },
+    }]]);
+    return { text, model, cached: false };
   }
 
   // lines: [{ key, text }]. Resolves to { results: { key: analysis }, error? }.
@@ -70,7 +93,8 @@
     await ready;
     const fp = fingerprint();
     const results = {};
-    const fullKey = (l) => fp + '|' + l.key;
+    // Song lines are analysed with the song's own rules (sung readings, poetic forms), so cached apart.
+    const fullKey = (l) => fp + (req.song ? '|song' : '') + '|' + l.key;
     const cached = await cache.getMany('lines', req.lines.map(fullKey));
     const pending = [];
     const fresh = [];
@@ -82,7 +106,7 @@
     }
     let error = null;
     if (fresh.length) {
-      const batch = analyzeBatch(fresh.map((l) => l.text), req.context || [], req.lang, forTab(tabId));
+      const batch = analyzeBatch(fresh.map((l) => l.text), req.context || [], req.lang, forTab(tabId), req.song || null);
       fresh.forEach((line, i) => {
         const p = batch.then((out) => out[i], () => null);
         inflight.set(fullKey(line), p);
@@ -880,6 +904,40 @@
             },
             (err) => send(port, { type: 'askError', reqId: msg.reqId, message: err.message }),
           );
+      } else if (msg.type === 'songGuide') {
+        let sentAt = 0;
+        let pending = null;
+        const part = (text) => {
+          clearTimeout(pending);
+          const go = () => {
+            sentAt = Date.now();
+            send(port, { type: 'songGuideText', reqId: msg.reqId, text });
+          };
+          if (Date.now() - sentAt > 400) go();
+          else pending = setTimeout(go, 400);
+        };
+        songGuide(msg, part).then(
+          (body) => {
+            clearTimeout(pending);
+            send(port, Object.assign({ type: 'songGuideDone', reqId: msg.reqId }, body));
+          },
+          (err) => {
+            clearTimeout(pending);
+            send(port, { type: 'songGuideDone', reqId: msg.reqId, error: err.message });
+          },
+        );
+      } else if (/^(lyricsFind|lyricsSearch|lyricsUse|lyricsOwn|lyricsOffset|songPlayed|songList)$/.test(msg.type)) {
+        const reply = (body) => send(port, Object.assign({ type: 'lyrics', reqId: msg.reqId }, body));
+        const np = msg.np || {};
+        const job =
+          msg.type === 'lyricsFind' ? SG.music.find(np)
+            : msg.type === 'lyricsSearch' ? SG.music.search(msg.q, np).then((list) => ({ list }))
+              : msg.type === 'lyricsUse' ? SG.music.useRecord(msg.id, np)
+                : msg.type === 'lyricsOwn' ? SG.music.useOwn(msg.text, np)
+                  : msg.type === 'lyricsOffset' ? SG.music.savePick(SG.lyrics.songKey(np), { offset: msg.offset }).then(() => ({ ok: true }))
+                    : msg.type === 'songPlayed' ? SG.music.remember(Object.assign({}, np, { site: port.sender && port.sender.url ? new URL(port.sender.url).hostname : '' })).then((song) => ({ song }))
+                      : SG.music.songs().then((list) => ({ list }));
+        job.then((body) => reply(body || {}), (err) => reply({ error: err.message }));
       } else if (msg.type === 'dictCard') {
         SG.dict.card(msg.lang, msg.s, msg.d).then((card) => send(port, { type: 'dictCard', reqId: msg.reqId, card }), () => send(port, { type: 'dictCard', reqId: msg.reqId, card: null }));
       } else if (msg.type === 'kanjiQuick') {
