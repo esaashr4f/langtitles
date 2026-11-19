@@ -426,23 +426,25 @@ general guides in advance for almost everything you'll meet, so the API only han
 - [ ] **After this the API only writes:** the short per-line "In this line" note (Haiku), answers to your
   questions, and guides for words outside the library (which can be added to it as they come up).
 
-## 16. Phones: iOS and Android (after Chrome and Firefox are finished and polished; not built yet)
+## 16. Phones: iOS and Android apps (after Chrome and Firefox are finished and polished; not built yet)
 
-Goal: Language Reactor-style learning on the phone, which nothing offers today: streaming services the user
-already subscribes to, their own websites, and songs (Spotify, Apple Music) with Listen mode.
-- [ ] **Android, first and cheapest:** Firefox for Android runs add-ons, so this extension can work there with
-  a touch / small-screen pass (the overlay already has a touch mode).
-- [ ] **iOS: Safari Web Extension:** the same code wrapped in a small iOS app (Xcode); works on sites that play
-  in mobile Safari (YouTube, anime / streaming sites, the user's own sites).
-- [ ] **iOS app with its own browser** for the user's sites, with the overlay injected.
-- [ ] **Netflix, Disney+ and other big services inside the app: check before building around it.**
-  Unknowns: whether their DRM video plays inside another app's web view, whether their mobile websites play on
-  phones at all, their terms of service, and App Store review rules for apps that wrap other companies'
-  services (risk of rejection). Prototype and read the current rules first; look at how others do it
-  (e.g. Lingopie licenses its own shows).
-- [ ] **Songs:** rather than wrapping Spotify's website, use the **Spotify iOS / Android SDK** (the user logs into
-  their own Spotify; the app gets what's playing and the playback position from the Spotify app) and draw our
-  own lyrics screen synced to it (LRCLIB lyrics, Listen mode, song guides). Same for **Apple Music via MusicKit**.
-  Smoother, and within their terms.
-- [ ] Shared core: the line breakdowns, guides, word bank, review and backups move into a shared module the
-  extension and the apps both use; sync between devices then becomes needed (sections on sync / accounts).
+Goal: standalone, paid (subscription) apps that do what Language Reactor does on desktop, which nothing offers
+on phones today: the streaming services the user already subscribes to, their own websites, and songs.
+- [ ] **The app is a learning-focused browser** (like Brave) with the Langtitles overlay built in: the user opens
+  Netflix, Disney+ and other services (logged into their own subscriptions) or any site, and the overlay runs on
+  top. On iPhone every browser uses Apple's WebKit, and Brave on iPhone plays Netflix, so the same should
+  work in our app's web view; prove it with a prototype first (iOS, then Android, where Widevine in the web view
+  needs testing).
+- [ ] **App Store / Play Store positioning:** listed as a browser for language learning ("works with the
+  streaming sites you already subscribe to"), without other services' names or logos in the listing; check
+  Apple's and Google's current review rules for browsers and for apps built on other services before submitting.
+- [ ] **Songs:** the Spotify iOS / Android SDK (the user logs into their own Spotify; the app gets the track and
+  playback position from the Spotify app) feeding our own lyrics screen (LRCLIB, Listen mode, song guides), and
+  Apple Music via MusicKit. Smoother than wrapping Spotify's website, and within their terms.
+- [ ] **Subscriptions:** in-app purchases through Apple / Google (15% under their small-business programmes,
+  30% above $1M a year; payment rules differ by region now), so subscribers never need an API key.
+- [ ] **Backend (needed for subscriptions):** accounts, the app calling Claude through our server with
+  per-user usage limits, sync of word bank / guides / known words across devices. The built-in guide library
+  (section 15) keeps the cost per subscriber low, which is what makes a subscription price work.
+- [ ] Shared core: line breakdowns, guides, word bank, review and backups moved into one module used by the
+  extensions and the apps (likely a cross-platform app: React Native or similar, with a native web view).
