@@ -373,3 +373,29 @@ opens with a different line (the 을/를 guide opening with 뭐라도 나를 나
   top bar.
 - [ ] On a YouTube video that's clearly a song, the "Turn on subtitles in the player" hint shows before Listen
   mode is offered; show the Listen offer in the panel instead of that hint.
+
+## 15. Built-in guide library from a large corpus (when you're on a higher plan; not built yet)
+
+Idea: instead of the API writing a guide the first time you meet anything (even the most basic words), write
+general guides in advance for almost everything you'll meet, so the API only handles context.
+- [ ] **Input from you:** subtitle files for 100+ Chinese shows, K-dramas, anime and Japanese shows, plus K-pop
+  and J-pop lyrics; one folder per language, grouped by show / artist; any format (srt, ass, vtt, lrc, txt).
+  Shared privately (uploaded to a session or a private repository), never a public one.
+- [ ] **Frequency first:** count every word and grammar form across the corpus, merged by dictionary form
+  (食べさせられた → 食べる, 먹었어요 → 먹다, using the built-in dictionaries and deinflection); write from the most
+  frequent down, so ~90% of what you hear is covered with the fewest guides. The counts show where to stop
+  per language.
+- [ ] **What gets a guide:** words; grammar forms (particles, endings, conjugations, which matter most in
+  Korean); set phrases and idioms that recur (only real ones, per the phrase rule in section 14).
+  Homographs get one guide per word (行く / 行う, 了 le / liǎo, Korean words that differ in hanja).
+- [ ] **Format:** the general guide format from section 14 ("written for one line" fixed first, or the library
+  would copy the problem 20,000 times). Fresh example sentences, never lines from the corpus, so nothing
+  copyrighted ships; the corpus is only used to choose and rank what to write.
+- [ ] **Who writes them:** Claude in sessions on your plan (not per-guide API cost), language by language,
+  with a checking pass (the guide-audit problems: grammar written up as words, romanisation, names,
+  contradictions) before shipping.
+- [ ] **Shipping:** roughly 20–40 MB of text for ~20,000 guides; each language an optional download on first
+  use (or bundled, like the dictionaries), versioned so improvements can be shipped; your own guides (with
+  your question notes) always override the built-in ones.
+- [ ] **After this the API only writes:** the short per-line "In this line" note (Haiku), answers to your
+  questions, and guides for words outside the library (which can be added to it as they come up).
