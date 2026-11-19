@@ -1491,3 +1491,11 @@
 .lt-root .sg-ss .sg-song-guide { margin-top: 10px; }
 .lt-root .sg-showsongs { display: flex; flex-direction: column; }
 .lt-root .sg-showsongs > .sg-btn { align-self: flex-start; }
+.lt-root .sg-tapsync {
+  position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 16px; max-width: 90%;
+  padding: 12px 16px; border-radius: 14px; background: #111216; box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.08) inset;
+  pointer-events: auto; font-family: var(--lt-ui); font-size: 13px; color: #fff;
+}
+.lt-root .sg-tapsync-l { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sg-soft); }
+.lt-root .sg-tapsync-b { flex: 0 0 auto; }

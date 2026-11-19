@@ -254,8 +254,16 @@
       if (listenKey !== key) return;
       if (res.track) useLyrics(res, 'auto');
       else {
-        listenNote = res.error || 'No lyrics found.';
-        showToast(`${listenNote} Press G → Song to search for them or paste them.`);
+        // YouTube Music has licensed lyrics for most songs LRCLIB lacks (much K-pop), usually not timed.
+        const own = await SG.listen.pageLyrics().catch(() => null);
+        if (own && listenKey === key) {
+          const got = await request({ type: 'lyricsOwn', text: own, np, from: 'page' });
+          if (got.track) useLyrics(got, 'auto');
+        }
+        if (!active() || active().source !== 'lyrics') {
+          listenNote = res.error || 'No lyrics found.';
+          showToast(`${listenNote} Press G → Song to search for them or paste them.`);
+        }
       }
       request({ type: 'songPlayed', np: Object.assign({}, np, { lang: res.track ? detectLang(res.track.cues.slice(0, 30).map((c) => c.text).join('\n')) : '' }) });
     } finally {
@@ -276,7 +284,7 @@
       activeId = null;
       chooseActive();
     }
-    const from = res.track.provider === 'own' ? 'your lyrics' : 'LRCLIB';
+    const from = res.track.provider === 'ytmusic' ? "YouTube Music's lyrics" : res.track.provider === 'own' ? 'your lyrics' : 'LRCLIB';
     listenNote = `Lyrics from ${from}${res.track.synced ? '' : ', not timed yet'}${t.offset ? `, timing ${t.offset > 0 ? '+' : ''}${t.offset.toFixed(2)} s` : ''}`;
     showToast(`${listenNp ? listenNp.track : 'Song'}: ${listenNote}.`);
     renderSong();
@@ -2660,6 +2668,12 @@
     if (!ui || !video || !enabled() || e.ctrlKey || e.metaKey || e.altKey || isEditable(e.target)) return;
     if (!active() && e.key.toLowerCase() !== 'g') return;
     const key = e.key.toLowerCase();
+    if (tapSync && key === 't') {
+      tapSync.mark();
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     // Timing: [ earlier, ] later (Shift: 1 s steps, typed as { and }), \ resets.
     if (e.key === '[' || e.key === '{' || e.key === ']' || e.key === '}' || e.key === '\\') {
       if (e.key === '\\') nudgeOffset(null);
@@ -3736,8 +3750,17 @@
     look.append(sizes, sing, gaps);
     box.append(h('div', 'sg-section', 'Lyrics view'), look);
 
-    // Song guide
+    // Tap to sync: lyrics without timings get them from you, one tap per line.
     const t = active();
+    if (t && t.source === 'lyrics' && t.cues.some((c) => c.unsynced)) {
+      box.append(h('div', 'sg-section', 'Timing'));
+      box.append(h('div', 'sg-note', 'These lyrics have no timings. Press Tap to sync (the song restarts), then tap the button or press T as each line starts. The timings are saved for this song.'));
+      const tapBtn = h('button', 'sg-btn sg-go', 'Tap to sync');
+      tapBtn.addEventListener('click', () => startTapSync(t));
+      box.append(tapBtn);
+    }
+
+    // Song guide
     if (np && t && t.source === 'lyrics') {
       box.append(h('div', 'sg-section', 'Song guide'));
       const gBody = h('div', 'sg-song-guide');
@@ -3862,6 +3885,46 @@
       row.append(acts, body);
       box.append(row);
     }
+  }
+
+  // Tap to sync: the viewer taps as each line starts; the result is saved as this song's LRC.
+  let tapSync = null; // { t, i, times }
+  function startTapSync(t) {
+    if (!video || !listenNp) return;
+    tapSync = { t, i: 0, times: [] };
+    const bar = h('div', 'sg-tapsync');
+    const label = h('div', 'sg-tapsync-l');
+    const tap = h('button', 'sg-btn sg-go sg-tapsync-b', 'Tap: this line starts now (T)');
+    const stop = h('button', 'sg-link', 'Stop and save');
+    const update = () => {
+      const next = t.cues[tapSync.i];
+      label.textContent = next ? `Next: ${next.text}` : 'All lines timed.';
+    };
+    tapSync.mark = () => {
+      if (!tapSync || tapSync.i >= t.cues.length) return;
+      tapSync.times.push(video.currentTime);
+      tapSync.i++;
+      update();
+      if (tapSync.i >= t.cues.length) tapSync.finish();
+    };
+    tapSync.finish = async () => {
+      const done = tapSync;
+      tapSync = null;
+      bar.remove();
+      if (!done.times.length) return;
+      const fmt = (x) => `${String(Math.floor(x / 60)).padStart(2, '0')}:${(x % 60).toFixed(2).padStart(5, '0')}`;
+      const lrc = done.t.cues.slice(0, done.times.length).map((c, i) => `[${fmt(done.times[i])}]${c.text}`).concat(done.t.cues.slice(done.times.length).map((c) => c.text)).join('\n');
+      const got = await request({ type: 'lyricsOwn', text: lrc, np: listenNp });
+      if (got.track) useLyrics(got, 'manual');
+      showToast(`Saved timings for ${done.times.length} line${done.times.length === 1 ? '' : 's'}.`);
+    };
+    tap.addEventListener('click', () => tapSync && tapSync.mark());
+    stop.addEventListener('click', () => tapSync && tapSync.finish());
+    update();
+    bar.append(label, tap, stop);
+    ui.root.append(bar);
+    video.currentTime = 0;
+    if (video.paused) video.play().catch(() => {});
   }
 
   function rememberOffset(t, scale) {

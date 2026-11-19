@@ -64,7 +64,7 @@
       if (cues.length) return { track: { id: 'lyrics:own:' + key, label: `${np.track} · your lyrics`, source: 'lyrics', provider: 'own', cues, synced: true, song: Object.assign({ key }, np) }, offset: saved.offset || 0, saved: true };
     }
     if (saved && saved.plain) {
-      return { track: { id: 'lyrics:own:' + key, label: `${np.track} · your lyrics`, source: 'lyrics', provider: 'own', cues: SG.lyrics.plainToCues(saved.plain, np.duration), synced: false, song: Object.assign({ key }, np) }, offset: 0, saved: true };
+      return { track: { id: 'lyrics:own:' + key, label: `${np.track} · ${saved.from === 'ytmusic' ? 'YouTube Music lyrics' : 'your lyrics'}`, source: 'lyrics', provider: saved.from === 'ytmusic' ? 'ytmusic' : 'own', cues: SG.lyrics.plainToCues(saved.plain, np.duration), synced: false, song: Object.assign({ key }, np) }, offset: 0, saved: true };
     }
     if (saved && saved.lrclibId) {
       const rec = await lrclib('get/' + saved.lrclibId, {}).catch(() => null);
@@ -103,10 +103,10 @@
     await savePick(key, { lrclibId: id, lrc: null, plain: null, offset: 0 });
     return { track: t, offset: 0 };
   }
-  async function useOwn(text, np) {
+  async function useOwn(text, np, from) {
     const key = SG.lyrics.songKey(np);
     const synced = SG.lyrics.parseLRC(text, np.duration);
-    await savePick(key, synced.length ? { lrc: text, plain: null, lrclibId: null } : { plain: text, lrc: null, lrclibId: null });
+    await savePick(key, synced.length ? { lrc: text, plain: null, lrclibId: null, from: from || 'own' } : { plain: text, lrc: null, lrclibId: null, from: from === 'page' ? 'ytmusic' : 'own' });
     return find(np);
   }
 

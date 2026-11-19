@@ -948,7 +948,7 @@
           msg.type === 'lyricsFind' ? SG.music.find(np)
             : msg.type === 'lyricsSearch' ? SG.music.search(msg.q, np).then((list) => ({ list }))
               : msg.type === 'lyricsUse' ? SG.music.useRecord(msg.id, np)
-                : msg.type === 'lyricsOwn' ? SG.music.useOwn(msg.text, np)
+                : msg.type === 'lyricsOwn' ? SG.music.useOwn(msg.text, np, msg.from)
                   : msg.type === 'lyricsOffset' ? SG.music.savePick(SG.lyrics.songKey(np), { offset: msg.offset }).then(() => ({ ok: true }))
                     : msg.type === 'songPlayed' ? SG.music.remember(Object.assign({}, np, { site: port.sender && port.sender.url ? new URL(port.sender.url).hostname : '' })).then((song) => ({ song }))
                       : SG.music.songs().then((list) => ({ list }));

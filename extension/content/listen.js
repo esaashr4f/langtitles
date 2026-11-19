@@ -100,5 +100,36 @@
     return m ? (Number(m[1] || 0) * 3600 + Number(m[2]) * 60 + Number(m[3])) : null;
   }
 
-  SG.listen = { kind, musicSite, nowPlaying, mediaElement, spotifyPosition };
+  // YouTube Music's own lyrics (licensed, usually not timed), from its Lyrics tab. The tab only loads
+  // its text once opened, so this opens it if needed and waits a moment.
+  async function pageLyrics() {
+    if (kind() !== 'ytmusic') return null;
+    const read = () => {
+      for (const sel of [
+        'ytmusic-description-shelf-renderer[page-type="MUSIC_PAGE_TYPE_TRACK_LYRICS"] .description',
+        'ytmusic-section-list-renderer[page-type="MUSIC_PAGE_TYPE_TRACK_LYRICS"] ytmusic-description-shelf-renderer .description',
+        '#tab-renderer ytmusic-description-shelf-renderer .description',
+      ]) {
+        const el = document.querySelector(sel);
+        const t = el && el.innerText ? el.innerText.trim() : '';
+        if (t && t.split('\n').length > 2) return t;
+      }
+      return null;
+    };
+    let text = read();
+    if (!text) {
+      const tab = Array.from(document.querySelectorAll('tp-yt-paper-tab, .tab-header')).find((el) => /^(lyrics|歌詞|가사)$/i.test(el.textContent.trim()));
+      if (!tab) return null;
+      tab.click();
+      for (let i = 0; i < 20 && !text; i++) {
+        await new Promise((r) => setTimeout(r, 250));
+        text = read();
+      }
+    }
+    if (!text) return null;
+    // The source line at the end ("Source: LyricFind") is not a lyric.
+    return text.split('\n').filter((l) => !/^(source|出典|출처)\s*[:：]/i.test(l.trim())).join('\n');
+  }
+
+  SG.listen = { pageLyrics, kind, musicSite, nowPlaying, mediaElement, spotifyPosition };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

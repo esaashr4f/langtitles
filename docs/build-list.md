@@ -258,7 +258,8 @@ subtitles) is in docs/music-mode.md. Build in this order:
 - [x] **K-pop / Korean songs:** sung pronunciation in Hangul with the sound change named, contractions given in
   full, 반말 / 존댓말 and 너 / 당신 shifts, feeling-endings (-잖아, -거든, -ㄹ게), why a line switches to English,
   hanja for Sino-Korean words in the song guide. (0.4.1)
-- [ ] K-pop, if wanted: YouTube Music's own (licensed) lyrics tab as a fallback when LRCLIB has nothing; concept
-  and era notes in song guides. Not possible: per-member line colours (no reliable free data).
+- [x] YouTube Music's own (licensed) lyrics tab as a fallback when LRCLIB has nothing (much K-pop), and Tap to
+  sync for lyrics without timings. (0.4.2; the page reading is untested on the live site)
+- [ ] K-pop, if wanted: concept and era notes in song guides. Not possible: per-member line colours (no reliable free data).
 - [x] Tests for LRC / enhanced LRC parsing, LRCLIB matching, chorus counts, video titles, MAL theme lines.
 - [ ] Adapter tests against saved page snapshots.
