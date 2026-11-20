@@ -378,6 +378,60 @@ inside the -아/어 줘 request pattern (해 줘 = "do it for me"), so the check
 - [ ] Core Korean grammar (particles, 반말 / 해요 / 합니다, -아/어 주다, connectives) as **built-in guides** like
   the 43 Japanese ones, so these are never written from a single line (also part of section 15).
 
+### Guide clean-up: stop paying again for guides you already have (causes found in the code)
+- **Cause 1: a check on every new line.** Each time a saved guide opens in a line it hasn't seen (the word card
+  opens the guide by itself after a moment), Langtitles pays Claude (Haiku) to check whether the guide fits the
+  line, and may add "Other uses you've met" to it. That's a paid call per new line per guide, even though the
+  guide itself isn't rewritten. Shows as "guide checks" in Spending.
+- **Cause 2: the same guide under different names.** A guide is saved under the form's identifier. Japanese
+  has a fixed list plus name matching; **Korean and Chinese have none**, so the same form named slightly
+  differently by the line breakdown (casual_banmal / banmal_casual / casual_speech) gets a new guide each
+  time. Word guides are saved under the dictionary form the breakdown gives, which can vary (彼 vs 彼の,
+  원해 vs 원하다), with the same effect.
+- **Cause 3: updates that change the guide version** (GUIDE_VERSION) make every saved guide look missing.
+- [ ] Opening a saved guide **never costs anything**. The line-specific part goes in the "In this line" box at the
+  top: taken from the line breakdown (already paid for: the word's meaning, role and note in this line), written
+  in a fixed form, free. A paid, short, cheap note only when you ask for one (a button), or when the breakdown
+  says the use is unusual.
+- [ ] No automatic additions to guides; no automatic per-line checks. "Why it means something different here"
+  only on request or when the breakdown flags it, and only for a genuinely different sense or function.
+- [ ] One guide per form: fixed identifier lists and name matching for Korean and Chinese like Japanese; word
+  guides saved under the dictionary's headword (from the built-in dictionaries), not whatever form the
+  breakdown wrote; existing duplicates merged (notes and lines you've met kept), with a count of what was merged.
+- [ ] Guides are never invalidated by an update: old guides keep working; improved versions are offered per
+  guide (or in bulk, with a cost) instead of being rebought silently.
+- [ ] A spending check in Progress: guides written vs. guides opened from saved, and guide-check spend, so it's
+  visible that nothing is rebought.
+
+### Subtitles and breakdowns after a reload
+- Found: breakdowns ARE saved and re-used for free (keyed by the line and the line before it), but after a
+  reload the panel shows "57/335 lines ready" and fills up gradually, because it asks for saved lines in small
+  batches, 10 minutes ahead of where you are, exactly as if it were paying for them. It looks like starting
+  again even when it costs nothing. Real re-buying does happen when: the subtitle file changes (a different
+  Jimaku / OpenSubtitles file, or the site's own subtitles instead: different text, different lines), the line
+  model is switched, or an update changes the breakdown version (section 14).
+- [ ] On loading an episode, fetch every saved breakdown for the whole track at once (local, free) and show
+  "335/335 saved" straight away; mark lines "saved" vs "new" in Script; only lines never seen are sent.
+- [ ] Remember the subtitle file chosen for each episode and load it automatically on return (downloaded file
+  kept locally), so a reload uses the same file and therefore the same saved breakdowns.
+- [ ] Per-episode store of lines + breakdowns (also in section 14), so an episode reopens instantly.
+
+### My shows
+- [ ] **Delete a show from My shows** (the background has a remove function; nothing in the panel or Library
+  calls it): a remove button on each show in the panel's My shows row and in Library → Shows.
+
+### Phrases: rethink (bad false positives, and the display doesn't work)
+- Found: 彼の was shown as a phrase meaning "that" because the dictionary has 彼の read **あの / かの** ("that");
+  the dictionary check matches the spelling and ignores the reading (here かれの, "his"), and it also accepts
+  pre-noun adjectives. The bracket label also collides with the word meanings above the line (今日いっぱい:
+  "through the end of today" over "through").
+- [ ] Dictionary phrase check: the entry's reading must match the line's reading; only expression entries
+  (not pre-noun adjectives); never when the parts simply add up.
+- [ ] Display: no brackets stacked over the word meanings. Options to choose from at build time: (a) a phrase
+  replaces its words' meanings with one meaning spanning them (no second row), (b) phrases only in the word
+  card ("Part of …") and the Line tab, nothing over the subtitle, (c) off by default. Recommendation: (b), plus
+  (a) only for true idioms.
+
 ### Phrases: only real phrases
 - [ ] A phrase is marked (bracket, phrase card, saved as a phrase) only when it's a **set phrase** or when the
   words **mean something different together** than apart. A word plus a verb that simply means the sum of its
@@ -430,6 +484,9 @@ general guides in advance for almost everything you'll meet, so the API only han
 
 Goal: standalone, paid (subscription) apps that do what Language Reactor does on desktop, which nothing offers
 on phones today: the streaming services the user already subscribes to, their own websites, and songs.
+- Found (tested on your iPhone): Netflix, Disney+ and the big services don't play inside another app; they send
+  users to their own apps. Some smaller sites do play. The phone app's video side is therefore: YouTube and the
+  sites that work, the user's own videos and files, and songs (Spotify / Apple Music, below). Rethink pending.
 - [ ] **A learning app, not just a browser:** the user opens the streaming services they subscribe to (Netflix,
   Disney+ and others) or their own sites in the app's built-in WebKit view (the same as any third-party browser
   on the App Store), with the Langtitles subtitles and panel on top; plus everything the Library offers: lessons,
