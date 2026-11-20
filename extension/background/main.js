@@ -1175,6 +1175,8 @@
         (msg.lang === 'ko' ? SG.dict.hanjaInfo(msg.ch) : SG.dict.kanjiInfo(msg.ch)).then((info) => send(port, { type: 'dictCard', reqId: msg.reqId, info }), () => send(port, { type: 'dictCard', reqId: msg.reqId, info: null }));
       } else if (msg.type === 'pickShow') {
         SG.shows.pick(msg.show, msg.siteTitle, msg.lang).then((entry) => send(port, { type: 'showSaved', reqId: msg.reqId, entry }));
+      } else if (msg.type === 'removeShow') {
+        SG.shows.remove(msg.id).then(() => send(port, { type: 'showSaved', reqId: msg.reqId, ok: true }));
       } else if (msg.type === 'myShows') {
         SG.shows.all().then((list) => send(port, { type: 'showSaved', reqId: msg.reqId, list }));
       } else if (msg.type === 'matchShow') {
@@ -1311,6 +1313,13 @@
     if (msg.type === 'rewriteGuide') return ready.then(() => rewriteGuide(msg.key, msg.model));
     if (msg.type === 'tidyGuides') return ready.then(tidyGuides).catch((err) => ({ error: err.message }));
     if (msg.type === 'episodesAll') return SG.episodes.all();
+    if (msg.type === 'removeShowEpisodes') {
+      return ready.then(async () => {
+        const eps = (await cache.getAll('episodes')).filter((e) => e.showKey === msg.showKey || e.key === 'show:' + msg.showKey);
+        for (const e of eps) await cache.remove('episodes', e.key);
+        return { removed: eps.length };
+      });
+    }
     if (msg.type === 'phraseCandidates') return ready.then(phraseCandidates).catch((err) => ({ error: err.message }));
     if (msg.type === 'convertPhrase') return ready.then(() => convertToPhrase(msg.key, msg.phrase, msg.meaning, msg.reading)).catch((err) => ({ error: err.message }));
     if (msg.type === 'framesGet') return SG.episodes.getFrames(msg.ids || []);

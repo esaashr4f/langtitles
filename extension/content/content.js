@@ -225,7 +225,8 @@
       // On YouTube, offer Listen mode once for a video that's clearly a song.
       if (np.isSong && !listenAsked && !(settings.siteMode || {})[location.hostname] && !hasLearningTrack()) {
         listenAsked = true;
-        showToast('This looks like a song. Press G → Listen to show its lyrics instead of subtitles.');
+        showToast('This looks like a song. Open the panel (G) to show its lyrics instead.');
+        renderTrackList();
       }
       return;
     }
@@ -1298,6 +1299,43 @@
     };
   }
 
+  // The part of the video you can actually see: some players (YouTube) make the video element larger than
+  // the player box and clip it, so the overlay follows the clipped box. Clipping ancestors are found every
+  // couple of seconds, not on every frame.
+  let clipFor = null;
+  let clipList = [];
+  let clipAt = 0;
+  function visibleRect(el) {
+    const r = el.getBoundingClientRect();
+    if (clipFor !== el || Date.now() - clipAt > 2000) {
+      clipFor = el;
+      clipAt = Date.now();
+      clipList = [];
+      let p = el.parentElement;
+      for (let i = 0; p && i < 10; i++, p = p.parentElement) {
+        const cs = getComputedStyle(p);
+        if (cs.overflow !== 'visible' || cs.overflowX !== 'visible' || cs.overflowY !== 'visible') clipList.push(p);
+      }
+    }
+    let left = r.left;
+    let top = r.top;
+    let right = r.right;
+    let bottom = r.bottom;
+    for (const c of clipList) {
+      const b = c.getBoundingClientRect();
+      if (b.width < 200 || b.height < 110) continue;
+      left = Math.max(left, b.left);
+      top = Math.max(top, b.top);
+      right = Math.min(right, b.right);
+      bottom = Math.min(bottom, b.bottom);
+    }
+    if (!document.fullscreenElement) {
+      top = Math.max(top, 0);
+      bottom = Math.min(bottom, innerHeight);
+    }
+    return { left, top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
+  }
+
   // Keep the overlay glued to the video, including in fullscreen.
   function place() {
     if (!ui || !video) return;
@@ -1329,7 +1367,7 @@
         }
       }
     }
-    let r = video.getBoundingClientRect();
+    let r = visibleRect(video);
     let visible = r.width >= 200 && r.height >= 110 && video.isConnected;
     // On a music site (or when the song has no picture to draw on) the lyrics get their own sheet.
     const listen = listenMode();
@@ -1615,9 +1653,16 @@
     const native = langCode(settings.nativeLang);
     let text = '';
     if (!settings.hasKey) text = 'Add your Anthropic API key in the Langtitles options to get breakdowns.';
+    else if (!tracks.size && SG.listen && SG.listen.kind() === 'youtube' && !listenMode() && video && (SG.listen.nowPlaying(video) || {}).isSong) text = 'listen-offer';
     else if (!tracks.size) text = 'Turn on subtitles in the player. Langtitles picks them up as the site loads them. If nothing appears, use “Pick on page” or “Load file”.';
     else if (!activeId) text = `The subtitles found are in ${langName(native)}. Choose a subtitle track in the language you are learning in the site’s player, or pick one above to analyze it anyway.`;
-    hint.textContent = text;
+    if (text === 'listen-offer') {
+      // A song on YouTube with no subtitles: offer its lyrics instead.
+      hint.textContent = '';
+      const go = h('button', 'sg-btn sg-go', 'Show the lyrics (Listen mode)');
+      go.addEventListener('click', () => setMode('listen'));
+      hint.append(h('div', '', 'This looks like a song. Langtitles can show its lyrics, broken down like subtitles.'), go);
+    } else hint.textContent = text;
     hint.style.display = text ? 'block' : 'none';
     const t = active();
     if (t) ui.panel.offset.textContent = (t.offset >= 0 ? '+' : '') + t.offset.toFixed(2) + 's';
@@ -4340,7 +4385,19 @@
           saveShowPick(sh);
           run();
         });
-        row.append(b);
+        // Remove from My shows (the subtitles and words saved from it stay).
+        const cell = h('div', 'sg-myshow-cell');
+        const del = ih('button', 'sg-myshow-del', 'x', '', 12);
+        del.title = `Remove ${sh.title} from My shows`;
+        del.setAttribute('aria-label', del.title);
+        del.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          await request({ type: 'removeShow', id: sh.id });
+          cell.remove();
+          if (!row.childElementCount) mine.textContent = '';
+        });
+        cell.append(b, del);
+        row.append(cell);
       }
       mine.append(row);
     });

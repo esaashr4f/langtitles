@@ -217,6 +217,16 @@
     names.append(h('h2', '', g.name), h('div', 'meta', `${SG.lang.langName(langOf(g))} · ${g.eps.length} episode${g.eps.length === 1 ? '' : 's'} watched with subtitles`));
     head.append(names);
     view.append(head);
+    const rm = h('button', 'show-remove', 'Remove this show');
+    rm.title = 'Removes its episodes, recaps and lessons from the Library (saved words and guides stay)';
+    rm.addEventListener('click', async () => {
+      if (!confirm(`Remove ${g.name} from the Library? Its episodes, recaps and lessons are deleted; your saved words and guides stay.`)) return;
+      await browser.runtime.sendMessage({ type: 'removeShowEpisodes', showKey: g.showKey });
+      current = '';
+      history.replaceState(null, '', location.pathname);
+      load();
+    });
+    names.append(rm);
 
     const vocab = h('section', 'show-block');
     const vBtn = h('button', 'primary', 'Vocabulary guide to this show');
