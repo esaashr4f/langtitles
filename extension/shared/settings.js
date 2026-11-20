@@ -26,6 +26,7 @@
       review: 'claude-sonnet-5-5',
       ask: 'claude-sonnet-5-5',
       songGuides: 'claude-opus-5-5',
+      lessons: 'claude-opus-5-5',
     },
     siteMode: {}, // host -> 'watch' | 'listen', set with the panel's switch
     lyricsSize: 'sheet', // Listen mode on music sites: 'strip' | 'sheet' | 'focus'
@@ -170,7 +171,8 @@
     { key: 'grammarGuides', label: 'Grammar guides' },
     { key: 'wordGuides', label: 'Word and phrase guides' },
     { key: 'ask', label: 'Ask about a line' },
-    { key: 'songGuides', label: 'Song guides (every lyric, line by line)' },
+    { key: 'songGuides', label: 'Song guides' },
+    { key: 'lessons', label: 'Episode lessons and whole-show guides' },
     { key: 'kanji', label: 'Kanji and character entries' },
     { key: 'episodeWords', label: 'Episode words' },
     { key: 'review', label: 'Review questions' },

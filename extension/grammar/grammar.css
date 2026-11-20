@@ -100,3 +100,24 @@ nav a small { display: inline; flex: 0 0 auto; }
 #view button.primary { background: var(--accent); color: var(--accent-text); border-color: transparent; }
 #view button.primary:disabled { opacity: 0.6; }
 #view button.show-remove { margin-top: 10px; padding: 4px 10px; font-size: 12.5px; color: var(--dim); }
+
+.lesson { line-height: 1.7; }
+.lesson .sg-g-h { margin-top: 28px; }
+.sg-g-quote { margin: 10px 0 2px; padding-left: 14px; border-left: 1px solid var(--line); font-size: 17px; }
+.sg-g-quote + .sg-g-quote { margin-top: 0; color: var(--dim); font-size: 14px; }
+.sg-g-link { color: var(--accent); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent); text-underline-offset: 3px; cursor: pointer; }
+.sg-g-link:hover { text-decoration-color: var(--accent); }
+.sg-g-link.loading { opacity: 0.6; }
+.lesson-frame { margin: 18px 0; }
+.lesson-frame img { display: block; width: min(560px, 100%); border-radius: 10px; background: #000; }
+.lesson-frame figcaption { margin-top: 6px; color: var(--dim); font-size: 14px; }
+.finish h3 { margin: 0 0 8px; font-size: 16px; }
+.finish-row { display: flex; align-items: center; gap: 6px; margin: 6px 0; font-size: 14px; }
+.finish-row input { width: 64px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--text); font: inherit; }
+.finish button { margin: 10px 8px 0 0; }
+
+.finish-row .season-done { display: none; margin: 0 0 0 8px; padding: 4px 10px; font-size: 12.5px; }
+.finish-rows.multi .finish-row .season-done { display: inline-block; }
+
+.companion { margin-top: 18px; }
+.companion h3 { margin: 0 0 8px; font-size: 16px; }

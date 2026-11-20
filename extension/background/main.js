@@ -717,6 +717,10 @@
   }
   setInterval(pollJobs, 120000);
   setTimeout(pollJobs, 15000);
+  // Whole-show lessons written through the Batch API.
+  const pollFinish = () => ready.then(() => SG.episodes.pollFinish(settings)).catch(() => {});
+  setInterval(pollFinish, 120000);
+  setTimeout(pollFinish, 20000);
 
   function bankKey(kind, lang, text) {
     return [kind, lang, text].join('|');
@@ -840,6 +844,23 @@
   }
 
   // Rewrites a saved guide (Library → Check my guides). The old version goes to history; notes are kept.
+  // A guide opened from a page (a link in a lesson or song guide): the saved one, or written now.
+  function pageGuide(msg) {
+    return new Promise((resolve) => {
+      const fakePort = {
+        sender: { tab: { id: -1 } },
+        postMessage(m) {
+          if (m.type === 'deepDone') resolve({ text: m.text, model: m.model, name: m.name || '' });
+          else if (m.type === 'deepError') resolve({ error: m.message });
+        },
+      };
+      const isWord = msg.kind !== 'g';
+      const lang = msg.lang || 'ja';
+      const k = isWord ? `word.${lang}.${msg.k}` : SG.canonicalForm(msg.k.includes('.') ? msg.k : `${lang}.${msg.k}`);
+      explainGuide({ reqId: 0, kind: isWord ? 'wordguide' : 'guide', form: { k, name: msg.label || msg.k }, lang, sentence: msg.sentence || '', word: msg.label || msg.k, dict: isWord ? msg.k : '', meaning: '' }, fakePort).catch((err) => resolve({ error: err.message }));
+    });
+  }
+
   // Remove per-line sections from saved guides (free); the old text goes to history.
   async function tidyGuides() {
     const all = await cache.getAll('guides');
@@ -978,8 +999,10 @@
     return { none: true };
   }
 
+  SG.findEpisodeSubs = (ep, langs) => autoSubtitle(ep, langs, { sameSource: true });
+
   // Automatic loading: a file chosen before for this episode, otherwise the best search result.
-  async function autoSubtitle(ep, langs) {
+  async function autoSubtitle(ep, langs, opts) {
     for (const lang of langs) {
       const pick = (await cache.getMany('picks', [SG.episode.key(ep, lang)])).get(SG.episode.key(ep, lang));
       if (pick) {
@@ -1000,6 +1023,17 @@
     const choices = new Map();
     for (const lang of langs) choices.set(lang, await showChoice(ep, lang));
     usable = usable.map((r, i) => ({ r, i, s: choiceScore(r, choices.get(r.lang)) })).sort((a, b) => b.s - a.s || a.i - b.i).map((x) => x.r);
+    // Whole-show fetches stay with the show's usual source (site, and group where known).
+    if (opts && opts.sameSource) {
+      const withChoice = usable.filter((r) => choices.get(r.lang));
+      if (withChoice.length || [...choices.values()].some(Boolean)) {
+        usable = usable.filter((r) => {
+          const c = choices.get(r.lang);
+          return c && choiceScore(r, c) >= (c.group ? 4 : 2);
+        });
+        if (!usable.length) return { track: null, errors: ['not on the show\'s usual subtitle source'], searched: found.providers.length };
+      }
+    }
     for (const result of usable.slice(0, 3)) {
       try {
         const loaded = await loadSubtitle(result, ep);
@@ -1118,6 +1152,8 @@
         SG.episodes.saveFrame(msg.id, msg.data).then((ok) => send(port, { type: 'lyrics', reqId: msg.reqId, ok }));
       } else if (msg.type === 'frameCapture') {
         SG.episodes.captureTab(port.sender.tab, msg.rect, msg.dpr).then((data) => send(port, { type: 'lyrics', reqId: msg.reqId, data }), (err) => send(port, { type: 'lyrics', reqId: msg.reqId, error: err.message }));
+      } else if (msg.type === 'episodeFrame') {
+        SG.episodes.addFrame(msg).catch(() => {});
       } else if (msg.type === 'episodeSeen') {
         SG.episodes.seen(msg).catch(() => {});
       } else if (msg.type === 'showSongs') {
@@ -1323,6 +1359,14 @@
     if (msg.type === 'phraseCandidates') return ready.then(phraseCandidates).catch((err) => ({ error: err.message }));
     if (msg.type === 'convertPhrase') return ready.then(() => convertToPhrase(msg.key, msg.phrase, msg.meaning, msg.reading)).catch((err) => ({ error: err.message }));
     if (msg.type === 'framesGet') return SG.episodes.getFrames(msg.ids || []);
+    if (msg.type === 'pageGuide') return ready.then(() => pageGuide(msg)).catch((err) => ({ error: err.message }));
+    if (msg.type === 'lessonWrite') return ready.then(() => SG.episodes.writeWalk(msg.key, settings, msg.again)).catch((err) => ({ error: err.message }));
+    if (msg.type === 'showMeta') return SG.episodes.showMeta(msg.showKey);
+    if (msg.type === 'finishShow') return ready.then(() => SG.episodes.finishShow(msg.showKey, msg.plan, settings, msg.langs && msg.langs.length ? msg.langs : (settings.learning || ['ja']), msg.scope || null)).catch((err) => ({ error: err.message }));
+    if (msg.type === 'finishEstimate') return ready.then(() => SG.episodes.estimate(msg.showKey, settings));
+    if (msg.type === 'companionEstimate') return ready.then(async () => { const p = await SG.episodes.companionPlan(msg.showKey, settings); return p.error ? p : p.estimate; });
+    if (msg.type === 'companionStart') return ready.then(() => SG.episodes.startCompanion(msg.showKey, settings)).catch((err) => ({ error: err.message }));
+    if (msg.type === 'finishStart') return ready.then(() => SG.episodes.startFinishBatch(msg.showKey, settings)).catch((err) => ({ error: err.message }));
     if (msg.type === 'episodeWrite') return ready.then(() => SG.episodes.write(msg.key, msg.kind, settings, msg.again)).catch((err) => ({ error: err.message }));
     if (msg.type === 'showVocab') return ready.then(() => SG.episodes.showVocab(msg.showKey, settings, msg.again)).catch((err) => ({ error: err.message }));
     if (msg.type === 'spendLog') return browser.storage.local.get('spendLog').then((r) => r.spendLog || { days: {}, shows: {}, top: [] });

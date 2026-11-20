@@ -479,7 +479,17 @@
       if (msg.error) el.textContent = msg.error;
       else if (msg.text) {
         el.textContent = '';
-        SG.renderGuide(el, msg.text, { known: known.ja, plain: !settings.furigana });
+        const songLang = langCode((active() || {}).lang || 'ja');
+        SG.renderGuide(el, msg.text, {
+          known: known.ja,
+          plain: !settings.furigana,
+          // Links in a song guide open that word's or form's guide in the panel.
+          onLink: (kind, k, label) => {
+            const w = { s: label, d: kind === 'g' ? label : k, m: '' };
+            if (kind === 'g') openPanelGuide({ k: SG.canonicalForm(k.includes('.') ? k : `${songLang}.${k}`), name: label }, { sentence: '', lang: songLang }, w, false);
+            else openPanelGuide(wordGuideForm(w, songLang), { sentence: '', lang: songLang }, w, true);
+          },
+        });
         if (msg.type === 'songGuideDone' && msg.model) el.append(h('div', 'sg-note', `Written by ${SG.modelLabel(msg.model)}${msg.cached ? ' (saved earlier)' : ''}.`));
       }
     } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs', 'showChoice', 'qaList', 'noteAdded', 'showSaved', 'dictCard', 'lyrics'].includes(msg.type)) {
@@ -3758,6 +3768,21 @@
     });
   }
 
+  // About once every 75 seconds of watching, a small frame with the line on screen goes with the episode,
+  // so its lesson can show and talk about the scene.
+  let frameAt = 0;
+  async function frameForLesson(t) {
+    if (settings.sceneFrames === false || listenMode() || t.source === 'lyrics' || t.lang === langCode(settings.nativeLang)) return;
+    if (video.currentTime - frameAt < 75 && video.currentTime >= frameAt) return;
+    frameAt = video.currentTime;
+    const idx = findCue(t.cues, video.currentTime - t.offset);
+    if (idx < 0) return; // only moments with a line on screen
+    const ep = await currentEpisode().catch(() => null);
+    if (!ep || !SG.episode.confident(ep)) return;
+    const data = await captureFrame().catch(() => null);
+    if (data) post({ type: 'episodeFrame', episode: ep, time: video.currentTime, idx, line: t.cues[idx].text, data });
+  }
+
   function trackWatching() {
     const t = active();
     if (!video || video.paused || !t) {
@@ -3765,6 +3790,7 @@
       return;
     }
     noteEpisode(t);
+    frameForLesson(t);
     const now = video.currentTime;
     if (watchedLast != null && now > watchedLast && now - watchedLast < 3) watchedSecs += now - watchedLast;
     watchedLast = now;

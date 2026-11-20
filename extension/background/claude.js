@@ -223,6 +223,34 @@
     }
   }
 
+  // An episode lesson: text plus the frames as small images (about a hundred tokens each), so the lesson
+  // can say what is happening in the picture. Returns the params so the Batch API can use the same request.
+  function lessonParams(settings, system, user, images) {
+    const params = baseParams(settings, 32000, settings.model);
+    if (settings.effort) params.output_config.effort = settings.effort === 'low' ? 'medium' : settings.effort;
+    params.system = system;
+    const content = [];
+    (images || []).forEach((img, i) => {
+      const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(img || '');
+      if (m) content.push({ type: 'text', text: `Frame ${i + 1}:` }, { type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } });
+    });
+    content.push({ type: 'text', text: user });
+    params.messages = [{ role: 'user', content }];
+    return params;
+  }
+  async function writeLesson(settings, system, user, images, onText) {
+    await capGuard(settings);
+    try {
+      const stream = getClient(settings).beta.messages.stream(lessonParams(settings, system, user, images));
+      if (onText) stream.on('text', (d) => onText(d));
+      const message = await stream.finalMessage();
+      recordUsage(message.model || settings.model, message.usage, false, settings.costTag, 'lessons', settings.costShow).catch(() => {});
+      return textOf(message);
+    } catch (err) {
+      throw describeError(err);
+    }
+  }
+
   // Plain text with nothing to stream to (recaps, lessons written from a page).
   function streamPlain(settings, system, user, maxTokens) {
     return streamText(settings, system, user, maxTokens, null, () => {});
@@ -458,6 +486,29 @@
     return plain;
   }
 
+  // Any request in the plain shape the Batch API takes.
+  function plainParams(params) {
+    const plain = {};
+    for (const k of Object.keys(params)) if (k !== 'betas' && k !== 'fallbacks') plain[k] = params[k];
+    return plain;
+  }
+
+  // Text results of a batch, by custom_id (lessons).
+  async function batchTexts(settings, id) {
+    const out = {};
+    try {
+      for await (const r of await getClient(settings).messages.batches.results(id)) {
+        if (r.result.type !== 'succeeded') continue;
+        const msg = r.result.message;
+        recordUsage(msg.model || settings.model, msg.usage, true, settings.costTag, 'lessons', settings.costShow).catch(() => {});
+        out[r.custom_id] = textOf(msg);
+      }
+    } catch (err) {
+      throw describeError(err);
+    }
+    return out;
+  }
+
   // Cheapest possible round trip, used by the "Test key" button.
   async function testKey(settings) {
     try {
@@ -470,5 +521,5 @@
     }
   }
 
-  SG.claude = { streamPlain, songGuide, checkGuide, matchGuide, extractLesson, onCost: (fn) => costListeners.add(fn), lineModelOf, spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
+  SG.claude = { plainParams, batchTexts, lessonParams, writeLesson, streamPlain, songGuide, checkGuide, matchGuide, extractLesson, onCost: (fn) => costListeners.add(fn), lineModelOf, spentThisMonth, monthKey, askLine, grammarCloze, batchCreate, batchRetrieve, batchResults, batchAnalysisParams, analyzeLines, explainWord, explainForm, explainWordGuide, charEntry, episodeWords, testKey, describeError, LangtitlesError };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

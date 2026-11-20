@@ -244,8 +244,8 @@
         vBody.append(h('p', 'model', SG.modelLabel(res.model) + (res.cached ? ' · saved earlier' : '')));
       }
     });
-    vocab.append(vBtn, vBody);
-    view.append(vocab);
+    // The old word-list "vocabulary guide" is gone: the lessons and the show companion teach in context.
+    view.append(finishedBlock(g));
 
     const list = h('div', 'eps');
     for (const e of g.eps) {
@@ -258,23 +258,24 @@
       const pct = e.lines && e.lines.length ? Math.round(((e.reached || 0) / e.lines.length) * 100) : 0;
       info.append(h('div', 'meta', `Last watched ${new Date(e.last).toLocaleDateString()}${pct ? ` · ${Math.min(100, pct)}% of the lines` : ''}`));
       const acts = h('div', 'ep-acts');
-      const body = h('article', 'guide');
-      for (const [kindName, label] of [['recap', 'Recap'], ['lesson', 'Lesson']]) {
-        const b = h('button', '', label);
-        if (e[kindName]) b.classList.add('done');
-        b.addEventListener('click', async () => {
-          for (const x of acts.children) x.classList.toggle('on', x === b);
-          body.textContent = e[kindName] ? '' : 'Writing…';
-          const res = e[kindName] ? { text: e[kindName].text, model: e[kindName].model, cached: true } : await browser.runtime.sendMessage({ type: 'episodeWrite', key: e.key, kind: kindName });
-          body.textContent = '';
-          if (!res || res.error) return (body.textContent = (res && res.error) || 'Could not write it.');
-          e[kindName] = { text: res.text, model: res.model };
-          if (kindName === 'recap') res.text.split(/\n\s*\n/).forEach((para) => body.append(h('p', '', para)));
-          else SG.renderGuide(body, res.text, { known: new Set(), plain: false });
-          body.append(h('p', 'model', SG.modelLabel(res.model)));
-        });
-        acts.append(b);
-      }
+      const body = h('article', 'guide lesson');
+      const lb = h('button', e.walk ? 'done' : '', e.walk ? 'Read the lesson' : 'Write the lesson');
+      lb.title = 'A teacher walking through the episode with you, from start to end (written once, then kept)';
+      lb.addEventListener('click', async () => {
+        lb.classList.add('on');
+        body.textContent = e.walk ? '' : 'Writing the lesson… It walks through the whole episode, so it takes a minute or two.';
+        const res = e.walk ? { text: e.walk.text, model: e.walk.model, frames: e.walk.frames || [] } : await browser.runtime.sendMessage({ type: 'lessonWrite', key: e.key });
+        body.textContent = '';
+        if (!res || res.error) {
+          body.textContent = (res && res.error) || 'Could not write it.';
+          return;
+        }
+        e.walk = { text: res.text, model: res.model, frames: res.frames || [], spoilers: e.walk && e.walk.spoilers };
+        lb.textContent = 'Read the lesson';
+        await renderLesson(body, res.text, res.frames || [], langOf(g), e);
+        body.append(h('p', 'model', SG.modelLabel(res.model) + (e.walk.spoilers ? ' · spoilers allowed (show finished)' : '')));
+      });
+      acts.append(lb);
       if (e.url) {
         const a = h('a', '', 'Watch');
         a.href = e.url;
@@ -288,6 +289,184 @@
       list.append(row);
     }
     view.append(list);
+  }
+
+  // "I've finished this show": get every episode's subtitles, then write every lesson (spoilers allowed).
+  function finishedBlock(g) {
+    const box = h('section', 'show-block finish');
+    box.append(h('h3', '', "I've finished this show"));
+    const body = h('div');
+    box.append(body);
+    browser.runtime.sendMessage({ type: 'showMeta', showKey: g.showKey }).then(async (meta) => {
+      const f = meta && meta.finish;
+      if (f && f.status === 'writing') {
+        const p = f.progress || {};
+        body.append(h('p', 'sub', `Writing ${f.total} lessons through the Batch API (half price, usually within an hour): ${p.succeeded || 0} done so far. They appear on each episode below.`));
+        return;
+      }
+      if (f && f.status === 'done') {
+        body.append(h('p', 'sub', `Done: ${f.saved || 0} lessons written with spoilers allowed. Open any episode below.`));
+        companionBlock(body, g, meta.companion);
+        return;
+      }
+      if (f && f.status === 'ready') {
+        showEstimate(body, g, f);
+        return;
+      }
+      body.append(h('p', 'sub', "Langtitles fetches the subtitles for every episode from this show's usual subtitle source (even episodes you never watched with it, at most 20 a minute), then writes a lesson for each one that walks you back through it and teaches the language, with spoilers allowed. You see the cost before anything is paid."));
+      const seasons = [...new Set(g.eps.map((e) => e.season || 1))].sort((a, b) => a - b);
+      const rows = h('div', 'finish-rows');
+      const status = h('p', 'sub');
+      const start = async (plan, scope, btn) => {
+        btn.disabled = true;
+        status.textContent = `Fetching subtitles for ${scope ? 'season ' + scope.season : 'every episode'}… (at most 20 a minute; anything missing can be fetched later)`;
+        const res = await browser.runtime.sendMessage({ type: 'finishShow', showKey: g.showKey, plan, scope });
+        if (!res || res.error) {
+          status.textContent = (res && res.error) || 'Something went wrong.';
+          btn.disabled = false;
+          return;
+        }
+        body.textContent = '';
+        showEstimate(body, g, res.meta.finish, res.estimate);
+      };
+      const rowPlan = (row) => {
+        const [se, from, upto] = row.querySelectorAll('input');
+        return { season: Number(se.value) || 1, from: Number(from.value) || 1, to: Number(upto.value) || 1 };
+      };
+      const addRow = (season, last) => {
+        const row = h('div', 'finish-row');
+        const se = h('input');
+        se.type = 'number';
+        se.min = '1';
+        se.value = String(season);
+        const from = h('input');
+        from.type = 'number';
+        from.min = '1';
+        from.value = '1';
+        const upto = h('input');
+        upto.type = 'number';
+        upto.min = '1';
+        upto.value = String(last);
+        row.append(document.createTextNode('Season '), se, document.createTextNode(' episodes '), from, document.createTextNode(' to '), upto);
+        const one = h('button', 'season-done', "I've finished this season");
+        one.addEventListener('click', () => {
+          const plan = rowPlan(row);
+          start([plan], { season: plan.season }, one);
+        });
+        row.append(one);
+        rows.append(row);
+        rows.classList.toggle('multi', rows.childElementCount > 1);
+      };
+      for (const se of seasons) addRow(se, Math.max(...g.eps.filter((e) => (e.season || 1) === se).map((e) => e.episode || 1), 1));
+      if (!seasons.length) addRow(1, 12);
+      const more = h('button', '', 'Add a season');
+      more.addEventListener('click', () => addRow(Math.max(...Array.from(rows.children).map((r) => rowPlan(r).season)) + 1, 12));
+      const go = h('button', 'primary', "I've finished this show");
+      go.addEventListener('click', () => start(Array.from(rows.children).map(rowPlan), null, go));
+      body.append(h('p', 'sub', 'Which episodes? (set the last episode of each season)'), rows, more, go, status);
+    });
+    return box;
+  }
+
+  // The show companion: a long watch-along of the whole show, built on the episode lessons.
+  async function companionBlock(body, g, c) {
+    const box = h('div', 'companion');
+    box.append(h('h3', '', 'Show companion'));
+    body.append(box);
+    if (c && c.status === 'done') {
+      const art = h('article', 'guide lesson');
+      const lang = langOf(g) || 'ja';
+      for (let i = 0; i < c.texts.length; i++) {
+        const part = h('div');
+        await renderLesson(part, c.texts[i] || '', [], lang, null);
+        art.append(part);
+      }
+      box.append(art, h('p', 'model', SG.modelLabel(c.model)));
+      return;
+    }
+    if (c && c.status === 'writing') {
+      box.append(h('p', 'sub', `Writing the companion in ${c.total} parts through the Batch API: ${(c.progress || {}).succeeded || 0} done so far.`));
+      return;
+    }
+    const est = await browser.runtime.sendMessage({ type: 'companionEstimate', showKey: g.showKey });
+    if (!est || est.error) {
+      box.append(h('p', 'sub', (est && est.error) || ''));
+      return;
+    }
+    box.append(h('p', 'sub', `A long watch-along of the whole show from episode 1 to the end, as if we'd watched it together: the story, the surprises, the questions it leaves, and the language that carries it woven in, with links to every guide. ${est.parts} parts, about $${est.dollars.toFixed(2)} at half price.`));
+    const go = h('button', 'primary', `Write the companion (about $${est.dollars.toFixed(2)})`);
+    const status = h('p', 'sub');
+    go.addEventListener('click', async () => {
+      go.disabled = true;
+      const res = await browser.runtime.sendMessage({ type: 'companionStart', showKey: g.showKey });
+      status.textContent = res && res.ok ? `Sent ${res.total} parts; they're written within about an hour.` : (res && res.error) || 'Could not start.';
+    });
+    box.append(go, status);
+  }
+
+  async function showEstimate(body, g, finish, est) {
+    est = est || (await browser.runtime.sendMessage({ type: 'finishEstimate', showKey: g.showKey }));
+    const list = finish.episodes || [];
+    const found = list.filter((r) => r.status === 'found' || r.status === 'have').length;
+    const missing = list.filter((r) => r.status !== 'found' && r.status !== 'have');
+    body.append(h('p', '', `Subtitles for ${found} of ${list.length} episodes.` + (missing.length ? ` Missing: ${missing.map((r) => `S${r.season}E${r.episode}`).join(', ')}.` : '')));
+    body.append(h('p', '', `Writing ${est.episodes} lessons with ${SG.modelLabel(est.model).replace(/^Written by /, '')} through the Batch API (half price) costs about $${est.dollars.toFixed(2)}.`));
+    const go = h('button', 'primary', `Write ${est.episodes} lessons (about $${est.dollars.toFixed(2)})`);
+    const status = h('p', 'sub');
+    go.addEventListener('click', async () => {
+      go.disabled = true;
+      const res = await browser.runtime.sendMessage({ type: 'finishStart', showKey: g.showKey });
+      status.textContent = res && res.ok ? `Sent ${res.total} lessons. They're written within about an hour and appear on each episode.` : (res && res.error) || 'Could not start.';
+    });
+    body.append(go, status);
+  }
+
+  // A lesson or guide with links to word and grammar guides, and the scene frames it placed.
+  async function renderLesson(target, text, frameIds, lang, e) {
+    const data = frameIds.length ? await SG.cache.getMany('frames', frameIds).catch(() => new Map()) : new Map();
+    const frames = frameIds.map((id) => (data.get(id) || {}).data || null);
+    const info = new Map(((e && e.frames) || []).map((f) => [f.id, f]));
+    SG.renderGuide(target, text, {
+      known: knownKanji,
+      onLink: (kind, k, label, el) => openLinked(kind, k, label, lang, el),
+      frame: (n) => {
+        const src = frames[n - 1];
+        if (!src) return null;
+        const fig = h('figure', 'lesson-frame');
+        const img = h('img');
+        img.src = src;
+        img.alt = 'The scene';
+        fig.append(img);
+        const f = info.get(frameIds[n - 1]);
+        if (f && f.line) {
+          const cap = h('figcaption', '', f.line);
+          cap.lang = lang;
+          fig.append(cap);
+        }
+        return fig;
+      },
+    });
+  }
+
+  // A link in a lesson or song guide: open that guide here (writing it first if it doesn't exist yet).
+  async function openLinked(kind, k, label, lang, el) {
+    const want = kind === 'g' ? SG.canonicalForm(k.includes('.') ? k : `${lang}.${k}`) : `word.${lang}.${k}`;
+    const have = guides.find((x) => x.k === want);
+    if (have) return show(have);
+    const was = el.textContent;
+    el.classList.add('loading');
+    el.textContent = was + ' (writing its guide…)';
+    const res = await browser.runtime.sendMessage({ type: 'pageGuide', kind, k, label, lang });
+    el.textContent = was;
+    el.classList.remove('loading');
+    if (!res || res.error) {
+      alert((res && res.error) || 'Could not open that guide.');
+      return null;
+    }
+    await load();
+    const now = guides.find((x) => x.k === want) || guides.find((x) => x.name === label);
+    if (now) show(now);
+    return null;
   }
 
   // A song: artwork, where to play it again, and its guide (or how to get one).
@@ -317,7 +496,7 @@
     view.append(head);
     const body = h('article', 'guide');
     if (g.noGuide) body.append(h('p', 'none', 'No guide for this song yet. Play it, open the panel (G) → Song → Write the song guide.'));
-    else SG.renderGuide(body, g.text, { known: new Set(), plain: false });
+    else renderLesson(body, g.text, [], langOf(g) || 'ja', null);
     view.append(body);
     if (!g.noGuide) {
       const tools = h('div', 'tools');

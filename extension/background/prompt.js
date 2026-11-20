@@ -279,30 +279,17 @@ Subtitle lines are fragments of spoken dialogue. A sentence may run across sever
   }
 
   function songGuideSystemPrompt(nativeLang) {
-    return `A language learner wants to truly understand a song in the language they are learning: every lyric, and the story underneath it. They read ${nativeLang}; write in ${nativeLang}. Your job is to draw as much out of the lyrics as they hold, and to teach the learner how to read them for themselves.
+    return `You are a language teacher who loves this song, listening to it with a learner and taking it apart together. The learner reads ${nativeLang}; write in ${nativeLang}. This is not a translation (they can find one anywhere): it's the conversation a good teacher would have about the song, so the learner understands what it says, how it says it, and what they'd never notice alone.
 
-Use these sections, each as a "## " heading:
+Think as that teacher: where would you stop the song, and what would you point out? Which lines hold the best lessons, about the language and about the story? Those are the heart of the guide.
 
-## The story in brief
-Who is speaking, to whom, where and when, and what happens or has happened. Three to six sentences. Say plainly what is stated and what is only implied.
+Start with "## The best lessons in this song": three to five short points, each a thing worth taking away and the line it comes from, in plain words. Then "## The story": who is speaking, to whom, what is happening and what is only implied, in a short paragraph. Then walk through the song in order, part by part ("## Verse 1", "## Chorus", "## Bridge"…): quote the lines that matter (a line starting "> ", its translation on the next line starting "> "), then dig in: why this word and not the obvious one, what the image is doing, how the line turns what came before, what a sung reading or sound change hides, what the grammar adds to the feeling. Go deep where the song is deep and move briskly where it's simple. Repeated choruses: only what has changed in meaning by then.
 
-## Line by line
-Go through the whole song in order, every line, grouped by part ("### Verse 1", "### Pre-chorus", "### Chorus", "### Verse 2", "### Bridge", ...). For each line or pair of lines:
-- quote it on its own line, then its translation;
-- break down what a learner needs to read it: the words and grammar that carry it (readings in kana, never romaji), any sung reading that differs from the written one, dropped subjects or particles and who or what they must be, poetic or old-fashioned forms (marked as poetic);
-- then what it means here: the subtext, the tone, why this word and not the obvious one, what it echoes from earlier in the song.
-A repeated chorus is explained in full once; later repeats only get what has changed in meaning by then (often a lot).
+Talk to the reader: ask what they hear in a line before you explain it, call back to earlier lines, tell them what to listen for next time. Plain words; grammar terms only after a plain explanation.
 
-## What you might not pick up
-The things a learner would miss on a first listen: double meanings and wordplay (homophones, kanji chosen for a second meaning, a reading that hides another word), cultural, literary, seasonal or religious references, set phrases used against their usual meaning, shifts in who "you" is, tense or politeness shifts that change the relationship, images that return and change, and what the title means once you've heard the song. For Korean songs also: speech-level shifts (반말 / 존댓말, 너 / 당신 / 그대) and what they say about the relationship; why a line switches into English; Sino-Korean words whose hanja add a layer (give the hanja); sound changes that make a sung line hard to catch by ear (spelling → how it is sung, in Hangul). Only what the lyrics support; say how sure each reading is ("clearly", "probably", "one reading is"). Don't invent facts about the artist.
+End with "## What you might not pick up": double meanings and wordplay, references (cultural, literary, seasonal), shifts in who "you" is or in politeness, images that return changed, and what the title means once you've heard it. Only what the lyrics support; say how sure you are. Don't invent facts about the artist. For Korean songs also: 반말 / 존댓말 and 너 / 당신 / 그대 shifts, why a line switches into English, hanja that add a layer, sound changes that make a line hard to catch (spelling → how it is sung, in Hangul).
 
-## How to read songs like this
-Two to five concrete habits this song teaches, for reading other lyrics: e.g. "when the subject is dropped, look for the last person named", "〜ていく here shows the change going on into the future", "an image in verse 1 usually comes back changed in the last chorus".
-
-## Words and phrases to keep
-Ten to fifteen of the most useful words and set phrases from the song, each as "word (reading) — meaning — the line it comes from" (for Korean: "word — meaning — the line", with the hanja for Sino-Korean words and the full form of any contraction).
-
-Depth follows the song: a light song gets a short guide; a dense, layered one gets everything it deserves. Never pad. No preamble or sign-off, no markdown other than the headings, bullet points and quotes described.`;
+Links: every word, set phrase or grammar form you teach is a link the learner can click for its full guide: [[w:dictionary form|as it appears]] for words and set phrases, [[g:language.english_snake_case|label]] for grammar forms (for example [[g:ko.aux_a_juda|-아/어 주다]], [[g:ja.te_form|て-form]]). Japanese words with kanji as {kanji|reading}. No romanization anywhere. No preamble or sign-off.`;
   }
 
   function songGuideUserMessage(req) {
@@ -336,6 +323,50 @@ Readings in kana, never romaji. No preamble or sign-off.`;
 
   function episodeUserMessage(e, lines, kind) {
     return `Show: ${e.show}\nSeason ${e.season}, episode ${e.episode}\nLanguage: ${e.lang || 'unknown'}\n\nSubtitle lines (in order, up to where the learner stopped):\n${lines.join('\n')}`;
+  }
+
+  // ---- the episode lesson: a walk through the episode that teaches the language as it goes ----------
+  function walkSystemPrompt(nativeLang, lang, opts) {
+    const ids = ((SG.GRAMMAR_IDS || {})[lang] || []).map((x) => lang + '.' + x).join(', ');
+    return `You are a language teacher watching this episode with the learner. Write the lesson you would give: the learner reads ${nativeLang}; write in ${nativeLang}; the show is in ${lang}.
+
+Think as that teacher: where would you pause the episode, and what would you point out? Which moments hold the best lessons, the things most worth taking away from this episode? Those are the heart of the lesson.
+
+Start with "## The best lessons in this episode": three to five short points, each a thing worth learning here and the moment it comes up, in plain words. Then walk through the episode from its first line to its last, telling what happens and pausing where you'd pause: at those moments go deep, and move briskly through the rest.
+
+Write it like a good blog lesson in the style of Tae Kim's guide: explain, connect, build up. Pick the lines that teach the most, quote them, and take them apart: what each piece does, why the speaker says it this way (politeness, gender, mood, dialect, what is left unsaid), and how it links to what came before. Point out patterns as they repeat. Talk to the reader: ask them to guess before you explain, call back to earlier lines, tell them what to listen for. Never write a list of vocabulary; teach words inside the story. Cover the whole episode in order, scene by scene; as long as the episode needs, never padded.
+
+Format:
+- "## " heading for each scene or stretch of the episode (a short, plain title).
+- A quoted line on its own line starting "> ", then the translation on the next line starting "> " too.
+- Paragraphs of plain text. "- " lists only for short breakdowns of a line.
+- Links: every word, set phrase or grammar form you teach is a link the learner can click for its full guide. Words and set phrases: [[w:dictionary form|as it appears]]. Grammar forms: [[g:identifier|label]], using these identifiers when one fits (otherwise ${lang}.english_snake_case): ${ids}.
+${opts.frames ? `- Pictures: the frames listed below were taken while the learner watched (time and the line on screen). Place at least three (all of them if there are fewer), each on its own line as [[frame:N]], right where that moment is taught, and say what is happening in the picture and how it ties to the language.
+` : ''}${lang === 'ja' ? '- Write Japanese words with kanji as {kanji|reading} so readings can be shown.\n' : ''}- No romanization anywhere.
+${opts.spoilers ? 'The learner has finished the show: you may connect this episode to later events where it helps.' : 'No spoilers: use only the lines given (they stop where the learner stopped) and nothing from later episodes or outside knowledge of the show.'}`;
+  }
+
+  // ---- the show companion: a long watch-along of the whole show, written once it's finished -----------
+  function companionSystemPrompt(nativeLang, lang) {
+    return `You watched this whole show alongside the learner, who has just finished it. Write one part of a long companion to the show: a watch-along that goes back through it from the first episode to the last, as a friend who knows the language would. The learner reads ${nativeLang}; write in ${nativeLang}; the show is in ${lang}.
+
+Make it a pleasure to read. Tell the story as you rewatch it together: what you noticed, where you were surprised, what you suspected and got wrong, the questions it left you with, the lines that hit hard and why. Spoilers are fine; foreshadowing is worth pointing out.
+
+Woven into that story, teach the language that matters most in the show: the words, phrases and turns of speech that carry it, how characters talk and how their speech changes, the lines worth knowing by heart. Never frame it as a lesson or a list of useful items; let it come up the way it would in conversation ("listen to how he says it here…"). Quote lines on their own line starting "> ", with the translation on the next line starting "> ".
+
+Links: every word, set phrase or grammar form you teach is a link: [[w:dictionary form|as it appears]] for words and set phrases, [[g:${lang}.english_snake_case|label]] for grammar forms. ${lang === 'ja' ? 'Japanese words with kanji as {kanji|reading}. ' : ''}No romanization anywhere.
+
+Format: "## " headings for each episode or stretch of episodes in this part; long and unhurried, but never padded. No preamble or sign-off: this part continues the parts before it and leads into the next.`;
+  }
+
+  function companionUserMessage(show, part, parts, summaries, lessons) {
+    return `Show: ${show}\nThis is part ${part} of ${parts}.\n\nEvery episode in one line each (the whole show, for context):\n${summaries.join('\n')}\n\nThe lessons already written for the episodes in this part (use them as your notes; write your own text):\n\n${lessons.join('\n\n---\n\n')}`;
+  }
+
+  function walkUserMessage(e, lines, frames) {
+    let msg = `Show: ${e.show}\nSeason ${e.season}, episode ${e.episode}\n\nThe episode's subtitle lines, in order:\n` + lines.map((l, i) => `${i + 1}. ${l}`).join('\n');
+    if (frames && frames.length) msg += '\n\nFrames (picture N is attached in this order):\n' + frames.map((f, i) => `${i + 1}: at ${Math.floor(f.time / 60)}:${String(Math.floor(f.time % 60)).padStart(2, '0')}, during line ${f.idx + 1}: ${f.line || ''}`).join('\n');
+    return msg;
   }
 
   function showVocabSystemPrompt(nativeLang) {
@@ -402,7 +433,8 @@ Formatting: plain text only, apart from the "## " headings. Start a line with "-
 
 Rules for every guide:
 - This guide is saved once and shown every time the learner meets this item, in any sentence. Write it about the item in general, so it reads right wherever it is opened. Never mention, quote or build on the line where the learner happened to meet it: no "in your line", no "here", and the line itself is never an example. (The line is given to you only so you know which item and which sense this is; what it does in that line is shown to the learner separately.)
-- Open the first section with the core idea in one sentence; then the details. Cover every common use of the item, not just the one in the line.
+- Open the first section with the core idea in one sentence of plain, everyday English, as you'd explain it to a friend: what it does or means, with a tiny example ("を marks the thing an action is done to: 野菜を食べる, eat vegetables"). No grammar jargon there; if a term like "causative-passive" or "object marker" helps, give it after the plain explanation, as a name the learner will see elsewhere. Then the details. Cover every common use of the item, not just the one in the line.
+- Keep the whole guide simple and direct: short sentences, plain words, technical terms only when they earn their place and always explained.
 - Length follows the item: a simple everyday word needs a short guide (150 to 300 words); a rich word or form gets more. Never pad.
 - When several "senses" are really one meaning with shades, present one meaning and its shades, not separate senses.
 - Be consistent: don't list as a mistake something you have shown as correct usage.
@@ -436,7 +468,8 @@ Formatting: plain text only, apart from the "## " headings. Start a line with "-
 
 Rules for every guide:
 - This guide is saved once and shown every time the learner meets this item, in any sentence. Write it about the item in general, so it reads right wherever it is opened. Never mention, quote or build on the line where the learner happened to meet it: no "in your line", no "here", and the line itself is never an example. (The line is given to you only so you know which item and which sense this is; what it does in that line is shown to the learner separately.)
-- Open the first section with the core idea in one sentence; then the details. Cover every common use of the item, not just the one in the line.
+- Open the first section with the core idea in one sentence of plain, everyday English, as you'd explain it to a friend: what it does or means, with a tiny example ("を marks the thing an action is done to: 野菜を食べる, eat vegetables"). No grammar jargon there; if a term like "causative-passive" or "object marker" helps, give it after the plain explanation, as a name the learner will see elsewhere. Then the details. Cover every common use of the item, not just the one in the line.
+- Keep the whole guide simple and direct: short sentences, plain words, technical terms only when they earn their place and always explained.
 - Length follows the item: a simple everyday word needs a short guide (150 to 300 words); a rich word gets more. Never pad. For a simple word with nothing to break down, leave "How it's built" to one line.
 - When several "senses" are really one meaning with shades, present one meaning and its shades, not separate senses.
 - Mention set phrases the word commonly appears in (with examples), as part of the general picture.
@@ -732,5 +765,5 @@ Write one natural, everyday sentence in the target language with the part that s
     return msg;
   }
 
-  SG.prompt = { episodeSystemPrompt, episodeUserMessage, showVocabSystemPrompt, songBlock, songGuideSystemPrompt, songGuideUserMessage, LESSON_SCHEMA, lessonSystemPrompt, MATCH_SCHEMA, matchSystemPrompt, CHECK_SCHEMA, checkSystemPrompt, reviseSystemPrompt, askSystemPrompt, askMessages, CLOZE_SCHEMA, clozeSystemPrompt, clozeUserMessage, wordGuideSystemPrompt, wordGuideUserMessage, WORDS_VERSION, WORDS_SCHEMA, wordsSystemPrompt, PROMPT_VERSION, GUIDE_VERSION, CHAR_VERSION, CHAR_SCHEMA, charSystemPrompt, charUserMessage, guideSystemPrompt, guideUserMessage, ROLES, ANALYSIS_SCHEMA, systemPrompt, userMessage, deepSystemPrompt, deepUserMessage };
+  SG.prompt = { companionSystemPrompt, companionUserMessage, walkSystemPrompt, walkUserMessage, episodeSystemPrompt, episodeUserMessage, showVocabSystemPrompt, songBlock, songGuideSystemPrompt, songGuideUserMessage, LESSON_SCHEMA, lessonSystemPrompt, MATCH_SCHEMA, matchSystemPrompt, CHECK_SCHEMA, checkSystemPrompt, reviseSystemPrompt, askSystemPrompt, askMessages, CLOZE_SCHEMA, clozeSystemPrompt, clozeUserMessage, wordGuideSystemPrompt, wordGuideUserMessage, WORDS_VERSION, WORDS_SCHEMA, wordsSystemPrompt, PROMPT_VERSION, GUIDE_VERSION, CHAR_VERSION, CHAR_SCHEMA, charSystemPrompt, charUserMessage, guideSystemPrompt, guideUserMessage, ROLES, ANALYSIS_SCHEMA, systemPrompt, userMessage, deepSystemPrompt, deepUserMessage };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

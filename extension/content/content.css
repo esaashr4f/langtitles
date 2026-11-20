@@ -1508,3 +1508,8 @@
 .lt-root .sg-myshow-cell:hover .sg-myshow-del, .lt-root .sg-myshow-del:focus-visible { display: inline-flex; }
 .lt-root.sg-touch .sg-myshow-del { display: inline-flex; }
 .lt-root .sg-hint .sg-go { margin-top: 10px; }
+.lt-root .sg-g-link { color: var(--lt-accent); text-decoration: underline; text-decoration-color: rgba(242, 179, 94, 0.4); text-underline-offset: 3px; cursor: pointer; }
+.lt-root .sg-g-link:hover { text-decoration-color: var(--lt-accent); }
+.lt-root .sg-g-quote { margin: 10px 0 2px; padding-left: 12px; border-left: 1px solid var(--sg-line-strong); font-size: 1.08em; }
+.lt-root .sg-g-quote + .sg-g-quote { margin-top: 0; color: var(--sg-soft); font-size: 0.95em; }
+.lt-root .sg-g-h3 { font-size: 0.95em; color: var(--sg-soft); }
