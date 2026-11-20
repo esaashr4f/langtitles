@@ -1499,3 +1499,6 @@
 }
 .lt-root .sg-tapsync-l { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sg-soft); }
 .lt-root .sg-tapsync-b { flex: 0 0 auto; }
+.lt-root .sg-inline-slim { padding: 8px 12px; background: transparent; border-style: dashed; }
+.lt-root .sg-inline-slim .sg-check-line { margin: 0; }
+.lt-root .sg-inline-slim { padding: 0; border: 0; margin: 2px 0 6px; }

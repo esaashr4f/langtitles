@@ -543,6 +543,25 @@
     return score + t.updatedAt / 1e13;
   }
 
+  // Ask for every saved breakdown of a track at once (nothing is bought), so a reload shows them all.
+  function preloadSaved(t) {
+    if (!t || preloaded.has(t.id)) return;
+    preloaded.add(t.id);
+    const song = t.source === 'lyrics' && listenNp ? { track: listenNp.track, artist: listenNp.artist } : undefined;
+    for (let i = 0; i < t.cues.length; i += 400) {
+      const lines = [];
+      for (let j = i; j < Math.min(t.cues.length, i + 400); j++) if (!analyses.has(t.keys[j])) lines.push({ key: t.keys[j], text: t.cues[j].text });
+      if (!lines.length) continue;
+      const reqId = ++reqSeq;
+      savedReqs.add(reqId);
+      post({ type: 'analyze', reqId, lang: t.lang, context: [], lines, song, savedOnly: true });
+      // Never hold the breakdowns up for long if the answer is lost.
+      setTimeout(() => {
+        if (savedReqs.delete(reqId)) pump();
+      }, 8000);
+    }
+  }
+
   function chooseActive() {
     let next = null;
     if (manualPick && tracks.has(manualPick)) next = manualPick;
@@ -569,6 +588,7 @@
       }
       pump();
     }
+    if (activeId) preloadSaved(tracks.get(activeId));
   }
 
   function readTextTracks() {
@@ -684,6 +704,9 @@
   function pump() {
     const t = active();
     if (!video || !shouldAnalyze(t) || Date.now() < pauseUntil) return;
+    // Wait for the saved breakdowns to come back first, so nothing saved is bought again.
+    if (t && !preloaded.has(t.id)) preloadSaved(t);
+    if (savedReqs.size) return;
     // Sites that resume an episode at 8:00 often report 0:00 for a moment first. Wait until the
     // video is really at its position, so lines before it are not prepared.
     if (video.seeking || video.readyState < 2 || (video.currentTime < 0.5 && (video.paused || !video.played.length))) return;
@@ -721,7 +744,9 @@
       const context = t.cues.slice(Math.max(0, first - 3), first).map((c) => c.text);
       const reqId = ++reqSeq;
       const song = t.source === 'lyrics' && listenNp ? { track: listenNp.track, artist: listenNp.artist, lyrics: Array.from(new Set(t.cues.map((c) => c.text))) } : undefined;
-      if (!post({ type: 'analyze', reqId, lang: t.lang, context, lines, song })) break;
+      const force = lines.some((l) => redoKeys.has(l.key));
+      if (!post({ type: 'analyze', reqId, lang: t.lang, context, lines, song, force })) break;
+      for (const l of lines) redoKeys.delete(l.key);
       for (const l of lines) requested.add(l.key);
       pendingReqs.set(reqId, lines.map((l) => l.key));
       inflight++;
@@ -730,6 +755,20 @@
   }
 
   function onAnalyzed(msg) {
+    if (msg.savedOnly) {
+      // Saved breakdowns for the whole episode, loaded at once (free); lines not saved are left for pump().
+      if (!savedReqs.delete(msg.reqId)) return;
+      for (const [key, a] of Object.entries(msg.results || {})) {
+        analyses.set(key, a);
+        savedKeys.add(key);
+        updateTranscriptRow(key);
+      }
+      renderStatus();
+      if (listenMode()) paintSongCoverage();
+      tick();
+      pump();
+      return;
+    }
     const keys = pendingReqs.get(msg.reqId);
     if (!keys) return;
     pendingReqs.delete(msg.reqId);
@@ -1090,6 +1129,24 @@
     const find = h('div', 'sg-pane');
     const findBody = h('div', 'sg-pane-body');
     find.append(findBody);
+    const redo = h('button', 'sg-link sg-redo');
+    redo.hidden = true;
+    redo.title = 'These lines were broken down by an earlier version of Langtitles or another line model. They work as they are; redo them only if you want the newer breakdowns (they are bought again).';
+    redo.addEventListener('click', () => {
+      const t = active();
+      if (!t) return;
+      for (const k of t.keys) {
+        const a = analyses.get(k);
+        if (a && a.older) {
+          analyses.delete(k);
+          savedKeys.delete(k);
+          redoKeys.add(k);
+        }
+      }
+      shownKey = null;
+      renderStatus();
+      pump();
+    });
     const songBox = h('div', 'sg-song');
     const watchOnly = h('div', 'sg-watch-only');
     const showSongsBox = h('div', 'sg-showsongs');
@@ -1101,6 +1158,7 @@
       modeSeg, songBox,
       h('div', 'sg-section', 'Track'), select,
       h('div', 'sg-section', 'Timing'), timing,
+      redo,
       watchOnly,
     );
 
@@ -1235,7 +1293,7 @@
     el.append(head, tabBar, ...tabBodies.values());
     setTab('line');
     return {
-      modeSeg, modeBtns, songBox, el, status, select, offset, hint, showChips, hideBtn, loopBtn, siteBox, classChips, jlptChips, look, setTab,
+      modeSeg, modeBtns, songBox, redo, el, status, select, offset, hint, showChips, hideBtn, loopBtn, siteBox, classChips, jlptChips, look, setTab,
       find, findBody, words, wordsBody, studyBody, studyBtns, guide, guideTitle, guideBody, detail, list, rows: new Map(),
     };
   }
@@ -1573,9 +1631,21 @@
       return;
     }
     let ready = 0;
-    for (const k of t.keys) if (analyses.has(k)) ready++;
+    let fromSaved = 0;
+    let older = 0;
+    for (const k of t.keys) {
+      const a = analyses.get(k);
+      if (!a) continue;
+      ready++;
+      if (savedKeys.has(k)) fromSaved++;
+      if (a.older) older++;
+    }
     const cov = coverage.get(t.id);
-    ui.panel.status.textContent = `${ready}/${t.cues.length} lines ready${inflight ? ' · working' : ''}${cov ? ` · ${cov.pct}% known` : ''} · this episode ${episodeCost > 0 && episodeCost < 0.005 ? 'under $0.01' : '$' + episodeCost.toFixed(2)}`;
+    if (ui.panel.redo) {
+      ui.panel.redo.hidden = !older || !settings.hasKey;
+      ui.panel.redo.textContent = `Redo ${older} line${older === 1 ? '' : 's'} made with an older version`;
+    }
+    ui.panel.status.textContent = `${ready}/${t.cues.length} lines ready${fromSaved ? ` (${fromSaved} saved)` : ''}${inflight ? ' · working' : ''}${cov ? ` · ${cov.pct}% known` : ''} · this episode ${episodeCost > 0 && episodeCost < 0.005 ? 'under $0.01' : '$' + episodeCost.toFixed(2)}`;
     ui.panel.status.title = 'Estimated cost of Claude requests for this video so far, from list prices';
   }
 
@@ -1795,6 +1865,10 @@
 
   // The main loop: decide which line is on screen and draw it when that changes.
   let lyrIdx = -2;
+  const savedReqs = new Set();
+  const savedKeys = new Set(); // lines whose breakdown came from what's saved
+  const preloaded = new Set(); // track ids already asked for their saved breakdowns
+  const redoKeys = new Set(); // lines being redone with the current version
   function tick() {
     if (!ui || !video) return;
     readDomCaption();
@@ -2152,7 +2226,10 @@
     if (target.guide) SG.renderGuide(target.el, target.text, { known: known.ja, plain: !settings.furigana });
     else target.el.textContent = target.text;
     const pl = target.guide && target.cacheKey ? deepPayloads.get(target.cacheKey) : null;
-    if (pl && pl.sentence) target.el.prepend(inThisLine(target, pl));
+    if (pl && pl.sentence) {
+      const box = inThisLine(target, pl, Boolean(ui && ui.pop.contains(target.el)));
+      if (box) target.el.prepend(box);
+    }
     const notes = target.guide && target.cacheKey ? deepNotesList.get(target.cacheKey) || [] : [];
     if (notes.length) {
       const nb = h('div', 'sg-notes');
@@ -2190,14 +2267,26 @@
 
   // "In this line": what the word or form is doing in the line on screen, built from the line breakdown that
   // was already paid for (free). The guide below it is general. A paid check is there only on request.
-  function inThisLine(target, pl) {
-    const box = h('div', 'sg-inline');
-    box.append(h('div', 'sg-g-h', 'In this line'));
-    const line = h('div', 'sg-g-p sg-g-ex', pl.sentence);
-    line.lang = pl.lang || '';
-    box.append(line);
+  // In the hover card the word's meaning, pieces and note are already shown above, so only what's new is
+  // added there (which piece of the word the form is); the panel and reader get the full box.
+  function inThisLine(target, pl, inCard) {
+    const box = h('div', 'sg-inline' + (inCard ? ' sg-inline-slim' : ''));
     const info = pl.line || {};
     const pieces = info.pieces || [];
+    if (inCard) {
+      if (pl.kind === 'guide') {
+        const name = String((pl.form && pl.form.name) || '');
+        const piece = pieces.find((p) => p.t && p.t !== pl.word && name.includes(p.t));
+        if (piece) {
+          const p1 = h('div', 'sg-g-p');
+          p1.append(document.createTextNode('In this line: '), h('b', '', piece.t), document.createTextNode(` on ${pl.word}, ${piece.g}`));
+          box.append(p1);
+        }
+      }
+      lineCheck(target, pl, box);
+      return box.childElementCount ? box : null;
+    }
+    box.append(h('div', 'sg-g-h', 'In this line'));
     if (pl.kind === 'guide') {
       // The piece of the word that is this form (을 in 웃음을), and what the word means here.
       const name = String((pl.form && pl.form.name) || '');
@@ -2214,6 +2303,12 @@
       if (pieces.length > 1) box.append(h('div', 'sg-g-p sg-g-ext', pieces.map((p) => `${p.t} ${p.g}`).join('  +  ')));
     }
     if (info.note) box.append(h('div', 'sg-g-p', info.note));
+    lineCheck(target, pl, box);
+    return box;
+  }
+
+  // The result of a check against this line, or the link to ask for one (a small cost).
+  function lineCheck(target, pl, box) {
     const note = deepNotes.get(target.cacheKey + '|' + sameLineKey(pl.sentence));
     if (note && note.done && note.covered) {
       box.append(h('div', 'sg-g-p sg-g-ext', 'Checked: the guide covers this use.'));
@@ -2233,7 +2328,6 @@
       });
       box.append(odd);
     }
-    return box;
   }
 
   // Shows cached text at once, attaches to a request already streaming, or starts a new one.
@@ -4059,7 +4153,19 @@
   }
 
   // When the site has no subtitles in a language being learned, fetch them from a subtitle site.
+  // The subtitle file chosen before for this episode loads as soon as the page does (no waiting for playback).
+  let savedPickTried = false;
+  async function loadSavedPick() {
+    if (savedPickTried || !video || hasLearningTrack() || !enabled()) return;
+    savedPickTried = true;
+    const ep = await currentEpisode().catch(() => null);
+    if (!ep || !SG.episode.confident(ep)) return;
+    const res = await request({ type: 'autoSubs', episode: ep, langs: wantedLangs(), savedOnly: true });
+    if (res.loaded && res.loaded.track && !hasLearningTrack()) useLoaded(res.loaded, ep, 'auto');
+  }
+
   async function maybeAutoFind() {
+    loadSavedPick();
     if (autoBusy || !settings.autoFind || !enabled() || !settings.hasKey || !(settings.subProviders || []).length) return;
     if (!video || video.paused || playedFor < 6 || hasLearningTrack()) return;
     autoBusy = true;

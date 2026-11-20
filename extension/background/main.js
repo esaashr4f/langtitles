@@ -138,6 +138,42 @@
     return { text, model, cached: false };
   }
 
+  // Every saved breakdown also lives under a version-free key, so updates and model changes never make an
+  // episode get bought again. Lines saved before this existed are found by trying the older versions.
+  const LINE_MODELS = ['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5', 'claude-fable-5-2'];
+  function anyKey(lineKey, song) {
+    return ['any', settings.nativeLang, song ? 'song' : 'sub', lineKey].join('|');
+  }
+  async function savedLines(lines, song) {
+    const out = new Map();
+    if (!lines.length) return out;
+    const fp = fingerprint();
+    const cur = (l) => fp + (song ? '|song' : '') + '|' + l.key;
+    const first = await cache.getMany('lines', lines.flatMap((l) => [cur(l), anyKey(l.key, song)]));
+    let missing = [];
+    for (const l of lines) {
+      const a = first.get(cur(l)) || first.get(anyKey(l.key, song));
+      if (a) out.set(l.key, a.fp && a.fp !== fp ? Object.assign({}, a, { older: true }) : a);
+      else missing.push(l);
+    }
+    // Older versions and other line models (only for lines not found above).
+    for (let v = prompt.PROMPT_VERSION; v >= 1 && missing.length; v--) {
+      const fps = LINE_MODELS.map((m) => [v, m, settings.nativeLang].join('|')).filter((x) => x !== fp);
+      const keys = missing.flatMap((l) => fps.map((f) => f + (song ? '|song' : '') + '|' + l.key));
+      const got = await cache.getMany('lines', keys);
+      const still = [];
+      for (const l of missing) {
+        const hit = fps.map((f) => got.get(f + (song ? '|song' : '') + '|' + l.key)).find(Boolean);
+        if (hit) {
+          out.set(l.key, Object.assign({}, hit, { older: true }));
+          cache.putMany('lines', [[anyKey(l.key, song), Object.assign({ fp: 'older' }, hit)]]).catch(() => {});
+        } else still.push(l);
+      }
+      missing = still;
+    }
+    return out;
+  }
+
   // lines: [{ key, text }]. Resolves to { results: { key: analysis }, error? }.
   async function analyze(req, tabId) {
     await ready;
@@ -145,14 +181,16 @@
     const results = {};
     // Song lines are analysed with the song's own rules (sung readings, poetic forms), so cached apart.
     const fullKey = (l) => fp + (req.song ? '|song' : '') + '|' + l.key;
-    const cached = await cache.getMany('lines', req.lines.map(fullKey));
+    // Saved breakdowns are reused whatever version or line model wrote them (marked "older"); a redo
+    // (req.force) is the only way a saved line is bought again.
+    const saved = req.force ? new Map() : await savedLines(req.lines, Boolean(req.song));
     const pending = [];
     const fresh = [];
     for (const line of req.lines) {
       const k = fullKey(line);
-      if (cached.has(k)) results[line.key] = cached.get(k);
+      if (saved.has(line.key)) results[line.key] = saved.get(line.key);
       else if (inflight.has(k)) pending.push(inflight.get(k).then((a) => a && (results[line.key] = a)));
-      else fresh.push(line);
+      else if (!req.savedOnly) fresh.push(line);
     }
     let error = null;
     if (fresh.length) {
@@ -168,7 +206,7 @@
         fresh.forEach((line, i) => {
           if (!out[i]) return;
           results[line.key] = out[i];
-          store.push([fullKey(line), out[i]]);
+          store.push([fullKey(line), out[i]], [anyKey(line.key, Boolean(req.song)), Object.assign({ fp }, out[i])]);
         });
         cache.putMany('lines', store).catch(() => {});
         lastError = null;
@@ -661,7 +699,7 @@
           if (!analyses || !keys) return;
           analyses.forEach((a, i) => {
             if (a && keys[i]) {
-              store.push([job.fingerprint + '|' + keys[i], a]);
+              store.push([job.fingerprint + '|' + keys[i], a], [anyKey(keys[i], false), Object.assign({ fp: job.fingerprint }, a)]);
               ok++;
             }
           });
@@ -928,6 +966,18 @@
     return n;
   }
 
+  // The file chosen before for this episode, if there is one (no searching), so it loads as soon as the page does.
+  async function savedSubtitle(ep, langs) {
+    for (const lang of langs) {
+      const pick = (await cache.getMany('picks', [SG.episode.key(ep, lang)])).get(SG.episode.key(ep, lang));
+      if (pick) {
+        const loaded = await loadSubtitle(pick.result, ep);
+        return Object.assign(loaded, { reused: true, offset: pick.offset, alternatives: null });
+      }
+    }
+    return { none: true };
+  }
+
   // Automatic loading: a file chosen before for this episode, otherwise the best search result.
   async function autoSubtitle(ep, langs) {
     for (const lang of langs) {
@@ -1023,7 +1073,7 @@
 
     port.onMessage.addListener((msg) => {
       if (msg.type === 'analyze') {
-        analyze(msg, tabId).then((res) => send(port, { type: 'analyzed', reqId: msg.reqId, results: res.results, error: res.error }));
+        analyze(msg, tabId).then((res) => send(port, { type: 'analyzed', reqId: msg.reqId, results: res.results, error: res.error, savedOnly: Boolean(msg.savedOnly) }));
       } else if (msg.type === 'deep') {
         explain(msg, port);
       } else if (msg.type === 'state') {
@@ -1190,7 +1240,7 @@
           );
       } else if (msg.type === 'autoSubs') {
         ready
-          .then(() => autoSubtitle(msg.episode, msg.langs))
+          .then(() => (msg.savedOnly ? savedSubtitle(msg.episode, msg.langs) : autoSubtitle(msg.episode, msg.langs)))
           .then(
             (loaded) => send(port, { type: 'subLoaded', reqId: msg.reqId, loaded, auto: true }),
             (err) => send(port, { type: 'subLoaded', reqId: msg.reqId, error: err.message, auto: true }),
