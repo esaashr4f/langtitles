@@ -24,11 +24,17 @@ test('dictionary lookups, expressions and kanji', async () => {
   assert.match(r.entries[0].s[0][1], /eat/);
   assert.match((await SG.dict.lookup('頑張っていた')).form, /^頑張/);
   assert.strictEqual((await SG.dict.lookup('取り巻く', '取り巻く')).entries[0].r[0], 'とりまく');
-  const words = [{ s: '歯切れ' }, { s: 'が' }, { s: '悪い', d: '悪い' }, { s: 'ようだ' }];
+  const words = [{ s: '歯切れ', r: 'はぎれ' }, { s: 'が' }, { s: '悪い', d: '悪い', r: 'わるい' }, { s: 'ようだ' }];
   const ex = await SG.dict.expressions(words);
   assert.ok(ex.some((e) => e.d === '歯切れが悪い' && e.w.join() === '0,1,2'));
-  const shop = await SG.dict.expressions([{ s: '店' }, { s: 'を' }, { s: '出した', d: '出す' }]);
+  const shop = await SG.dict.expressions([{ s: '店', r: 'みせ' }, { s: 'を' }, { s: '出した', d: '出す', r: 'だした' }]);
   assert.ok(shop.some((e) => e.d === '店を出す'));
+  // 彼の read かれの is "his", not the expression 彼の read あの / かの ("that").
+  const his = await SG.dict.expressions([{ s: '彼', r: 'かれ' }, { s: 'の' }, { s: '言葉', r: 'ことば' }]);
+  assert.ok(!his.some((e) => e.d === '彼の'));
+  // Words that simply add up are not phrases.
+  const plain = await SG.dict.expressions([{ s: '本', r: 'ほん' }, { s: 'を' }, { s: '読む', d: '読む', r: 'よむ' }]);
+  assert.strictEqual(plain.length, 0);
   const k = await SG.dict.kanjiInfo('頑');
   assert.ok(k.on.length && k.st > 0);
 });

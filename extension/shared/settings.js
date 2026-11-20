@@ -50,6 +50,7 @@
     hideKnownPinyin: true, // also hide pinyin over hanzi marked as known
     showRoles: true,
     showPhrases: true,
+    phraseBrackets: false, // brackets over phrases on the subtitle (phrases are always in the word card and Line tab)
     autoAddNotes: false, // add the lesson from each Ask answer to its guides without asking
     matchCheck: true, // check saved guides against new lines (cheap model)
     checkGuides: true, // proofread new guides with the cheap model before saving
@@ -108,7 +109,7 @@
   // Annotations that can be switched on and off while watching (side panel and toolbar popup).
   SG.ANNOTATIONS = [
     { key: 'showMeaning', label: 'Meaning', title: 'What each word means, above it' },
-    { key: 'showPhrases', label: 'Phrases', title: 'One meaning over set phrases, compound particles and endings that belong together (に関して, 歯切れが悪い)' },
+    { key: 'phraseBrackets', label: 'Phrase brackets', title: 'A bracket with one meaning over set phrases and idioms (に関して, 歯切れが悪い). Off: phrases show in the word card (Part of …) and the Line tab only' },
     { key: 'showParts', label: 'Pieces', title: 'The pieces a word is built from, with what each does (x + y + z)' },
     { key: 'furigana', lang: 'ja', label: 'Furigana', title: 'Hiragana over kanji you have not marked known' },
     { key: 'pinyin', lang: 'zh', label: 'Pinyin', title: 'Pinyin over Chinese characters' },

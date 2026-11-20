@@ -52,6 +52,16 @@
 
   // Multi-word expressions in a line that the dictionary knows (歯切れが悪い, 店を出す, に関して):
   // runs of two to four words, the last one in its dictionary form. Returns [{ w: [indexes], d, entry }].
+  // Only real expressions (JMdict "exp"), and only when the entry is read the way the line reads it:
+  // 彼の is an entry read あの / かの ("that"), which is not 彼の read かれの ("his").
+  const KANA = /^[\u3040-\u30ff\u30fc]*$/;
+  const toHira = (t) => String(t || '').replace(/[\u30a1-\u30f6]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+  function readsAs(entry, words) {
+    const parts = words.slice(0, -1).map((w) => (w.r ? w.r : KANA.test(w.s || '') ? w.s : null));
+    if (parts.some((p) => p == null)) return false; // can't tell how the line reads it: don't guess
+    const pre = toHira(parts.join(''));
+    return (entry.r || []).some((r) => toHira(r).startsWith(pre));
+  }
   async function expressions(words) {
     const found = [];
     for (let i = 0; i < words.length; i++) {
@@ -62,7 +72,7 @@
         const last = words[j];
         for (const tail of [last.s, last.d].filter(Boolean)) {
           const form = head + tail;
-          const hit = (await exact(form)).find((e) => e.s.some((x) => /exp|v5|v1|vs|adj/.test(x[0])) || len >= 3);
+          const hit = (await exact(form)).find((e) => e.s.some((x) => /\bexp\b/.test(x[0])) && readsAs(e, words.slice(i, j + 1)));
           if (hit) {
             found.push({ w: Array.from({ length: len }, (_, n) => i + n), d: form, entry: hit });
             break;

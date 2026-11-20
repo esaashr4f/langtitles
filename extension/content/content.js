@@ -1360,7 +1360,7 @@
     c.toggle('sg-no-parts', !settings.showParts);
     c.toggle('sg-no-mean', !settings.showMeaning);
     c.toggle('sg-no-roles', !settings.showRoles);
-    c.toggle('sg-no-phrases', settings.showPhrases === false);
+    c.toggle('sg-no-phrases', !settings.phraseBrackets);
     c.toggle('sg-no-tr', !settings.showTranslation);
     c.toggle('sg-hidden', overlayHidden);
     ui.panel.hideBtn.classList.toggle('sg-on', !overlayHidden);
@@ -2230,6 +2230,8 @@
       const box = inThisLine(target, pl, Boolean(ui && ui.pop.contains(target.el)));
       if (box) target.el.prepend(box);
     }
+    const checkBox = pl && pl.sentence ? h('div', 'sg-linecheck') : null;
+    if (checkBox) lineCheck(target, pl, checkBox);
     const notes = target.guide && target.cacheKey ? deepNotesList.get(target.cacheKey) || [] : [];
     if (notes.length) {
       const nb = h('div', 'sg-notes');
@@ -2245,6 +2247,7 @@
       }
       target.el.append(nb);
     }
+    if (checkBox && checkBox.childElementCount) target.el.append(checkBox);
     const model = target.cacheKey ? deepModels.get(target.cacheKey) : target.model;
     if (target.guide && model) {
       const by = h('div', 'sg-guide-by', SG.modelLabel(model));
@@ -2283,7 +2286,6 @@
           box.append(p1);
         }
       }
-      lineCheck(target, pl, box);
       return box.childElementCount ? box : null;
     }
     box.append(h('div', 'sg-g-h', 'In this line'));
@@ -2303,7 +2305,6 @@
       if (pieces.length > 1) box.append(h('div', 'sg-g-p sg-g-ext', pieces.map((p) => `${p.t} ${p.g}`).join('  +  ')));
     }
     if (info.note) box.append(h('div', 'sg-g-p', info.note));
-    lineCheck(target, pl, box);
     return box;
   }
 

@@ -61,7 +61,7 @@
             cont: { type: 'boolean', description: 'True when the sentence carries on into the next subtitle line.' },
             phrases: {
               type: 'array',
-              description: 'Multi-word units whose meaning belongs to the whole: compound particles, set phrases and idioms, noun + する/とする/にする phrases, clusters of auxiliaries and endings, and split patterns.',
+              description: 'Only multi-word units a learner must learn whole: fixed expressions, or words that mean something different together than added up (compound particles, set phrases, idioms, split patterns, clusters of endings). Never words that simply add up.',
               items: {
                 type: 'object',
                 additionalProperties: false,
@@ -193,7 +193,7 @@ tr: a natural translation, the way a good subtitler would put it.
 chunks: the line split into its meaningful chunks, in order, together covering every word exactly once (from and to are word indexes in w, 0-based). Each chunk gets a short natural gloss for what it means in this sentence (not a dictionary list) and its job. Read in order, the glosses show how the original fits together: 自分など "someone like me" · まだ "still" · 吸血鬼を取り巻く "that circle vampires" · コウモリ程度 "a mere bat-level" · でしかない "am nothing but" · と "…(that)". Particles belong to the chunk they mark.
 build: how the sentence builds from its core outward, three to six steps, each adding one part: t is the text so far, m what it means, why what the added part does and, where useful, why the order differs from ${nativeLang} (a clause before a noun describes it; しか + negative means "only"). For a very short line give one step.
 cont: true when the sentence carries on into the next line (for example it ends in と, が, けど, て, or a clause with no main verb yet).
-phrases: every multi-word unit whose meaning belongs to the whole rather than to its words, so it can be learned and saved as one item:
+phrases: only multi-word units a learner must learn as one item: fixed expressions, or words whose meaning together is different from their meanings added up. Words that simply add up are never a phrase, however often they go together (내게 말해 "tell me", 本を読む "read a book", 彼の言葉 "his words"). For Korean, words separated by a space are separate words unless they form a fixed expression, and a particle belongs to the word it's attached to. Kinds:
   compound particle: に関して "regarding", について, によって, にとって, に対して, として, をめぐって;
   set phrase: 店を出す "open a shop", 実行に移す "put into action", 悪態をつく "curse", 必要とする "need", 気になる, 手を出す;
   idiom: 歯切れが悪い "evasive", 腹が立つ;
