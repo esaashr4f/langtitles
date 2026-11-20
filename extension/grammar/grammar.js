@@ -262,10 +262,55 @@
       const body = h('article', 'guide lesson');
       const lb = h('button', e.walk ? 'done' : '', e.walk ? 'Read the lesson' : 'Write the lesson');
       lb.title = 'A teacher walking through the episode with you, from start to end (written once, then kept)';
+      const write = async (model) => {
+        body.textContent = 'Writing the lesson… It walks through the whole episode, so it takes a minute or two.';
+        const res = await browser.runtime.sendMessage({ type: 'lessonWrite', key: e.key, model });
+        body.textContent = '';
+        if (!res || res.error) {
+          body.textContent = (res && res.error) || 'Could not write it.';
+          return;
+        }
+        e.walk = { text: res.text, model: res.model, frames: res.frames || [] };
+        lb.textContent = 'Read the lesson';
+        await renderLesson(body, res.text, res.frames || [], langOf(g), e);
+        body.append(h('p', 'model', SG.modelLabel(res.model)));
+      };
+      // Before anything is paid: what it costs, with Sonnet, Opus, or half price through the Batch API.
+      const offer = async () => {
+        body.textContent = '';
+        const est = await browser.runtime.sendMessage({ type: 'lessonEstimate', key: e.key });
+        if (!est || est.error) {
+          body.textContent = (est && est.error) || 'Could not estimate the cost.';
+          return;
+        }
+        const S = est.prices['claude-sonnet-5-5'];
+        const O = est.prices['claude-opus-5-5'];
+        const box = h('div', 'cost-choice');
+        box.append(h('p', 'sub', `A lesson for this episode (${est.lines} lines). Typical cost, and the most it can cost:`));
+        const b1 = h('button', 'primary', `Sonnet · about $${S.typical.toFixed(2)} (at most $${S.most.toFixed(2)})`);
+        const b2 = h('button', '', `Opus · about $${O.typical.toFixed(2)} (at most $${O.most.toFixed(2)})`);
+        const b3 = h('button', '', `Sonnet at half price · about $${(S.typical / 2).toFixed(2)}, ready within the hour`);
+        b1.addEventListener('click', () => write('claude-sonnet-5-5'));
+        b2.addEventListener('click', () => write('claude-opus-5-5'));
+        b3.addEventListener('click', async () => {
+          const res = await browser.runtime.sendMessage({ type: 'lessonBatch', key: e.key, model: 'claude-sonnet-5-5' });
+          body.textContent = res && res.ok ? 'Sent at half price. The lesson appears here within about an hour.' : (res && res.error) || 'Could not send it.';
+        });
+        box.append(b1, b2, b3);
+        body.append(box);
+      };
       lb.addEventListener('click', async () => {
         lb.classList.add('on');
-        body.textContent = e.walk ? '' : 'Writing the lesson… It walks through the whole episode, so it takes a minute or two.';
-        const res = e.walk ? { text: e.walk.text, model: e.walk.model, frames: e.walk.frames || [] } : await browser.runtime.sendMessage({ type: 'lessonWrite', key: e.key });
+        if (!e.walk) {
+          if (e.walkBatch) {
+            body.textContent = 'Being written at half price; it appears here within about an hour of sending.';
+            return;
+          }
+          offer();
+          return;
+        }
+        body.textContent = '';
+        const res = { text: e.walk.text, model: e.walk.model, frames: e.walk.frames || [] };
         body.textContent = '';
         if (!res || res.error) {
           body.textContent = (res && res.error) || 'Could not write it.';
@@ -275,6 +320,9 @@
         lb.textContent = 'Read the lesson';
         await renderLesson(body, res.text, res.frames || [], langOf(g), e);
         body.append(h('p', 'model', SG.modelLabel(res.model) + (e.walk.spoilers ? ' · spoilers allowed (show finished)' : '')));
+        const again = h('button', 'redo-link', 'Rewrite this lesson…');
+        again.addEventListener('click', () => offer());
+        body.append(again);
       });
       acts.append(lb);
       if (e.url) {
@@ -510,6 +558,29 @@
       view.append(aBtn, aBody);
     }
     const body = h('article', 'guide');
+    if (!g.noGuide) {
+      // Rewrite (e.g. in the newer format), with the cost up front; the old version goes to history.
+      const redo = h('div', 'cost-choice');
+      const r1 = h('button', '', 'Rewrite with Sonnet (about $0.10)');
+      const r2 = h('button', '', 'Rewrite with Opus (about $0.20)');
+      const go = async (model) => {
+        redo.textContent = 'Rewriting… (a minute or two)';
+        const res = await browser.runtime.sendMessage({ type: 'songGuideRedo', key: g.key, model });
+        if (!res || res.error) {
+          redo.textContent = (res && res.error) || 'Could not rewrite it.';
+          return;
+        }
+        g.text = res.text;
+        g.model = res.model;
+        redo.textContent = '';
+        body.textContent = '';
+        renderLesson(body, res.text, [], langOf(g) || 'ja', null);
+      };
+      r1.addEventListener('click', () => go('claude-sonnet-5-5'));
+      r2.addEventListener('click', () => go('claude-opus-5-5'));
+      redo.append(r1, r2);
+      view.append(redo);
+    }
     if (g.noGuide) body.append(h('p', 'none', 'No guide for this song yet. Play it, open the panel (G) → Song → Write the song guide.'));
     else renderLesson(body, g.text, [], langOf(g) || 'ja', null);
     view.append(body);

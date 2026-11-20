@@ -551,7 +551,20 @@
             else openPanelGuide(wordGuideForm(w, songLang), { sentence: '', lang: songLang }, w, true);
           },
         });
-        if (msg.type === 'songGuideDone' && msg.model) el.append(h('div', 'sg-note', `Written by ${SG.modelLabel(msg.model)}${msg.cached ? ' (saved earlier)' : ''}.`));
+        if (msg.type === 'songGuideDone' && msg.model) {
+          el.append(h('div', 'sg-note', `${SG.modelLabel(msg.model)}${msg.cached ? ' (saved earlier)' : ''}.`));
+          if (msg.cached && listenNp && active()) {
+            const t = active();
+            const again = h('button', 'sg-link', 'Rewrite this guide (Sonnet, about $0.10)');
+            again.addEventListener('click', () => {
+              el.textContent = 'Rewriting…';
+              const reqId = 'sg' + ++reqSeq;
+              songGuideTargets.set(reqId, el);
+              post({ type: 'songGuide', reqId, again: true, model: 'claude-sonnet-5-5', track: listenNp.track, artist: listenNp.artist, album: listenNp.album, art: listenNp.art, url: listenNp.url, lang: t.lang, lyrics: t.cues.map((c) => c.text) });
+            });
+            el.append(again);
+          }
+        }
       }
     } else if (['showsFound', 'tabInfo', 'subsFound', 'subLoaded', 'charInfo', 'bankSaved', 'bankStatus', 'stroke', 'episodeWords', 'pitch', 'seasonStarted', 'seasonJobs', 'showChoice', 'qaList', 'noteAdded', 'showSaved', 'dictCard', 'lyrics'].includes(msg.type)) {
       const cb = subReqs.get(msg.reqId);

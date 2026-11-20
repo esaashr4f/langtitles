@@ -128,7 +128,42 @@
 
   // The episode lesson: a walk through the episode, teaching the language as it goes. Spoiler-free unless
   // the show is marked finished.
-  async function writeWalk(key, settings, again, onText) {
+  const PRICES = { 'claude-opus-5-5': [4, 20], 'claude-sonnet-5-5': [2, 10], 'claude-haiku-5-5': [0.1, 0.5], 'claude-fable-5-2': [8, 40] };
+  // What one lesson costs: typical and at most (the length is capped at 16,000 tokens of text).
+  async function lessonEstimate(key, settings) {
+    const e = (await cache().getMany('episodes', [key])).get(key);
+    if (!e) return { error: 'That episode is no longer saved.' };
+    const meta = await showMeta(e.showKey);
+    const spoilers = Boolean(meta.finished || (meta.finishedSeasons || []).includes(e.season));
+    const lines = spoilers ? e.lines || [] : watchedLines(e);
+    const input = lines.join('\n').length / 1.6 + 2500 + Math.min(12, (e.frames || []).length) * 120;
+    const out = {};
+    for (const m of ['claude-sonnet-5-5', 'claude-opus-5-5']) {
+      const [pi, po] = PRICES[m];
+      out[m] = { typical: Math.round(((input * pi + 9000 * po) / 1e6) * 100) / 100, most: Math.round(((input * pi + 16000 * po) / 1e6) * 100) / 100 };
+    }
+    return { lines: lines.length, prices: out };
+  }
+
+  // One lesson through the Batch API (half price, usually ready within the hour); collected by pollFinish.
+  async function walkBatch(key, settings, model) {
+    const e = (await cache().getMany('episodes', [key])).get(key);
+    if (!e) return { error: 'That episode is no longer saved.' };
+    const meta = await showMeta(e.showKey);
+    const spoilers = Boolean(meta.finished || (meta.finishedSeasons || []).includes(e.season));
+    const lines = spoilers ? e.lines || [] : watchedLines(e);
+    if (lines.length < 5) return { error: 'Not enough of this episode has been watched with subtitles yet.' };
+    const frames = await framesFor(e, lines.length);
+    const s = Object.assign({}, settings, { model });
+    const lang = String(e.lang || 'ja').slice(0, 2);
+    const params = SG.claude.plainParams(SG.claude.lessonParams(s, SG.prompt.walkSystemPrompt(settings.nativeLang, lang, { spoilers, frames: frames.length > 0 }), SG.prompt.walkUserMessage(e, lines, frames), frames.map((f) => f.data)));
+    const batch = await SG.claude.batchCreate(s, [{ custom_id: 'one', params }]);
+    e.walkBatch = { batchId: batch.id, model, spoilers, frames: frames.map((f) => f.id), sent: Date.now() };
+    await cache().putMany('episodes', [[key, e]]);
+    return { ok: true };
+  }
+
+  async function writeWalk(key, settings, again, onText, model) {
     const e = (await cache().getMany('episodes', [key])).get(key);
     if (!e) return { error: 'That episode is no longer saved.' };
     if (!again && e.walk) return { text: e.walk.text, model: e.walk.model, frames: e.walk.frames || [], cached: true };
@@ -137,7 +172,7 @@
     const lines = spoilers ? e.lines || [] : watchedLines(e);
     if (lines.length < 5) return { error: 'Not enough of this episode has been watched with subtitles yet.' };
     const frames = await framesFor(e, lines.length);
-    const model = SG.modelFor(settings, 'lessons');
+    model = model || SG.modelFor(settings, 'lessons');
     const s = Object.assign({}, settings, { model, costFeature: 'lessons', costShow: e.show });
     const lang = String(e.lang || 'ja').slice(0, 2);
     const P = SG.prompt;
@@ -325,6 +360,14 @@
 
   // Check running whole-show batches and save the lessons that are done.
   async function pollFinish(settings) {
+    for (const e of (await cache().getAll('episodes')).filter((x) => !x.meta && x.walkBatch)) {
+      const b = await SG.claude.batchRetrieve(settings, e.walkBatch.batchId).catch(() => null);
+      if (!b || b.processing_status !== 'ended') continue;
+      const texts = await SG.claude.batchTexts(settings, e.walkBatch.batchId).catch(() => ({}));
+      if (texts.one) e.walk = { text: SG.guideText ? SG.guideText.stripRomaji(texts.one) : texts.one, model: e.walkBatch.model, at: Date.now(), spoilers: e.walkBatch.spoilers, frames: e.walkBatch.frames, batch: true };
+      delete e.walkBatch;
+      await cache().putMany('episodes', [[e.key, e]]);
+    }
     const companions = (await cache().getAll('episodes')).filter((m) => m.meta && m.companion && m.companion.status === 'writing' && m.companion.batchId);
     for (const meta of companions) {
       const b = await SG.claude.batchRetrieve(settings, meta.companion.batchId).catch(() => null);
@@ -362,5 +405,5 @@
     }
   }
 
-  SG.episodes = { companionPlan, startCompanion, saveFrame, getFrames, captureTab, epKey, seen, addFrame, all, write, writeWalk, showVocab, showMeta, finishShow, estimate, startFinishBatch, pollFinish };
+  SG.episodes = { lessonEstimate, walkBatch, companionPlan, startCompanion, saveFrame, getFrames, captureTab, epKey, seen, addFrame, all, write, writeWalk, showVocab, showMeta, finishShow, estimate, startFinishBatch, pollFinish };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

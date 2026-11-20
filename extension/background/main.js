@@ -124,7 +124,7 @@
       if (have && have.text) return { text: have.text, model: have.model, cached: true };
     }
     if (!settings.apiKey) return { error: 'Add your Anthropic API key in Options first.' };
-    const model = SG.modelFor(settings, 'songGuides');
+    const model = req.model || SG.modelFor(settings, 'songGuides');
     let sofar = '';
     const raw = await claude.songGuide(forTab(null), Object.assign({ model }, req), (d) => {
       sofar += d;
@@ -863,6 +863,17 @@
     return entry;
   }
 
+  // Rewrite a saved song guide from the Library: its lyrics come from the song's saved choice or LRCLIB.
+  async function songGuideRedo(key, model) {
+    const g = (await cache.getMany('guides', [key])).get(key);
+    if (!g || !g.song) return { error: 'That song guide is no longer saved.' };
+    const np = { track: g.song.track, artist: g.song.artist, album: g.song.album || '' };
+    const found = await SG.music.find(np);
+    if (!found.track) return { error: (found.error || 'No lyrics found') + ' Open the song and use Song → Rewrite instead.' };
+    await cache.putMany('history', [[key + '|' + Date.now(), Object.assign({}, g, { retiredAt: Date.now() })]]);
+    return songGuide(Object.assign({}, np, { art: g.song.art, url: g.song.url, lang: g.lang, lyrics: found.track.cues.map((c) => c.text), again: true, model }));
+  }
+
   // A guide opened from a page (a link in a lesson or song guide): the saved one, or written now.
   function pageGuide(msg) {
     return new Promise((resolve) => {
@@ -1380,7 +1391,10 @@
     if (msg.type === 'framesGet') return SG.episodes.getFrames(msg.ids || []);
     if (msg.type === 'artistGuide') return ready.then(() => artistGuide(msg.artist, msg.again)).catch((err) => ({ error: err.message }));
     if (msg.type === 'pageGuide') return ready.then(() => pageGuide(msg)).catch((err) => ({ error: err.message }));
-    if (msg.type === 'lessonWrite') return ready.then(() => SG.episodes.writeWalk(msg.key, settings, msg.again)).catch((err) => ({ error: err.message }));
+    if (msg.type === 'lessonWrite') return ready.then(() => SG.episodes.writeWalk(msg.key, settings, msg.again, null, msg.model)).catch((err) => ({ error: err.message }));
+    if (msg.type === 'lessonEstimate') return ready.then(() => SG.episodes.lessonEstimate(msg.key, settings));
+    if (msg.type === 'lessonBatch') return ready.then(() => SG.episodes.walkBatch(msg.key, settings, msg.model)).catch((err) => ({ error: err.message }));
+    if (msg.type === 'songGuideRedo') return ready.then(() => songGuideRedo(msg.key, msg.model)).catch((err) => ({ error: err.message }));
     if (msg.type === 'showMeta') return SG.episodes.showMeta(msg.showKey);
     if (msg.type === 'finishShow') return ready.then(() => SG.episodes.finishShow(msg.showKey, msg.plan, settings, msg.langs && msg.langs.length ? msg.langs : (settings.learning || ['ja']), msg.scope || null)).catch((err) => ({ error: err.message }));
     if (msg.type === 'finishEstimate') return ready.then(() => SG.episodes.estimate(msg.showKey, settings));

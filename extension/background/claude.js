@@ -226,7 +226,7 @@
   // An episode lesson: text plus the frames as small images (about a hundred tokens each), so the lesson
   // can say what is happening in the picture. Returns the params so the Batch API can use the same request.
   function lessonParams(settings, system, user, images) {
-    const params = baseParams(settings, 32000, settings.model);
+    const params = baseParams(settings, settings.maxTokens || 16000, settings.model);
     if (settings.effort) params.output_config.effort = settings.effort === 'low' ? 'medium' : settings.effort;
     params.system = system;
     const content = [];

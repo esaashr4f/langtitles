@@ -25,8 +25,8 @@
       episodeWords: 'claude-sonnet-5-5',
       review: 'claude-sonnet-5-5',
       ask: 'claude-sonnet-5-5',
-      songGuides: 'claude-opus-5-5',
-      lessons: 'claude-opus-5-5',
+      songGuides: 'claude-sonnet-5-5',
+      lessons: 'claude-sonnet-5-5',
     },
     siteMode: {}, // host -> 'watch' | 'listen', set with the panel's switch
     lyricsSize: 'sheet', // Listen mode on music sites: 'strip' | 'sheet' | 'focus'

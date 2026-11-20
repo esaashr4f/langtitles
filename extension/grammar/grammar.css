@@ -121,3 +121,6 @@ nav a small { display: inline; flex: 0 0 auto; }
 
 .companion { margin-top: 18px; }
 .companion h3 { margin: 0 0 8px; font-size: 16px; }
+
+.cost-choice { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0; }
+.cost-choice .sub { width: 100%; margin: 0; }
