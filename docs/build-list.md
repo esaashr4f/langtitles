@@ -274,7 +274,33 @@ subtitles) is in docs/music-mode.md. Build in this order:
 - [x] Tests for LRC / enhanced LRC parsing, LRCLIB matching, chorus counts, video titles, MAL theme lines.
 - [ ] Adapter tests against saved page snapshots.
 
-## 14. Requested after 0.5.1 (not built yet: wait for "build")
+## 14. Requested after 0.5.1: built in 0.6.0
+
+Done in 0.6.0 (everything in this section except where noted):
+- Guides: written in general; "In this line" built free from the line breakdown (in the hover card only what the
+  card doesn't already show); no paid check or automatic additions on reopen (a check only on request, at the
+  bottom of the guide); plain-English openings; one guide per form (Korean name matching, word guides by the
+  dictionary headword, duplicates merged once); 25 built-in Korean grammar guides (Korean guides written from one
+  line swapped for them, notes kept); Check my guides tidies per-line notes for free and flags guides written
+  around one line; guide reuse counts in Progress. Note: the guide version was already fixed at 1, so updates
+  never made guides look missing; the real causes were the per-line checks and the name variations.
+- Subtitles: every saved breakdown loads at once (nothing is requested until they're in); saved breakdowns are
+  reused across versions and line models, marked older, with a Redo button; the subtitle file chosen for an
+  episode loads as soon as the page does.
+- Phrases: only fixed expressions or words that mean something different together; Korean spacing respected;
+  dictionary phrases must match the line's reading; no brackets over the subtitle by default (a switch in Look).
+- My shows: remove from the panel and from Library → Shows. YouTube: the overlay fits the visible player; songs
+  get a Listen offer.
+- Lessons: one teacher-style lesson per episode (best lessons first, then a walk through the whole episode,
+  links to every guide, frames taken about once a minute while watching); "I've finished this show" / "this
+  season" (same subtitle source, at most 20 downloads a minute, lessons at half price through the Batch API,
+  cost shown first); a long show companion once the lessons are written. The show vocabulary guide stays.
+- Song guides: a dissection with the best lessons first, links, and K-pop concept notes.
+- Listen extras: lyrics from Spotify's / Apple Music's own lyrics view as a fallback (untested on the live
+  sites), karaoke highlight from word timings, shadowing (M), song review cards with artwork and Play from,
+  an artist overview in the Library.
+- Not done: Chinese name matching and built-in Chinese guides (left for later, as asked).
+
 
 ### Don't pay twice for the same subtitles
 - [~] Already there: every line breakdown is saved in the browser (IndexedDB), keyed by the line and the line
