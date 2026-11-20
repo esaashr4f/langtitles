@@ -244,7 +244,8 @@
         vBody.append(h('p', 'model', SG.modelLabel(res.model) + (res.cached ? ' · saved earlier' : '')));
       }
     });
-    // The old word-list "vocabulary guide" is gone: the lessons and the show companion teach in context.
+    vocab.append(vBtn, vBody);
+    view.append(vocab);
     view.append(finishedBlock(g));
 
     const list = h('div', 'eps');
