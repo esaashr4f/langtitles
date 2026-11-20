@@ -516,3 +516,26 @@ on phones today: the streaming services the user already subscribes to, their ow
   (section 15) keeps the cost per subscriber low, which is what makes a subscription price work.
 - [ ] Shared core: line breakdowns, guides, word bank, review and backups moved into one module used by the
   extensions and the apps (likely a cross-platform app: React Native or similar, with a native web view).
+
+## 17. More languages (future; not now)
+
+Ranked by how much good media there is to learn from (film, TV, music, and how easy subtitles are to find):
+
+1. **Russian:** a huge film and TV catalogue, plenty of subtitles, big music scene.
+2. **Arabic (regional varieties):** Egyptian first (the largest film / TV / music output; Ramadan series), then
+   Levantine (Syrian / Lebanese drama), Gulf (Khaleeji TV), Maghrebi (Moroccan / Algerian / Tunisian).
+   Catch: subtitles are usually in Modern Standard Arabic while people speak dialect; right-to-left layout.
+3. **Thai:** lakorn dramas, very popular series (including BL), T-pop; good subtitle supply.
+   Catch: no spaces between words (needs word splitting), tones.
+4. **Cantonese:** Hong Kong cinema and TVB drama, Cantopop. Catch: subtitles are often written in standard
+   Chinese rather than spoken Cantonese; readings in jyutping.
+5. **Indonesian:** sinetron, a growing film industry, streaming originals, music.
+6. **Tagalog / Filipino:** teleserye dramas, films, OPM; lots of Taglish (code-switching with English).
+7. **Vietnamese:** films, V-pop, growing streaming output. Catch: tones and many short words.
+8. **Kazakh:** smaller output, some film and Q-pop; much media is in Russian. Cyrillic, moving to Latin script.
+9. **Uzbek:** Uzbekfilm and music; fewer subtitles. Latin and Cyrillic both in use.
+10. **Mongolian:** small output, some film and music. Cyrillic.
+11. **Khmer:** small output, limited subtitles. Catch: no spaces between words.
+
+Each needs: a dictionary (Wiktionary extracts from kaikki.org cover most of these), word splitting where there
+are no spaces (Thai, Khmer), right-to-left support (Arabic), readings / romanisation choices per language.
