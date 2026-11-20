@@ -87,6 +87,22 @@
       box.append(document.createTextNode(c.sentence.slice(0, at)), h('mark', '', target), document.createTextNode(c.sentence.slice(at + target.length)));
     } else box.textContent = c.sentence;
     if (c.frame) box.append(SG.frameImg(c.frame));
+    if (c.art) {
+      const img = h('img', 'scene art');
+      img.src = c.art;
+      img.alt = '';
+      img.referrerPolicy = 'no-referrer';
+      box.append(img);
+    }
+    if (c.url && /^https?:/.test(c.url) && c.time != null) {
+      const go = h('a', 'play-from', `${c.song ? 'Play' : 'Watch'} from ${Math.floor(c.time / 60)}:${String(Math.floor(c.time % 60)).padStart(2, '0')}`);
+      go.href = '#';
+      go.addEventListener('click', (e) => {
+        e.preventDefault();
+        browser.runtime.sendMessage({ type: 'openAt', url: c.url, time: c.time });
+      });
+      box.append(go);
+    }
     return box;
   }
 

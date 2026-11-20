@@ -844,6 +844,25 @@
   }
 
   // Rewrites a saved guide (Library → Check my guides). The old version goes to history; notes are kept.
+  // An artist overview: recurring words, themes and style across the songs you've studied by them,
+  // written from their song guides (Sonnet by default), kept until there are new songs.
+  async function artistGuide(artist, again) {
+    const songs = (await cache.getAll('guides')).filter((g) => g.kind === 'song' && g.song && (g.song.artist || '').toLowerCase() === String(artist || '').toLowerCase());
+    if (!songs.length) return { error: 'Write a song guide for one of their songs first.' };
+    const store = (await browser.storage.local.get('artistGuides')).artistGuides || {};
+    const have = store[artist.toLowerCase()];
+    if (have && !again && have.songs === songs.length) return have;
+    if (!settings.apiKey) return { error: 'Add your Anthropic API key in Options first.' };
+    const s = Object.assign({}, settings, { model: SG.modelFor(settings, 'wordGuides'), costFeature: 'music' });
+    const system = `A learner studies songs by one artist in the language they're learning. From the guides to the songs below, write a short, lively overview in ${settings.nativeLang}: the words and phrases this artist keeps coming back to (as links: [[w:dictionary form|as written]]), the themes and images that recur, how the songs talk (politeness, persona, mixing in English), and which of these songs to study next for the most new language. "## " headings, plain words, no romanization, nothing invented about the artist beyond the songs.`;
+    const user = songs.map((g) => `### ${g.song.track}\n${String(g.text).slice(0, 6000)}`).join('\n\n');
+    const text = await claude.streamPlain(s, system, `Artist: ${artist}\n\n${user}`, 6000);
+    const entry = { text: SG.guideText.stripRomaji(text), model: s.model, at: Date.now(), songs: songs.length };
+    store[artist.toLowerCase()] = entry;
+    await browser.storage.local.set({ artistGuides: store });
+    return entry;
+  }
+
   // A guide opened from a page (a link in a lesson or song guide): the saved one, or written now.
   function pageGuide(msg) {
     return new Promise((resolve) => {
@@ -1359,6 +1378,7 @@
     if (msg.type === 'phraseCandidates') return ready.then(phraseCandidates).catch((err) => ({ error: err.message }));
     if (msg.type === 'convertPhrase') return ready.then(() => convertToPhrase(msg.key, msg.phrase, msg.meaning, msg.reading)).catch((err) => ({ error: err.message }));
     if (msg.type === 'framesGet') return SG.episodes.getFrames(msg.ids || []);
+    if (msg.type === 'artistGuide') return ready.then(() => artistGuide(msg.artist, msg.again)).catch((err) => ({ error: err.message }));
     if (msg.type === 'pageGuide') return ready.then(() => pageGuide(msg)).catch((err) => ({ error: err.message }));
     if (msg.type === 'lessonWrite') return ready.then(() => SG.episodes.writeWalk(msg.key, settings, msg.again)).catch((err) => ({ error: err.message }));
     if (msg.type === 'showMeta') return SG.episodes.showMeta(msg.showKey);

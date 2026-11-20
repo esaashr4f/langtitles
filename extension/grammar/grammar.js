@@ -495,6 +495,20 @@
     names.append(meta);
     head.append(names);
     view.append(head);
+    if (x.artist) {
+      const aBtn = h('button', '', `About ${x.artist}'s songs`);
+      aBtn.title = 'Recurring words, themes and style across the songs you have studied by this artist';
+      const aBody = h('article', 'guide lesson');
+      aBtn.addEventListener('click', async () => {
+        aBtn.disabled = true;
+        aBody.textContent = 'Writing…';
+        const res = await browser.runtime.sendMessage({ type: 'artistGuide', artist: x.artist });
+        aBody.textContent = '';
+        if (!res || res.error) aBody.textContent = (res && res.error) || 'Could not write it.';
+        else renderLesson(aBody, res.text, [], langOf(g) || 'ko', null);
+      });
+      view.append(aBtn, aBody);
+    }
     const body = h('article', 'guide');
     if (g.noGuide) body.append(h('p', 'none', 'No guide for this song yet. Play it, open the panel (G) → Song → Write the song guide.'));
     else renderLesson(body, g.text, [], langOf(g) || 'ja', null);

@@ -103,7 +103,19 @@
   // YouTube Music's own lyrics (licensed, usually not timed), from its Lyrics tab. The tab only loads
   // its text once opened, so this opens it if needed and waits a moment.
   async function pageLyrics() {
-    if (kind() !== 'ytmusic') return null;
+    const k = kind();
+    if (k === 'spotify' || k === 'apple') {
+      // Their own lyrics view, when it's open (Spotify: the microphone button; Apple Music: the lyrics button).
+      const sels = k === 'spotify'
+        ? ['[data-testid="fullscreen-lyric"]', '[data-testid="lyrics-line"]', '.lyrics-lyricsContent-lyric']
+        : ['.lyrics__line', '.lyric-line', '[data-testid="lyric-line"]'];
+      for (const sel of sels) {
+        const lines = Array.from(document.querySelectorAll(sel)).map((el) => el.textContent.trim()).filter(Boolean);
+        if (lines.length > 2) return lines.join('\n');
+      }
+      return null;
+    }
+    if (k !== 'ytmusic') return null;
     const read = () => {
       for (const sel of [
         'ytmusic-description-shelf-renderer[page-type="MUSIC_PAGE_TYPE_TRACK_LYRICS"] .description',

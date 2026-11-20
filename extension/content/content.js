@@ -256,7 +256,8 @@
       if (listenKey !== key) return;
       if (res.track) useLyrics(res, 'auto');
       else {
-        // YouTube Music has licensed lyrics for most songs LRCLIB lacks (much K-pop), usually not timed.
+        // The site's own lyrics (YouTube Music's tab; Spotify's or Apple's lyrics view when open), usually
+        // licensed and often covering songs LRCLIB lacks (much K-pop); usually not timed.
         const own = await SG.listen.pageLyrics().catch(() => null);
         if (own && listenKey === key) {
           const got = await request({ type: 'lyricsOwn', text: own, np, from: 'page' });
@@ -290,6 +291,66 @@
     listenNote = `Lyrics from ${from}${res.track.synced ? '' : ', not timed yet'}${t.offset ? `, timing ${t.offset > 0 ? '+' : ''}${t.offset.toFixed(2)} s` : ''}`;
     showToast(`${listenNp ? listenNp.track : 'Song'}: ${listenNote}.`);
     renderSong();
+  }
+
+  // Karaoke: with word timings (enhanced LRC), the words sung so far light up.
+  function paintSung(cue, now) {
+    let sung = 0;
+    for (const w of cue.words) if (w.start != null && w.start <= now) sung += w.text.length;
+    else if (w.start == null) sung += w.text.length;
+    let pos = 0;
+    const lineText = cue.text;
+    for (const tok of ui.line.querySelectorAll('.sg-tok, .sg-gap')) {
+      const surf = tok.querySelector('.sg-surf');
+      const s = surf ? surf.textContent.replace(/\s+/g, '') : '';
+      const at = lineText.indexOf(s, pos);
+      if (at >= 0) pos = at + s.length;
+      tok.classList.toggle('sg-sung', s.length > 0 && at >= 0 && at + s.length <= sung + 1);
+    }
+  }
+
+  // Shadowing: hear the line, say or sing it back (recorded on this computer only), then hear both.
+  let shadowing = false;
+  async function shadowLine() {
+    const t = active();
+    const cue = t && shownIndex >= 0 ? t.cues[shownIndex] : null;
+    if (!cue || !video || shadowing) return;
+    shadowing = true;
+    const wait = (ms) => new Promise((res) => setTimeout(res, ms));
+    const len = Math.max(1.5, cue.end - cue.start) * 1000;
+    const playLine = async () => {
+      video.currentTime = cue.start + t.offset;
+      await video.play().catch(() => {});
+      await wait(len);
+      video.pause();
+    };
+    let stream = null;
+    try {
+      showToast('Listen…');
+      await playLine();
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(stream);
+      const chunks = [];
+      rec.ondataavailable = (e) => chunks.push(e.data);
+      const stopped = new Promise((res) => (rec.onstop = res));
+      showToast('Your turn: say or sing the line now.');
+      rec.start();
+      await wait(len + 800);
+      rec.stop();
+      await stopped;
+      showToast('The original, then you.');
+      await playLine();
+      const url = URL.createObjectURL(new Blob(chunks, { type: rec.mimeType || 'audio/webm' }));
+      const audio = new Audio(url);
+      await audio.play().catch(() => {});
+      await new Promise((res) => (audio.onended = res));
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      showToast("Couldn't use the microphone: " + (e.message || e.name) + '. Allow it for this site to shadow lines.');
+    } finally {
+      if (stream) stream.getTracks().forEach((x) => x.stop());
+      shadowing = false;
+    }
   }
 
   // The lines around the current one, for the lyrics sheet (one above, two below).
@@ -1073,6 +1134,8 @@
     ctl('rotate-ccw', 'Replay slow', 'S', () => replayLine(false));
     const loopBtn = ctl('repeat', 'Loop', 'L', () => replayLine(true));
     ctl('skip-forward', 'Next', 'D', () => seekToCue(1));
+    const shadowBtn = ctl('mic', 'Shadow', 'M', () => shadowLine());
+    shadowBtn.classList.add('sg-ctl-listen');
     tabBodies.get('line').append(hint, guide, detail, controls);
 
     // ---- Transcript
@@ -1944,6 +2007,7 @@
       lyrIdx = idx;
       paintLyricsAround(t, idx, now);
     }
+    if (t.source === 'lyrics' && idx >= 0 && t.cues[idx].words) paintSung(t.cues[idx], now);
     if (idx === -1) {
       // Stay on the line while the viewer is studying it.
       if (popFor || (autoPaused && video.paused)) return;
@@ -2846,6 +2910,12 @@
     if (!ui || !video || !enabled() || e.ctrlKey || e.metaKey || e.altKey || isEditable(e.target)) return;
     if (!active() && e.key.toLowerCase() !== 'g') return;
     const key = e.key.toLowerCase();
+    if (key === 'm' && listenMode() && !e.shiftKey) {
+      shadowLine();
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     if (tapSync && key === 't') {
       tapSync.mark();
       e.preventDefault();
@@ -3346,10 +3416,13 @@
     } catch (e) {
       /* the line is still worth saving without the show's name */
     }
-    const frame = await saveFrame();
+    const song = listenMode() && listenNp ? listenNp : null;
+    if (song) show = `${song.track}${song.artist ? ' — ' + song.artist : ''}`;
+    const frame = song ? null : await saveFrame();
     return {
       sentence: ctx.sentence, translation: ctx.translation || '', show, url: tabUrl || location.href,
       time: Math.max(0, Math.round((ctx.time || 0) * 10) / 10), savedAt: Date.now(), frame: frame ? frame.id : undefined,
+      art: song && song.art ? song.art : undefined, song: song ? true : undefined,
     };
   }
 

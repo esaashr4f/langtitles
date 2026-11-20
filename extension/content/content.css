@@ -1513,3 +1513,8 @@
 .lt-root .sg-g-quote { margin: 10px 0 2px; padding-left: 12px; border-left: 1px solid var(--sg-line-strong); font-size: 1.08em; }
 .lt-root .sg-g-quote + .sg-g-quote { margin-top: 0; color: var(--sg-soft); font-size: 0.95em; }
 .lt-root .sg-g-h3 { font-size: 0.95em; color: var(--sg-soft); }
+
+/* Karaoke: words already sung */
+.lt-root .sg-tok.sg-sung .sg-surf { color: var(--lt-accent); }
+/* Shadowing only in Listen mode */
+.lt-root:not(.lt-listen) .sg-ctl-listen { display: none; }
