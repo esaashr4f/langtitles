@@ -82,9 +82,11 @@
     const note = (await browser.storage.local.get('libraryFixNote')).libraryFixNote;
     const fixBox = $('fixNote');
     if (note && fixBox && !note.seen) {
-      const s = note.summary.reduce((a, x) => ({ added: a.added + x.added, retired: a.retired + x.retired }), { added: 0, retired: 0 });
+      const s = (note.summary || []).reduce((a, x) => ({ added: a.added + x.added, retired: a.retired + x.retired }), { added: 0, retired: 0 });
       fixBox.hidden = false;
-      fixBox.textContent = `Your guides were updated: ${s.added} rewritten or new guides (phrases saved as phrases, grammar as grammar), ${s.retired} replaced. Old versions are kept.`;
+      fixBox.textContent = note.merged
+        ? `${note.merged} guide${note.merged === 1 ? ' was a duplicate' : 's were duplicates'} of another (the same form under a different name) and ${note.merged === 1 ? 'has' : 'have'} been merged; your notes and the lines you met them in are kept, and old versions are in history.`
+        : `Your guides were updated: ${s.added} rewritten or new guides (phrases saved as phrases, grammar as grammar), ${s.retired} replaced. Old versions are kept.`;
       const ok = document.createElement('button');
       ok.textContent = 'OK';
       ok.addEventListener('click', () => {
@@ -354,9 +356,10 @@
     let enc = null;
     if (Array.isArray(g.encounters) && g.encounters.length) {
       enc = h('details', 'encounters');
-      enc.append(h('summary', '', `Met in ${g.encounters.length + (g.sentence ? 1 : 0)} lines`));
+      const lines = [{ sentence: g.sentence, meaning: '' }].concat(g.encounters).filter((x, i, all) => x.sentence && all.findIndex((y) => y.sentence === x.sentence) === i);
+      enc.append(h('summary', '', `Lines you've met it in · ${lines.length}`));
       const ul = h('ul');
-      for (const e of [{ sentence: g.sentence, meaning: '' }].concat(g.encounters).filter((x) => x.sentence)) {
+      for (const e of lines) {
         const li = h('li');
         const q = h('q', '', e.sentence);
         if (g.lang) q.lang = g.lang;
@@ -369,8 +372,8 @@
     }
     const body = h('div', 'guide');
     if (g.lang) body.lang = g.lang;
-    SG.renderGuide(body, g.text, { known: knownKanji });
-    view.append(head, tools, ...(enc ? [enc] : []), body);
+    SG.renderGuide(body, SG.guideText.withoutSections(g.text, ['Where you met it', "Other uses you've met"]), { known: knownKanji });
+    view.append(head, tools, body, ...(enc ? [enc] : []));
     window.scrollTo(0, 0);
   }
 
@@ -381,10 +384,14 @@
     view.append(h('h2', '', 'Check my guides'), h('p', 'sub', 'Looking through your guides…'));
     let builtin = {};
     try {
-      builtin = (await (await fetch('../data/grammar/ja.json')).json()).forms || {};
+      for (const l of ['ja', 'ko']) Object.assign(builtin, (await (await fetch(`../data/grammar/${l}.json`)).json()).forms || {});
     } catch (e) {
       /* no built-in guides */
     }
+    // Free tidy first: notes that were appended per line ("Other uses you've met", "Where you met it") come out
+    // of the saved text (kept in history), since the guide now stays general and lines are listed separately.
+    const tidied = await browser.runtime.sendMessage({ type: 'tidyGuides' }).catch(() => null);
+    if (tidied && tidied.count) guides = (await SG.cache.getAll('guides')).sort((a, b) => b.savedAt - a.savedAt);
     const problems = [];
     for (const g of guides) {
       const why = [];
@@ -396,6 +403,7 @@
       if (isWord && SG.canonicalForm(`${parts[1]}.fn_${d}`) !== `${parts[1]}.fn_${d}`) why.push('Grammar written up as a word: it should be a grammar guide.');
       if (isWord && /(set phrase|fixed expression|idiom|compound particle|part of the (?:pattern|phrase|expression))/i.test(SG.guideText.section(text, 'What it means').slice(0, 600))) why.push('Probably filed under one word of a phrase: check whether the phrase has its own guide.');
       if (SG.guideText.hasRomaji(text)) why.push('Contains romaji.');
+      if (g.sentence && SG.guideText.leansOnLine(text, g.sentence)) why.push('Written around one line (' + g.sentence.slice(0, 24) + (g.sentence.length > 24 ? '…' : '') + ') instead of in general: it reads wrong in other lines.');
       if (/garbled|can't say for sure|probably not the word/i.test(text)) why.push('Calls something a subtitle error or isn\'t sure: worth a second look.');
       const heads = (text.match(/^## /gm) || []).length;
       if (heads < 4) why.push('Missing sections.');
@@ -405,6 +413,7 @@
     }
     view.textContent = '';
     view.append(h('h2', '', 'Check my guides'));
+    if (tidied && tidied.count) view.append(h('p', 'sub', `Tidied ${tidied.count} guide${tidied.count === 1 ? '' : 's'} for free: removed notes that had been added for single lines (old versions are in history).`));
     if (!problems.length) {
       view.append(h('p', '', 'Everything looks fine.'));
       return;

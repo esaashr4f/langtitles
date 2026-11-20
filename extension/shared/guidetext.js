@@ -90,5 +90,21 @@
     return (t.trim() + '\n\n## ' + heading + '\n' + body.trim()).trim();
   }
 
-  SG.guideText = { stripRomaji, hasRomaji, section, replaceSection, kanaToRomaji };
+  // The guide without the named sections (and without a trailing blank).
+  function withoutSections(text, headings) {
+    let t = String(text || '');
+    for (const hd of headings || []) t = t.replace(sectionRe(hd), '');
+    return t.trim();
+  }
+
+  // Does the guide's general part lean on one line? (quotes it, or talks about "your line" / "here")
+  function leansOnLine(text, sentence) {
+    const body = withoutSections(text, ['Where you met it', "Other uses you've met"]);
+    const firstPart = body.split(/^## /m).slice(0, 3).join('## ');
+    const s = String(sentence || '').replace(/\s+/g, '');
+    if (s.length >= 4 && firstPart.replace(/\s+/g, '').includes(s.slice(0, Math.min(12, s.length)))) return true;
+    return /\b(in|on) (your|this|the) line\b|\bwhere you met it\b|\bin the line where\b/i.test(firstPart);
+  }
+
+  SG.guideText = { stripRomaji, hasRomaji, section, replaceSection, withoutSections, leansOnLine, kanaToRomaji };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

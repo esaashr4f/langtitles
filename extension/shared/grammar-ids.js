@@ -111,7 +111,42 @@
       fn_よ: 'ending_yo', fn_ね: 'ending_ne', fn_か: 'ending_ka', fn_な: 'ending_na', fn_さ: 'ending_sa', fn_かな: 'ending_kana',
       fn_だ: 'copula_da_desu', fn_です: 'copula_da_desu', fn_らしい: 'rashii', fn_みたい: 'you_mitai', fn_よう: 'you_mitai',
     },
-    ko: {}, zh: {},
+    ko: {
+      // particles
+      topic: 'particle_topic_eun_neun', topic_marker: 'particle_topic_eun_neun', eun_neun: 'particle_topic_eun_neun', particle_eun: 'particle_topic_eun_neun', particle_neun: 'particle_topic_eun_neun', topic_particle: 'particle_topic_eun_neun',
+      subject: 'particle_subject_i_ga', subject_marker: 'particle_subject_i_ga', i_ga: 'particle_subject_i_ga', particle_i: 'particle_subject_i_ga', particle_ga: 'particle_subject_i_ga', subject_particle: 'particle_subject_i_ga',
+      object: 'particle_object_eul_reul', object_marker: 'particle_object_eul_reul', object_particle: 'particle_object_eul_reul', eul_reul: 'particle_object_eul_reul', particle_eul: 'particle_object_eul_reul', particle_reul: 'particle_object_eul_reul', particle_object: 'particle_object_eul_reul',
+      ege: 'particle_ege_hante', hante: 'particle_ege_hante', dative: 'particle_ege_hante', dative_ege: 'particle_ege_hante', particle_ege: 'particle_ege_hante', particle_hante: 'particle_ege_hante', ege_contracted: 'particle_ege_hante', dative_particle: 'particle_ege_hante',
+      eseo: 'particle_eseo', location_eseo: 'particle_eseo', particle_e_location: 'particle_e', location_e: 'particle_e', direction_e: 'particle_e',
+      possessive: 'particle_ui', possessive_ui: 'particle_ui', ui: 'particle_ui', possessive_particle: 'particle_ui',
+      also_do: 'particle_do', only_man: 'particle_man', ro: 'particle_ro_euro', euro: 'particle_ro_euro', instrumental: 'particle_ro_euro', means_ro: 'particle_ro_euro', direction_ro: 'particle_ro_euro',
+      wa_gwa: 'particle_wa_gwa_hago_rang', hago: 'particle_wa_gwa_hago_rang', rang: 'particle_wa_gwa_hago_rang', and_particle: 'particle_wa_gwa_hago_rang',
+      buteo: 'particle_buteo_kkaji', kkaji: 'particle_buteo_kkaji', boda: 'particle_boda', comparison_boda: 'particle_boda', cheoreom: 'particle_cheoreom', like_cheoreom: 'particle_cheoreom',
+      // speech levels
+      casual: 'casual_banmal', casual_speech: 'casual_banmal', banmal: 'casual_banmal', informal: 'casual_banmal', haeche: 'casual_banmal', casual_ending: 'casual_banmal', banmal_casual: 'casual_banmal', informal_speech: 'casual_banmal', casual_present: 'casual_banmal', plain_casual: 'casual_banmal',
+      polite: 'polite_ayo_eoyo', haeyo: 'polite_ayo_eoyo', polite_yo: 'polite_ayo_eoyo', yo: 'polite_ayo_eoyo', polite_ending: 'polite_ayo_eoyo', haeyoche: 'polite_ayo_eoyo', informal_polite: 'polite_ayo_eoyo',
+      formal: 'formal_seumnida', seumnida: 'formal_seumnida', hapsyo: 'formal_seumnida', formal_polite: 'formal_seumnida', hamnida: 'formal_seumnida',
+      past: 'past_at_eot', past_tense: 'past_at_eot', past_eot: 'past_at_eot', past_at: 'past_at_eot',
+      honorific: 'honorific_si', honorific_suffix: 'honorific_si',
+      // auxiliaries
+      a_juda: 'aux_a_juda', eo_juda: 'aux_a_juda', juda: 'aux_a_juda', jwo: 'aux_a_juda', request_jwo: 'aux_a_juda', benefactive: 'aux_a_juda', do_for_me: 'aux_a_juda', aux_juda: 'aux_a_juda', casual_request: 'aux_a_juda', a_eo_juda: 'aux_a_juda',
+      progressive: 'aux_go_itta', go_itda: 'aux_go_itta', go_itta: 'aux_go_itta', want: 'aux_go_sipda', go_sipda: 'aux_go_sipda', desire: 'aux_go_sipda',
+      eul_su_itda: 'aux_eul_su_itta', can: 'aux_eul_su_itta', ability: 'aux_eul_su_itta', must: 'aux_a_ya_hada', a_ya_hada: 'aux_a_ya_hada',
+      // connectives and endings
+      aseo: 'connective_aseo', eoseo: 'connective_aseo', so_aseo: 'connective_aseo', and_go: 'connective_go', go: 'connective_go',
+      neunde: 'connective_neunde', but_jiman: 'connective_jiman', jiman: 'connective_jiman', if_myeon: 'connective_eumyeon', myeon: 'connective_eumyeon', eumyeon: 'connective_eumyeon',
+      nikka: 'connective_nikka', eunikka: 'connective_nikka', jana: 'ending_jana', janha: 'ending_jana', geodeun: 'ending_geodeun',
+      modifier: 'modifier_neun_eun_eul', adnominal: 'modifier_neun_eun_eul', relative_clause: 'modifier_neun_eun_eul', noun_modifier: 'modifier_neun_eun_eul',
+      negative: 'negative_an', negation_an: 'negative_an', an: 'negative_an', ji_anta: 'negative_ji_anta', mot: 'negative_mot',
+      future: 'future_geot_ida', future_eul_geoya: 'future_geot_ida', eul_geoya: 'future_geot_ida', copula: 'copula_ida', ida: 'copula_ida',
+      fn_은: 'particle_topic_eun_neun', fn_는: 'particle_topic_eun_neun', fn_ㄴ: 'particle_topic_eun_neun', fn_이: 'particle_subject_i_ga', fn_가: 'particle_subject_i_ga',
+      fn_을: 'particle_object_eul_reul', fn_를: 'particle_object_eul_reul', fn_ㄹ: 'particle_object_eul_reul', fn_에: 'particle_e', fn_에서: 'particle_eseo', fn_서: 'particle_eseo',
+      fn_에게: 'particle_ege_hante', fn_한테: 'particle_ege_hante', fn_께: 'particle_ege_hante', fn_게: 'particle_ege_hante', fn_에게서: 'particle_ege_hante', fn_한테서: 'particle_ege_hante',
+      fn_도: 'particle_do', fn_만: 'particle_man', fn_의: 'particle_ui', fn_와: 'particle_wa_gwa_hago_rang', fn_과: 'particle_wa_gwa_hago_rang', fn_하고: 'particle_wa_gwa_hago_rang', fn_랑: 'particle_wa_gwa_hago_rang', fn_이랑: 'particle_wa_gwa_hago_rang',
+      fn_로: 'particle_ro_euro', fn_으로: 'particle_ro_euro', fn_부터: 'particle_buteo_kkaji', fn_까지: 'particle_buteo_kkaji', fn_보다: 'particle_boda', fn_처럼: 'particle_cheoreom', fn_이다: 'copula_ida',
+      propositive: 'propositive_ja', lets: 'propositive_ja', quotation: 'quotation_dago', reported_speech: 'quotation_dago', dago: 'quotation_dago',
+    },
+    zh: {},
   };
 
   // Letters of any script survive (fn_なり), everything else becomes "_".
@@ -130,6 +165,17 @@
     if (known[lang] && known[lang].has(id)) return lang + '.' + id;
     const alias = ALIASES[lang] && ALIASES[lang][id];
     if (alias) return lang + '.' + alias;
+    // Korean names not seen before: match by their key words (object_marker_eul -> the object particle).
+    if (lang === 'ko') {
+      const parts = id.split('_');
+      for (let n = parts.length - 1; n >= 1; n--) {
+        for (let i = 0; i + n <= parts.length; i++) {
+          const sub = parts.slice(i, i + n).join('_');
+          if (known.ko.has(sub)) return 'ko.' + sub;
+          if (ALIASES.ko[sub]) return 'ko.' + ALIASES.ko[sub];
+        }
+      }
+    }
     return lang + '.' + id;
   };
 

@@ -2133,8 +2133,15 @@
     const seen = new Set();
     return (Array.isArray(w.g) ? w.g : [])
       .filter((f) => f && f.k)
-      .map((f) => Object.assign({}, f, { k: SG.canonicalForm(f.k) }))
+      .map((f) => Object.assign({}, f, { k: SG.canonicalForm(f.k), name: generalFormName(f.name, w.s, isFunctionWord(w)) }))
       .filter((f) => !seen.has(f.k) && seen.add(f.k));
+  }
+  // "object marker 을 웃음을" -> "object marker 을": a form's label never carries the word it was met on.
+  function generalFormName(name, word, wordIsForm) {
+    let n = String(name || '').trim();
+    // The word is trimmed off the label, unless the word is itself the particle or ending (を, 을).
+    if (!wordIsForm && word && n.length > word.length && n.endsWith(word)) n = n.slice(0, -word.length).trim() || n;
+    return n;
   }
 
   function guideCacheKey(form) {
@@ -2145,33 +2152,7 @@
     if (target.guide) SG.renderGuide(target.el, target.text, { known: known.ja, plain: !settings.furigana });
     else target.el.textContent = target.text;
     const pl = target.guide && target.cacheKey ? deepPayloads.get(target.cacheKey) : null;
-    const written = target.cacheKey ? deepSentences.get(target.cacheKey) : null;
-    if (pl && pl.sentence && written != null && sameLineKey(written) !== sameLineKey(pl.sentence)) {
-      // The guide was written for another line: say what it means in this one, and flag a mismatch.
-      const box = h('div', 'sg-inline');
-      box.append(h('div', 'sg-g-h', 'In this line'));
-      const line = h('div', 'sg-g-p sg-g-ex', pl.sentence);
-      line.lang = pl.lang || '';
-      box.append(line);
-      if (pl.meaning) box.append(h('div', 'sg-g-p', `${pl.word || pl.dict || ''}: ${pl.meaning}`));
-      const note = deepNotes.get(target.cacheKey + '|' + sameLineKey(pl.sentence));
-      if (note && note.why) {
-        box.append(h('div', 'sg-g-h', 'Why it means something different here'), h('div', 'sg-g-p', note.why));
-        if (note.added) box.append(h('div', 'sg-g-p sg-g-ext', 'This use has been added to the guide (under "Other uses you\'ve met").'));
-      } else if (settings.hasKey) {
-        const odd = h('button', 'sg-btn sg-ghost sg-improve', "This doesn't match");
-        odd.title = 'Have Claude check this guide against this line and explain the difference';
-        odd.addEventListener('click', (e) => {
-          e.stopPropagation();
-          odd.textContent = 'Checking…';
-          const reqId = ++deepReq;
-          deepByReq.set(reqId, Object.assign({}, target, { quiet: true }));
-          post(Object.assign({ type: 'deep', reqId }, pl, { force: true }));
-        });
-        box.append(odd);
-      }
-      target.el.prepend(box);
-    }
+    if (pl && pl.sentence) target.el.prepend(inThisLine(target, pl));
     const notes = target.guide && target.cacheKey ? deepNotesList.get(target.cacheKey) || [] : [];
     if (notes.length) {
       const nb = h('div', 'sg-notes');
@@ -2207,6 +2188,54 @@
     }
   }
 
+  // "In this line": what the word or form is doing in the line on screen, built from the line breakdown that
+  // was already paid for (free). The guide below it is general. A paid check is there only on request.
+  function inThisLine(target, pl) {
+    const box = h('div', 'sg-inline');
+    box.append(h('div', 'sg-g-h', 'In this line'));
+    const line = h('div', 'sg-g-p sg-g-ex', pl.sentence);
+    line.lang = pl.lang || '';
+    box.append(line);
+    const info = pl.line || {};
+    const pieces = info.pieces || [];
+    if (pl.kind === 'guide') {
+      // The piece of the word that is this form (을 in 웃음을), and what the word means here.
+      const name = String((pl.form && pl.form.name) || '');
+      const piece = pieces.find((p) => p.t && p.t !== pl.word && name.includes(p.t)) || pieces.find((p) => p.t && p.t !== pl.word && /marker|particle|ending|past|polite|casual|negative|passive|causative|tense|form/i.test(p.g || '') && name.toLowerCase().split(/\s+/).some((x) => x.length > 3 && (p.g || '').toLowerCase().includes(x)));
+      const p1 = h('div', 'sg-g-p');
+      if (piece) p1.append(h('b', '', piece.t), document.createTextNode(` on ${pl.word}: ${piece.g}`));
+      else p1.append(h('b', '', pl.word || ''), document.createTextNode(pl.meaning ? `: ${pl.meaning}` : ''));
+      box.append(p1);
+      if (piece && pl.meaning) box.append(h('div', 'sg-g-p sg-g-ext', `${pl.word} here: ${pl.meaning}`));
+    } else {
+      const p1 = h('div', 'sg-g-p');
+      p1.append(h('b', '', pl.word || pl.dict || ''), document.createTextNode(pl.meaning ? `: ${pl.meaning}` : ''));
+      box.append(p1);
+      if (pieces.length > 1) box.append(h('div', 'sg-g-p sg-g-ext', pieces.map((p) => `${p.t} ${p.g}`).join('  +  ')));
+    }
+    if (info.note) box.append(h('div', 'sg-g-p', info.note));
+    const note = deepNotes.get(target.cacheKey + '|' + sameLineKey(pl.sentence));
+    if (note && note.done && note.covered) {
+      box.append(h('div', 'sg-g-p sg-g-ext', 'Checked: the guide covers this use.'));
+    } else if (note && note.why) {
+      box.append(h('div', 'sg-g-h', 'Why it means something different here'), h('div', 'sg-g-p', note.why));
+      if (note.other) box.append(h('div', 'sg-g-p sg-g-ext', 'This line uses: ' + note.other));
+    } else if (settings.hasKey) {
+      const odd = h('button', 'sg-link sg-check-line', "Doesn't fit this line? Check it");
+      odd.title = 'Have Claude check the guide against this line (a small cost; nothing is changed in the guide)';
+      odd.addEventListener('click', (e) => {
+        e.stopPropagation();
+        odd.textContent = 'Checking…';
+        const reqId = ++deepReq;
+        deepByReq.set(reqId, Object.assign({}, target, { quiet: true }));
+        deepNoteFor.set(reqId, target);
+        post(Object.assign({ type: 'deep', reqId }, pl, { force: true }));
+      });
+      box.append(odd);
+    }
+    return box;
+  }
+
   // Shows cached text at once, attaches to a request already streaming, or starts a new one.
   function startDeep(el, cacheKey, guide, payload) {
     if (payload && !payload.improve) deepPayloads.set(cacheKey, payload);
@@ -2215,8 +2244,7 @@
     if (deepTexts.has(cacheKey)) {
       el.classList.remove('sg-loading');
       paintDeep({ el, text: deepTexts.get(cacheKey), guide, cacheKey });
-      // Opened on a different line than it was written for: ask for the line check (the saved
-      // guide comes back as is, plus a note if this line uses it differently).
+      // Opened on another line: the background remembers the line (free) and returns any note it has for it.
       if (guide && payload && payload.sentence && sameLineKey(payload.sentence) !== sameLineKey(deepSentences.get(cacheKey))) {
         const reqId = ++deepReq;
         deepByReq.set(reqId, { el, cacheKey, text: deepTexts.get(cacheKey), guide, quiet: true });
@@ -2327,6 +2355,7 @@
     const form = phraseGuideForm(p, ctx.lang);
     startDeep(el, guideCacheKey(form), true, {
       kind: 'wordguide', form, lang: ctx.lang, sentence: ctx.sentence, word: p.d, dict: p.d, reading: p.r, pos: p.kind, meaning: p.m, phrase: true,
+      line: { pieces: [], note: '', role: '', translation: ctx.translation || '' },
     });
   }
 
@@ -2335,12 +2364,14 @@
     const form = wordGuideForm(w, ctx.lang);
     startDeep(el, guideCacheKey(form), true, {
       kind: 'wordguide', form, lang: ctx.lang, sentence: ctx.sentence, word: w.s, dict: w.d, reading: w.r, pos: w.pos, meaning: w.m,
+      line: { pieces: Array.isArray(w.p) ? w.p : [], note: w.n || '', role: w.role || '', translation: ctx.translation || '' },
     });
   }
 
   function showGuide(el, form, ctx, w) {
     startDeep(el, guideCacheKey(form), true, {
       kind: 'guide', form: { k: form.k, name: form.name }, lang: ctx.lang, sentence: ctx.sentence, word: w.s, meaning: w.m || '',
+      line: { pieces: Array.isArray(w.p) ? w.p : [], note: w.n || '', role: w.role || '', translation: ctx.translation || '' },
     });
   }
 
@@ -2349,11 +2380,7 @@
       const t = deepNoteFor.get(msg.reqId);
       if (!t) return;
       const payload = deepPayloads.get(t.cacheKey);
-      if (payload) deepNotes.set(t.cacheKey + '|' + sameLineKey(payload.sentence), { why: msg.why, added: msg.added });
-      if (msg.text) {
-        deepTexts.set(t.cacheKey, msg.text);
-        t.text = msg.text;
-      }
+      if (payload) deepNotes.set(t.cacheKey + '|' + sameLineKey(payload.sentence), { why: msg.why, other: msg.other || '', covered: Boolean(msg.covered), done: msg.covered != null });
       if (t.el.isConnected) paintDeep(t);
       return;
     }

@@ -208,6 +208,9 @@
   // ---- spending: per day (one series), and this month's split by feature and show as bar lists
   {
     const log = (await browser.runtime.sendMessage({ type: 'spendLog' }).catch(() => null)) || { days: {}, shows: {}, top: [] };
+    // Guides: how many were written (paid) vs. opened from what's saved (free), since this was counted.
+    const gs = (await browser.storage.local.get('guideStats')).guideStats;
+    if (gs) $('guideReuse').textContent = `Guides since ${new Date(gs.since).toLocaleDateString()}: ${gs.written || 0} written (paid), ${gs.reused || 0} opened from saved (free), ${gs.checks || 0} line checks you asked for.`;
     const money = (v) => (v < 0.01 ? '<$0.01' : '$' + v.toFixed(2));
     const perDay = days.map((d) => {
       const f = log.days[d.key];

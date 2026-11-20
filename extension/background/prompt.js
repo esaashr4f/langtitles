@@ -162,14 +162,14 @@
                   n: { type: 'string', description: 'A short note shown when the learner hovers the word, or an empty string when there is nothing to add.' },
                   g: {
                     type: 'array',
-                    description: 'Grammar forms this word carries that are worth studying, most important first.',
+                    description: 'Every grammar form this word carries that is worth studying, most important first (a word can carry several: 구해줘 carries the -아/어 주다 "for me" auxiliary and the casual ending).',
                     items: {
                       type: 'object',
                       additionalProperties: false,
                       required: ['k', 'name'],
                       properties: {
                         k: { type: 'string', description: 'Stable identifier: language code, a dot, English snake_case name of the form.' },
-                        name: { type: 'string', description: 'Short label for the form, including the form itself.' },
+                        name: { type: 'string', description: 'Short general label for the form, including the form itself in its general shape (object marker 을/를, causative-passive させられる), never the word it is attached to in this line.' },
                       },
                     },
                   },
@@ -398,16 +398,13 @@ How it sounds: politeness, formality, emotional colour (for example resentment, 
 ## Common mistakes
 The mistakes learners actually make with it, each with the correction.
 
-## Where you met it
-Two or three sentences on what the form is doing in the line where the learner met it.
-
 Formatting: plain text only, apart from the "## " headings. Start a line with "- " for a list item. Put each example sentence on its own line, followed by " — " and its translation. Write every Japanese word that contains kanji as {kanji part|reading}, for example {食|た}べさせられる, {母|はは}, {昨日|きのう}, so readings can be drawn over the kanji; do not also add a reading in brackets after it. Accuracy matters more than coverage: state only rules you are sure of, and say so when usage varies between speakers or regions.
 
 Rules for every guide:
-- Open the first section with the core idea in one sentence, tied to the line where the learner met it; then the details.
+- This guide is saved once and shown every time the learner meets this item, in any sentence. Write it about the item in general, so it reads right wherever it is opened. Never mention, quote or build on the line where the learner happened to meet it: no "in your line", no "here", and the line itself is never an example. (The line is given to you only so you know which item and which sense this is; what it does in that line is shown to the learner separately.)
+- Open the first section with the core idea in one sentence; then the details. Cover every common use of the item, not just the one in the line.
 - Length follows the item: a simple everyday word needs a short guide (150 to 300 words); a rich word or form gets more. Never pad.
 - When several "senses" are really one meaning with shades, present one meaning and its shades, not separate senses.
-- If the line uses a known set pattern or a compound (こと + noun + に関しては, に関して, X ものは X), say so. Don't call the line a subtitle error unless nothing in the language explains it.
 - Be consistent: don't list as a mistake something you have shown as correct usage.
 - No romanization anywhere (no romaji, no Korean romanization).`;
   }
@@ -418,7 +415,7 @@ Rules for every guide:
 Write a complete guide to the word under these headings, each on its own line starting with "## ":
 
 ## What it means
-The core meaning in one sentence. Then each common sense as a list item, with an example sentence and its translation. Say which sense is used where the learner met the word.
+The core meaning in one sentence. Then each common sense as a list item, with an example sentence and its translation.
 
 ## How it's built
 The parts the word is made of and what each contributes: for a compound, each character or element, how they combine, and the pattern behind it if it is a productive one (with two or three other words built the same way); for a derived or inflected word, its stem and affixes. For Japanese, say whether the reading follows the individual characters (on'yomi or kun'yomi) or belongs to the word as a whole (jukujikun: 昨日 is read きのう as a unit, not き + のう), and give any other reading of the same spelling and when it is used (昨日 also さくじつ, in formal speech and writing). For a simple word with nothing to break down, say so in one line.
@@ -435,16 +432,14 @@ How it sounds: politeness, formality, age, gender, region, warmth or coldness, s
 ## Common mistakes
 The mistakes learners actually make with it, each with the correction.
 
-## Where you met it
-Two or three sentences on what the word means and why this word was chosen in the line where the learner met it.
-
 Formatting: plain text only, apart from the "## " headings. Start a line with "- " for a list item. Put each example sentence on its own line, followed by " — " and its translation. Write every Japanese word that contains kanji as {kanji part|reading}, for example {食|た}べる, {母|はは}, {昨日|きのう}, so readings can be drawn over the kanji; do not also add a reading in brackets after it. Accuracy matters more than coverage: state only what you are sure of, and say so when usage varies between speakers or regions.
 
 Rules for every guide:
-- Open the first section with the core idea in one sentence, tied to the line where the learner met it; then the details.
+- This guide is saved once and shown every time the learner meets this item, in any sentence. Write it about the item in general, so it reads right wherever it is opened. Never mention, quote or build on the line where the learner happened to meet it: no "in your line", no "here", and the line itself is never an example. (The line is given to you only so you know which item and which sense this is; what it does in that line is shown to the learner separately.)
+- Open the first section with the core idea in one sentence; then the details. Cover every common use of the item, not just the one in the line.
 - Length follows the item: a simple everyday word needs a short guide (150 to 300 words); a rich word gets more. Never pad. For a simple word with nothing to break down, leave "How it's built" to one line.
 - When several "senses" are really one meaning with shades, present one meaning and its shades, not separate senses.
-- If the word is part of a set phrase or pattern in the line (に関して, 歯切れが悪い, こと + noun + に関しては), say so first and explain the line through the phrase. Don't call the line a subtitle error unless nothing in the language explains it.
+- Mention set phrases the word commonly appears in (with examples), as part of the general picture.
 - Be consistent: don't list as a mistake something you have shown as correct usage.
 - No romanization anywhere (no romaji, no Korean romanization).`;
   }
@@ -464,7 +459,7 @@ Unit: ${req.dict || req.word || ''}
 Reading: ${req.reading || ''}
 Meaning there: ${req.meaning || ''}
 Language: ${req.lang || 'unknown'}
-Line where the learner met it: ${req.sentence || ''}${notesBlock(req)}`;
+Line where the learner met it (only to identify the unit; don't mention it): ${req.sentence || ''}${notesBlock(req)}`;
     }
     return `Word as it appeared: ${req.word || ''}
 Dictionary form: ${req.dict || req.word || ''}
@@ -472,7 +467,7 @@ Reading: ${req.reading || ''}
 Part of speech: ${req.pos || ''}
 Meaning there: ${req.meaning || ''}
 Language: ${req.lang || 'unknown'}
-Line where the learner met it: ${req.sentence || ''}${notesBlock(req)}`;
+Line where the learner met it (only to identify the word and sense; the guide is general and doesn't mention it): ${req.sentence || ''}${notesBlock(req)}`;
   }
 
   function guideUserMessage(req) {
@@ -480,7 +475,7 @@ Line where the learner met it: ${req.sentence || ''}${notesBlock(req)}`;
     return `Form: ${f.name || f.k}
 Identifier: ${f.k}
 Language: ${req.lang || 'unknown'}
-Line where the learner met it: ${req.sentence || ''}
+Line where the learner met it (only to identify the form; the guide is general and doesn't mention it): ${req.sentence || ''}
 Word that carries it there: ${req.word || ''}${notesBlock(req)}`;
   }
 
@@ -557,15 +552,15 @@ Word that carries it there: ${req.word || ''}${notesBlock(req)}`;
   const MATCH_SCHEMA = {
     type: 'object',
     additionalProperties: false,
-    required: ['covered', 'why', 'addition'],
+    required: ['covered', 'why', 'other_form'],
     properties: {
-      covered: { type: 'boolean', description: 'True when the guide already explains this use.' },
-      why: { type: 'string', description: 'When not covered: two to four sentences on what is really going on here — another sense, part of a bigger expression or pattern (name it), or an error in the line or the guide (say so plainly). Empty when covered.' },
-      addition: { type: 'string', description: 'When not covered and this is a real use the guide should teach: one list item to add to the guide ("- " + the use, then an example line with " — " and its translation, using {kanji|reading} markup). Empty otherwise.' },
+      covered: { type: 'boolean', description: 'True unless the item is used in this line in a genuinely different sense or function from everything the guide describes. A use the guide covers in general, even without an example of this exact situation, is covered.' },
+      why: { type: 'string', description: 'When not covered: one or two plain sentences on the different sense or function. Empty when covered. Never conclude that the guide covers it after all: then covered is true.' },
+      other_form: { type: 'string', description: 'When the line actually uses a different grammar form or word than the guide is about (for example the plain casual ending 해 rather than the request 해 줘), name that form briefly. Empty otherwise.' },
     },
   };
   function matchSystemPrompt(nativeLang) {
-    return `A learner opened a saved guide for a word, phrase or grammar form while watching a show, on a line other than the one the guide was written for. Decide whether the guide already explains how it is used in this new line. Answer in ${nativeLang}. Be strict: if the guide's explanation would mislead the learner about this line, it is not covered. No romanization.`;
+    return `A learner opened a saved guide for a word, phrase or grammar form while watching a show, on a line other than the one the guide was written for. Decide whether the guide already explains how it is used in this new line. Answer in ${nativeLang}. The learner is smart: a guide that covers the use in general covers it, even without an example of this exact situation. Say "not covered" only for a genuinely different sense or function. No romanization.`;
   }
 
   // Single kanji / hanzi entries are cached by character, separately from line analyses.

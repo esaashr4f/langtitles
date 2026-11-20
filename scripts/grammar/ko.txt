@@ -1,0 +1,653 @@
+=== ko.particle_topic_eun_neun | topic marker 은/는
+## What it is
+은/는 marks the topic: what the sentence is about, "as for X…". It often carries a sense of contrast with other things that could have been said ("as for me, at least…").
+
+## How to make it
+- After a consonant: 은. 사람은, 책은
+- After a vowel: 는. 나는, 친구는
+- Contractions in speech and lyrics: 나는 → 난, 너는 → 넌, 저는 → 전, 그건 (그것은), 이건 (이것은)
+- It can follow other particles: 에서는, 에게는, 한테는, 까지는.
+
+## When to use it
+- Introducing or keeping the topic of what you're saying.
+저는 학생이에요. — I'm a student.
+- Contrast: this one, as opposed to others.
+커피는 좋아하는데 차는 안 좋아해. — Coffee I like, but tea I don't.
+- General statements and definitions.
+고양이는 물을 싫어해. — Cats hate water.
+- After another particle, to set that phrase up as the topic or contrast it.
+학교에서는 조용해. — At school, at least, he's quiet.
+
+## When it seems to fit but doesn't
+- New information, or answering "who / what?": use 이/가. 누가 왔어? — 민수가 왔어. (not 민수는)
+- The subject inside a describing clause before a noun takes 이/가. 내가 산 책 — the book I bought (not 나는 산 책)
+- "I have / I like / I need X" puts 이/가 on X: 나는 시간이 없어. — I don't have time.
+
+## Nuance and register
+Neutral in every speech level. Heavy contrast can sound pointed: 이건 괜찮아 can imply "but the others aren't".
+
+## Common mistakes
+- Using 은/는 for brand-new information in a question's answer; that's 이/가.
+- Forgetting that 난 / 넌 / 전 are just 나는 / 너는 / 저는.
+
+=== ko.particle_subject_i_ga | subject marker 이/가
+## What it is
+이/가 marks the subject, singling it out: "it's X that…". It introduces new information and answers "who?" or "what?".
+
+## How to make it
+- After a consonant: 이. 사람이, 책이
+- After a vowel: 가. 친구가, 의자가
+- Special forms: 나 + 가 → 내가, 너 + 가 → 네가 (often said and written 니가 in speech and lyrics), 저 + 가 → 제가, 누구 + 가 → 누가.
+
+## When to use it
+- New information or an answer to "who / what?".
+누가 했어? — 내가 했어. — Who did it? — I did.
+- Describing what happens or exists.
+비가 와. — It's raining.
+- With 있다 / 없다, 좋다, 싫다, 필요하다, 아프다: the thing had, liked, needed or hurting takes 이/가.
+머리가 아파. — My head hurts.
+- With 되다 and 아니다: what someone becomes or isn't.
+의사가 됐어. — She became a doctor. 그건 내 잘못이 아니야. — That's not my fault.
+- The subject inside a clause that describes a noun.
+네가 좋아하는 노래 — the song you like
+
+## When it seems to fit but doesn't
+- Setting the topic or contrasting: use 은/는 (see that guide).
+- The object of an action verb takes 을/를: 밥을 먹어 (not 밥이 먹어).
+
+## Nuance and register
+Neutral. Stressing 이/가 in an answer is like stressing the word in English: "*I* did it."
+
+## Common mistakes
+- 나가 / 너가 instead of 내가 / 네가 (너가 is common in casual speech, but 네가 is standard).
+- Using 을/를 with 좋다: 너를 좋아해 (좋아하다, verb) but 네가 좋아 (좋다, adjective).
+
+=== ko.particle_object_eul_reul | object marker 을/를
+## What it is
+을/를 marks the direct object: the thing an action is done to. 밥을 먹다 — eat rice; 너를 사랑해 — I love you.
+
+## How to make it
+- After a consonant: 을. 책을, 웃음을
+- After a vowel: 를. 너를, 노래를
+- In speech and lyrics 를 often shrinks to ㄹ on a vowel: 나를 → 날, 너를 → 널, 이것을 → 이걸, 그것을 → 그걸, 뭐를 → 뭘.
+- It is often dropped in casual speech: 밥 먹었어? — Have you eaten?
+
+## When to use it
+- The object of an action verb.
+영화를 봤어. — I watched a movie.
+- After 하다 nouns to put the action in focus: 공부를 하다 = 공부하다.
+- Sometimes to mark the destination with 가다 / 오다 in speech, or the route crossed: 길을 건너다 — cross the road.
+- For emphasis on a word that wouldn't normally take it: 나를 좀 봐 sounds more insistent than 나 좀 봐.
+
+## When it seems to fit but doesn't
+- Adjectives and "have / like / need" adjectives (좋다, 싫다, 있다, 필요하다) take 이/가, not 을/를: 네가 좋아.
+- 좋아하다 / 싫어하다 (the verbs) do take 을/를: 너를 좋아해.
+- 되다 takes 이/가: 가수가 되고 싶어.
+- Meeting someone: 친구를 만나다 (을/를), but "resemble" is 닮다 with 을/를 or 와/과 — check each verb.
+
+## Nuance and register
+Neutral. Dropping it is casual; keeping it adds weight or clarity.
+
+## Common mistakes
+- 을/를 on the thing you like with the adjective 좋다.
+- Not recognising 날 / 널 / 이걸 as 나를 / 너를 / 이것을.
+
+=== ko.particle_ege_hante | to (a person) 에게 / 한테 / 께
+## What it is
+에게 and 한테 mark the person (or animal) something goes to or is aimed at: "to / for someone". With passive and causative verbs they mark "by whom".
+
+## How to make it
+- Attach directly to the noun, whatever its last sound: 친구에게, 친구한테
+- 에게 is neutral and also written; 한테 is spoken and casual; 께 is the honorific form (선생님께).
+- Contractions: 나에게 → 내게, 너에게 → 네게, 저에게 → 제게.
+- "From a person": 에게서 / 한테서 (내게서 = 나에게서, "from me").
+
+## When to use it
+- Giving, sending, saying, asking: the person on the receiving end.
+엄마한테 전화했어. — I called Mom. 내게 말해 줘. — Tell me.
+- Feelings or effects aimed at someone.
+너에게 미안해. — I'm sorry to you.
+- "By" someone, with passive or causative verbs.
+선생님한테 혼났어. — I got told off by the teacher.
+- "From" someone, with 에게서 / 한테서: 친구한테서 들었어. — I heard it from a friend.
+
+## When it seems to fit but doesn't
+- For places and things, use 에: 학교에 보내다 (send to school), not 학교에게.
+- For organisations, 에 is usual: 회사에 연락하다.
+
+## Nuance and register
+에게: neutral, writing, songs. 한테: everyday speech. 께: polite, for people you honour.
+
+## Common mistakes
+- 에게 with places or things.
+- Reading 내게 / 네게 as new words: they are 나에게 / 너에게.
+
+=== ko.particle_e | at / to / in (place and time) 에
+## What it is
+에 marks a point: where something is or goes, and when something happens. "At / in / to / on".
+
+## How to make it
+- Attach directly: 집에, 학교에, 3시에, 아침에
+
+## When to use it
+- Where something exists, with 있다 / 없다 / 살다.
+방에 고양이가 있어. — There's a cat in the room.
+- Destination, with 가다 / 오다 / 도착하다.
+서울에 가. — I'm going to Seoul.
+- A point in time.
+주말에 만나자. — Let's meet at the weekend.
+- "Per": 하루에 두 번 — twice a day.
+- A cause, with some verbs: 소리에 놀랐어. — I was startled by the noise.
+
+## When it seems to fit but doesn't
+- Where an action takes place: use 에서. 카페에서 공부해. — I study at a café.
+- Times with 오늘, 어제, 내일, 지금 take no 에: 오늘 가 (not 오늘에).
+- People: use 에게 / 한테.
+
+## Nuance and register
+Neutral in every level.
+
+## Common mistakes
+- 에 for the place of an action (공원에 운동해 → 공원에서 운동해).
+
+=== ko.particle_eseo | at / from (place of action) 에서
+## What it is
+에서 marks where an action happens ("at, in") and where movement starts ("from").
+
+## How to make it
+- Attach directly: 학교에서, 집에서. In speech it can shrink to 서 after 여기 / 거기 / 어디: 여기서, 어디서.
+
+## When to use it
+- The place of an action.
+도서관에서 공부했어. — I studied at the library.
+- A starting point.
+한국에서 왔어요. — I'm from Korea (I came from Korea).
+- With 부터 / 까지 for ranges: 서울에서 부산까지 — from Seoul to Busan.
+
+## When it seems to fit but doesn't
+- Where something simply is (있다 / 없다 / 살다): 에. 집에 있어 (not 집에서 있어), though 집에서 살다 is also heard.
+- "From a person": 에게서 / 한테서.
+
+## Nuance and register
+Neutral.
+
+## Common mistakes
+- 에 for the place of an action, or 에서 for where something exists.
+
+=== ko.particle_do | also / even 도
+## What it is
+도 means "also, too", and in negative or extreme sentences "even". It replaces 은/는, 이/가 and 을/를.
+
+## How to make it
+- Attach directly: 나도, 이것도. It follows other particles: 에도, 에서도, 한테도.
+
+## When to use it
+- Also, too.
+나도 갈래. — I'll go too.
+- Not even, with a negative.
+하나도 몰라. — I don't know a single thing.
+- Even (something surprising).
+아이도 할 수 있어. — Even a child can do it.
+- After amounts, to stress how much: 세 시간도 기다렸어. — I waited a whole three hours.
+
+## When it seems to fit but doesn't
+- Don't stack it with 은/는, 이/가, 을/를: 나도 (not 나는도).
+
+## Nuance and register
+Neutral.
+
+## Common mistakes
+- Keeping the other particle: 책을도 → 책도.
+
+=== ko.particle_ui | possessive 의
+## What it is
+의 links two nouns: "X's Y", "the Y of X".
+
+## How to make it
+- Attach directly: 친구의 집. In speech 의 is usually pronounced 에.
+- With pronouns it contracts: 나의 → 내, 너의 → 네 (often said 니 or 너의 in songs to be clear), 저의 → 제.
+- In everyday speech it's often dropped between nouns: 친구 집.
+
+## When to use it
+- Possession and belonging.
+내 친구 — my friend. 너의 미소 — your smile.
+- "Of", in titles and written style.
+사랑의 의미 — the meaning of love.
+
+## When it seems to fit but doesn't
+- Between two simple nouns in speech, Koreans usually leave it out: 학교 친구, 우리 엄마 (not 우리의 엄마).
+
+## Nuance and register
+Using 의 everywhere sounds written or poetic; lyrics use it more than speech.
+
+## Common mistakes
+- Not recognising 내 / 네 / 제 as 나의 / 너의 / 저의.
+- 나의 엄마 instead of the natural 우리 엄마.
+
+=== ko.casual_banmal | casual speech (반말)
+## What it is
+반말 is the casual level of speech, used with close friends, family, people younger than you, children, and in songs and inner thoughts. The core form is the verb stem + -아/어 (or 해 for 하다) with no ending after it: 먹어, 가, 해.
+
+## How to make it
+- Stem's last vowel is ㅏ or ㅗ: + 아. 가다 → 가, 보다 → 봐, 알다 → 알아
+- Any other vowel: + 어. 먹다 → 먹어, 주다 → 줘, 마시다 → 마셔
+- 하다 → 해 (원하다 → 원해, 사랑하다 → 사랑해)
+- 이다 → 야 after a vowel, 이야 after a consonant (나야, 사람이야); 아니다 → 아니야
+- The same form is a statement, a question (rising tone) or a command, depending on intonation: 가? (going?), 가! (go!).
+- Other casual endings: -지 (shared knowledge, softening), -냐 / -니 (questions), -자 (let's), -네 (discovery), -거든 (because, you see), -잖아 (you know).
+
+## When to use it
+- Talking to friends, siblings, partners, children.
+뭐 해? — What are you doing?
+- Statements, questions and commands with one form.
+나를 원해. — You want me. / 원해? — Do you want it? / 와! — Come!
+- Songs and inner monologue, where it feels intimate and direct.
+
+## When it seems to fit but doesn't
+- Strangers, older people, colleagues and customers: use -아요/어요 (해요).
+- Formal announcements and news: -습니다 / -ㅂ니다.
+- A request "for me" isn't 반말 by itself: that's -아/어 주다 (해 줘, see that guide), which can be casual or polite.
+
+## Nuance and register
+Close and warm with the right person; rude with the wrong one. Switching to 반말 mid-conversation can signal intimacy, or anger.
+
+## Common mistakes
+- Using 반말 with someone older or a stranger.
+- Thinking every -어 줘 is "casual speech": the meaning comes from 주다.
+
+=== ko.polite_ayo_eoyo | polite speech -아요/어요 (해요)
+## What it is
+-아요/어요 is everyday polite speech: polite but not stiff, used with strangers, colleagues, older people and anyone you're not close to. It's 반말 + 요.
+
+## How to make it
+- Take the casual form and add 요: 가 → 가요, 먹어 → 먹어요, 해 → 해요
+- 이다: 예요 after a vowel (친구예요), 이에요 after a consonant (학생이에요); 아니다 → 아니에요
+- Like 반말, one form serves as statement, question or request by intonation.
+
+## When to use it
+- Most everyday conversation with people you aren't close to.
+어디 가요? — Where are you going?
+- Polite requests (with 주다).
+도와주세요. — Please help me.
+
+## When it seems to fit but doesn't
+- Very formal settings (news, presentations, the army, customer announcements): -습니다.
+- Close friends and family: 반말; 요 there feels distant.
+
+## Nuance and register
+The safe default with strangers. Adding 요 to almost anything (even 네요, 고요) softens it politely.
+
+## Common mistakes
+- 이에요 / 예요 mixed up: vowel → 예요, consonant → 이에요.
+
+=== ko.formal_seumnida | formal speech -습니다/ㅂ니다
+## What it is
+-습니다 / -ㅂ니다 is the formal polite level: news, speeches, presentations, the military, staff to customers, and set phrases (감사합니다).
+
+## How to make it
+- Stem ending in a consonant: + 습니다. 먹다 → 먹습니다
+- Stem ending in a vowel: + ㅂ니다. 가다 → 갑니다, 하다 → 합니다
+- ㄹ-stems drop the ㄹ: 알다 → 압니다
+- Questions: -습니까 / -ㅂ니까. 아십니까?
+- Commands: -(으)십시오. Suggestions: -(으)ㅂ시다.
+
+## When to use it
+- Formal speech and fixed polite phrases.
+감사합니다. — Thank you. 처음 뵙겠습니다. — Nice to meet you.
+- Announcements and broadcasts.
+열차가 도착합니다. — The train is arriving.
+
+## When it seems to fit but doesn't
+- Everyday polite conversation: -아요/어요 is more natural; -습니다 all the time sounds stiff.
+
+## Nuance and register
+Formal and respectful; in songs it's rare and stands out (often for effect, or quoting).
+
+## Common mistakes
+- Forgetting the ㄹ drop (알습니다 → 압니다).
+
+=== ko.past_at_eot | past tense -았/었-
+## What it is
+-았/었- puts a verb or adjective in the past: "did, was".
+
+## How to make it
+- Stem vowel ㅏ or ㅗ: -았-. 가다 → 갔어, 보다 → 봤어
+- Other vowels: -었-. 먹다 → 먹었어, 주다 → 줬어
+- 하다 → 했- (했어, 했어요, 했습니다)
+- 이다 → 였다 after a vowel (친구였어), 이었다 after a consonant (학생이었어)
+- Then any ending: 갔어, 갔어요, 갔습니다, 갔지, 갔잖아
+- -았었/었었-: a past that no longer holds ("used to / had").
+
+## When to use it
+- Finished events.
+어제 영화 봤어. — I watched a movie yesterday.
+- Past states.
+그때 행복했어. — I was happy then.
+- Some verbs use the past for a present state: 결혼했어 (is married), 늦었어 (is late), 닮았어 (looks alike).
+
+## When it seems to fit but doesn't
+- Ongoing past actions: -고 있었어 (was doing).
+- Describing a noun in the past uses -(으)ㄴ / -던: 어제 본 영화 (the movie I watched yesterday).
+
+## Nuance and register
+Works at every speech level.
+
+## Common mistakes
+- 하다 → 핬어 (wrong) instead of 했어.
+- Using present for states that Korean puts in the past (결혼해 → 결혼했어 for "is married").
+
+=== ko.aux_a_juda | doing something for someone -아/어 주다 (해 줘)
+## What it is
+-아/어 주다 adds "for someone": the action is done as a favour or benefit. In requests it means "please do it (for me)": 해 줘, 해 주세요.
+
+## How to make it
+- Casual form of the verb + 주다: 하다 → 해 주다, 가다 → 가 주다, 기다리다 → 기다려 주다
+- Requests: 해 줘 (casual), 해 주세요 (polite), 해 주시겠어요? (very polite)
+- Often written together in lyrics and chat: 구해줘, 말해줘, 돌려놔줘
+- For someone you honour: -아/어 드리다 (도와 드릴게요 — I'll help you).
+
+## When to use it
+- Asking someone to do something.
+나를 구해 줘. — Save me. 내게 말해 줘. — Tell me.
+- Saying you'll do something for someone.
+내가 해 줄게. — I'll do it for you.
+- Thanking for a favour: 와 줘서 고마워. — Thanks for coming.
+
+## When it seems to fit but doesn't
+- A plain casual sentence without a favour: just 반말 (원해 — I want it; 해 — I do it / do it).
+- Asking someone to do something for your superior: -아/어 드리다.
+
+## Nuance and register
+Softens commands: 기다려! (Wait!) vs 기다려 줘 (Wait for me, please). In songs, 줘 often turns a line into a plea.
+
+## Common mistakes
+- Reading 해 줘 as two separate ideas; the 줘 is the favour.
+- Using 주다 when you're doing it for someone older: 드리다.
+
+=== ko.negative_an | negation 안
+## What it is
+안 before a verb or adjective means "not / don't": the speaker chooses not to, or it simply isn't so.
+
+## How to make it
+- 안 + verb / adjective: 안 가, 안 먹어, 안 예뻐
+- 하다 verbs with a noun: noun + 안 + 하다: 공부 안 해 (not 안 공부해). 하다 adjectives keep it in front: 안 피곤해.
+- The longer form -지 않다 means the same (see that guide).
+
+## When to use it
+- Not doing, by choice or as a fact.
+나 안 가. — I'm not going.
+- Something isn't so.
+안 아파. — It doesn't hurt.
+
+## When it seems to fit but doesn't
+- Can't (inability): 못.
+- Commands ("don't"): -지 마. 가지 마 — Don't go.
+- "Isn't" with nouns: 아니다. 내 잘못이 아니야.
+
+## Nuance and register
+Casual and common in speech; -지 않다 is more written or careful.
+
+## Common mistakes
+- 안 공부해 instead of 공부 안 해.
+- 안 for "don't" commands instead of -지 마.
+
+=== ko.connective_aseo | because / and then -아서/어서
+## What it is
+-아서/어서 links two clauses: the first is the reason for the second ("so"), or happens first and leads into it ("and then").
+
+## How to make it
+- Like the casual ending + 서: 가다 → 가서, 먹다 → 먹어서, 하다 → 해서, 이다 → 이라서 / 여서
+- No past tense inside: 늦어서 (not 늦었어서).
+
+## When to use it
+- Reason: 늦어서 미안해. — Sorry I'm late. (being late, so sorry)
+- Sequence where the first step leads to the second: 친구를 만나서 영화를 봤어. — I met a friend and (with them) watched a movie.
+- Fixed thanks and apologies: 와 줘서 고마워.
+
+## When it seems to fit but doesn't
+- Reasons with commands or suggestions (let's, please): use -(으)니까. 비가 오니까 우산 가져가.
+- Plain listing of actions with no link: -고.
+
+## Nuance and register
+Neutral; very common in speech.
+
+## Common mistakes
+- Adding past tense inside (했어서).
+- Using it before a command.
+
+=== ko.connective_go | and -고
+## What it is
+-고 joins clauses or describes doing things in a row: "and", "and then".
+
+## How to make it
+- Stem + 고: 먹고, 가고, 예쁘고, 이고
+
+## When to use it
+- Listing actions or qualities.
+착하고 재미있어. — She's kind and fun.
+- One after another.
+밥 먹고 가자. — Let's eat and then go.
+- With some verbs, the manner or state: 안경을 쓰고 있어 (wearing glasses).
+
+## When it seems to fit but doesn't
+- When the first action leads into or causes the second: -아서/어서.
+- Ongoing actions: -고 있다 (see that guide).
+
+## Nuance and register
+Neutral.
+
+## Common mistakes
+- 가고 친구를 만났어 for "went and met a friend (there)": use 가서.
+
+=== ko.connective_jiman | but -지만
+## What it is
+-지만 means "but, although", joining two contrasting clauses.
+
+## How to make it
+- Stem + 지만: 좋지만, 갔지만, 학생이지만
+
+## When to use it
+- Contrast.
+비싸지만 맛있어. — It's expensive but tasty.
+- Polite softener before a request: 죄송하지만… — I'm sorry, but…
+
+## When it seems to fit but doesn't
+- Background rather than contrast ("…, and/but"): -는데 is more natural in speech.
+
+## Nuance and register
+Clear and slightly formal; speech often prefers -는데.
+
+## Common mistakes
+- Overusing it in speech where -는데 sounds more natural.
+
+=== ko.connective_neunde | background / but -는데
+## What it is
+-는데 sets up background for what follows ("…, and / so / but…"), or ends a sentence softly, leaving something unsaid.
+
+## How to make it
+- Verbs: -는데 (가는데, 먹는데); adjectives: -(으)ㄴ데 (예쁜데, 좋은데); past: -았/었는데 (갔는데)
+- 이다: 인데
+
+## When to use it
+- Background before a question or request.
+배고픈데 뭐 먹을까? — I'm hungry, so what shall we eat?
+- Soft contrast.
+좋은데 비싸. — It's nice, but expensive.
+- At the end, hinting at something unsaid.
+나는 괜찮은데… — I'm fine, though…
+
+## When it seems to fit but doesn't
+- A clear cause with a result: -아서/어서 or -(으)니까.
+
+## Nuance and register
+Very common in speech; ending with it sounds hesitant or hinting.
+
+## Common mistakes
+- Adjective form: 좋는데 (wrong) → 좋은데.
+
+=== ko.connective_eumyeon | if / when -(으)면
+## What it is
+-(으)면 means "if" or "when (whenever)".
+
+## How to make it
+- Vowel stem: + 면 (가면, 하면); consonant stem: + 으면 (먹으면); ㄹ stem: + 면 (살면)
+- Past "if": -았/었으면 (갔으면)
+- -았/었으면 좋겠다: "I wish / I hope". 네가 왔으면 좋겠어. — I wish you'd come.
+
+## When to use it
+- Conditions.
+비가 오면 안 갈래. — If it rains, I won't go.
+- Whenever.
+슬프면 이 노래를 들어. — When I'm sad, I listen to this song.
+
+## When it seems to fit but doesn't
+- "When" for a single past event: -(으)ㄹ 때 or -았/었을 때.
+
+## Nuance and register
+Neutral; -았/었으면 좋겠다 is a gentle way to say what you want.
+
+## Common mistakes
+- 먹면 instead of 먹으면.
+
+=== ko.ending_jana | you know -잖아
+## What it is
+-잖아 reminds the listener of something they already know or should know: "you know…", "…, remember?", "come on, it's…".
+
+## How to make it
+- Stem + 잖아: 가잖아, 먹잖아, 했잖아; 이다: 이잖아 / 잖아 (친구잖아)
+- Polite: -잖아요
+
+## When to use it
+- Reminding.
+내가 말했잖아. — I told you, didn't I?
+- Justifying, as if it's obvious.
+배고프잖아. — (Because) I'm hungry, obviously.
+
+## When it seems to fit but doesn't
+- New information the listener can't know: plain ending.
+
+## Nuance and register
+Casual and familiar; can sound reproachful (내가 말했잖아!).
+
+## Common mistakes
+- Using it with people you're not close to.
+
+=== ko.ending_geodeun | you see, … -거든
+## What it is
+-거든 gives a reason or background the listener didn't know: "…, you see", "because…".
+
+## How to make it
+- Stem + 거든: 바쁘거든, 갔거든; 이다: 이거든 / 거든
+- Polite: -거든요
+
+## When to use it
+- Explaining.
+오늘 못 가. 일이 있거든. — I can't go today. I've got work, you see.
+- Setting up a story: 어제 친구를 만났거든, 근데… — So I met a friend yesterday, and…
+
+## When it seems to fit but doesn't
+- Reasons the listener already knows: -잖아.
+- In the middle of a sentence, -거든 means "if" (가거든 연락해 — call when you get there), a separate, more formal use.
+
+## Nuance and register
+Casual and chatty.
+
+## Common mistakes
+- Using it for shared knowledge (-잖아).
+
+=== ko.aux_go_sipda | want to -고 싶다
+## What it is
+-고 싶다 means "want to (do)". For someone else's wish: -고 싶어하다.
+
+## How to make it
+- Stem + 고 싶다: 가고 싶어, 보고 싶어
+- 보고 싶다 also means "miss (someone)": 보고 싶어. — I miss you.
+
+## When to use it
+- Your wishes.
+집에 가고 싶어. — I want to go home.
+- Missing someone.
+너무 보고 싶어. — I miss you so much.
+
+## When it seems to fit but doesn't
+- Wanting a thing (a noun): 원하다 or noun + 이/가 갖고 싶다.
+- Someone else's want: -고 싶어하다 (그는 가고 싶어해).
+
+## Nuance and register
+Neutral; 보고 싶어 is everywhere in songs.
+
+## Common mistakes
+- 그는 가고 싶어 (sounds like his inner voice) instead of 가고 싶어해.
+
+=== ko.aux_go_itta | doing (right now) -고 있다
+## What it is
+-고 있다 means an action is in progress: "is doing".
+
+## How to make it
+- Stem + 고 있다: 먹고 있어, 기다리고 있어; past: -고 있었어
+
+## When to use it
+- Ongoing actions.
+지금 뭐 하고 있어? — What are you doing right now?
+- Continuing situations.
+아직 기다리고 있어. — I'm still waiting.
+- Wearing: 안경을 쓰고 있어. — He's wearing glasses.
+
+## When it seems to fit but doesn't
+- Resulting states (sitting, standing, open): -아/어 있다. 앉아 있어 — is seated.
+
+## Nuance and register
+Neutral; the plain present often does the same job in speech.
+
+## Common mistakes
+- 앉고 있어 for "is seated" (that's "is in the act of sitting down").
+
+=== ko.future_geot_ida | will / going to -(으)ㄹ 거다
+## What it is
+-(으)ㄹ 거다 (casual -(으)ㄹ 거야, polite -(으)ㄹ 거예요) talks about the future, or a guess: "will, going to, probably".
+
+## How to make it
+- Vowel stem: ㄹ 거야 (갈 거야); consonant: 을 거야 (먹을 거야)
+- Questions: 갈 거야? — Are you going to go?
+
+## When to use it
+- Plans and intentions.
+내일 갈 거야. — I'm going tomorrow.
+- Guesses.
+괜찮을 거야. — It'll be okay.
+
+## When it seems to fit but doesn't
+- A promise or offer to the listener: -(으)ㄹ게 (내가 할게 — I'll do it).
+- Asking what the listener wants to do: -(으)ㄹ래 (뭐 먹을래?).
+
+## Nuance and register
+Neutral. In songs, 괜찮을 거야 and 기억할 거야 are common.
+
+## Common mistakes
+- Using 할 거야 for promises where 할게 fits.
+
+=== ko.modifier_neun_eun_eul | describing a noun -는 / -(으)ㄴ / -(으)ㄹ
+## What it is
+These endings turn a verb or adjective into a describer placed before a noun, like a relative clause: "the X that…".
+
+## How to make it
+- Verbs, now: -는. 웃는 얼굴 — a smiling face
+- Verbs, past: -(으)ㄴ. 어제 본 영화 — the movie (I) saw yesterday
+- Verbs, future or unrealised: -(으)ㄹ. 할 일 — things to do
+- Adjectives: -(으)ㄴ. 예쁜 꽃 — a pretty flower; 달콤한 미소 — a sweet smile
+- 있다 / 없다: -는 (재미있는, 맛없는)
+
+## When to use it
+- Describing a noun with a whole clause.
+네가 좋아하는 노래 — the song you like
+- With 것 / 때 / 수 / 적: 먹을 때 (when eating), 본 적 있어 (have seen).
+
+## When it seems to fit but doesn't
+- The subject inside the clause takes 이/가, not 은/는: 내가 만든 노래.
+
+## Nuance and register
+Neutral; used everywhere.
+
+## Common mistakes
+- Adjective with -는 (예쁘는 → 예쁜).
+- Mixing up 본 (saw) and 볼 (will see).
