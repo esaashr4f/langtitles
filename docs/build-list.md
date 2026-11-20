@@ -461,6 +461,17 @@ general guides in advance for almost everything you'll meet, so the API only han
 - [ ] **Input from you:** subtitle files for 100+ Chinese shows, K-dramas, anime and Japanese shows, plus K-pop
   and J-pop lyrics; one folder per language, grouped by show / artist; any format (srt, ass, vtt, lrc, txt).
   Shared privately (uploaded to a session or a private repository), never a public one.
+- [ ] **Scope you described:** every season of the ~100 most popular anime, K-dramas, C-dramas, live-action Japanese
+  shows, and other Korean / Chinese shows (several million lines). Processed locally by scripts, not line by line
+  by Claude: Japanese via the dictionary + deinflection, Korean by splitting particles / endings from stems,
+  Chinese by dictionary word segmentation. Variety of genres matters more than count; the frequency curve shows
+  where new vocabulary stops paying off.
+- [ ] **Getting the files:** supplied by you (upload / private repository), or downloaded through the subtitle
+  APIs with your own keys set in the environment (never pasted in chat), within their download limits.
+- [ ] **What it saves:** guide spending mostly (line breakdowns stay per line, since they depend on context).
+  Optional, for shows you plan to watch: pre-made breakdowns for specific subtitle files, so watching those
+  exact files costs nothing.
+- [ ] Do section 14's guide fixes first (general format, one name per form, no paid checks on reopen).
 - [ ] **Frequency first:** count every word and grammar form across the corpus, merged by dictionary form
   (食べさせられた → 食べる, 먹었어요 → 먹다, using the built-in dictionaries and deinflection); write from the most
   frequent down, so ~90% of what you hear is covered with the fewest guides. The counts show where to stop
