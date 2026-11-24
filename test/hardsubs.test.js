@@ -31,7 +31,7 @@ function frame(w, h, lines) {
 test('finds two burned-in subtitle lines and ignores bright objects', () => {
   const w = 384;
   const h = 216;
-  // two lines from 79% to 86% and 87% to 94% of the height (like the animepahe screenshot)
+  // two lines from 79% to 86% and 87% to 94% of the height (like a typical anime site screenshot)
   const hit = SG.hardsubs.find(frame(w, h, [[0.79, 0.855], [0.87, 0.935]]), w, h);
   assert.ok(hit);
   assert.ok(Math.abs(hit.top - 0.21) < 0.02, String(hit.top));

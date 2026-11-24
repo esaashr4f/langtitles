@@ -89,19 +89,19 @@
   }
 
   // "Show Name S01E02", "Show 1x02", "Show Season 1 Episode 2", "Show - Episode 3", "第3話", "3화"
-  // Release / file names ("AnimePahe_Monster_-_62_BD_1080p_Kitsune.mp4", "[Kitsune] Monster - 62 (BD 1080p).mkv")
+  // Release / file names ("SiteName_Monster_-_62_BD_1080p_Group.mp4", "[Group] Monster - 62 (BD 1080p).mkv")
   // become an ordinary title ("Monster - 62"). Players inside frames often have one as their page title.
   const QUALITY = /\b(BD|BDRip|Blu-?Ray|WEB(-?DL|-?Rip)?|HDTV|DVD(Rip)?|\d{3,4}p|[xh]\.?26[45]|HEVC|AVC|AAC|FLAC|Opus|10-?bit|8-?bit|Dual[- ]Audio|Multi[- ]?Subs?|Eng(lish)?[- ]?Subs?|Uncensored)\b/gi;
-  function cleanReleaseName(t, site) {
+  function cleanReleaseName(t, sites) {
     const looksLikeFile = /\.(mp4|mkv|avi|webm|m4v|ts)$/i.test(t) || (/_/.test(t) && !/\s/.test(t)) || /^\[[^\]]+\]/.test(t);
     if (!looksLikeFile) return t;
     let x = t.replace(/\.(mp4|mkv|avi|webm|m4v|ts)$/i, '');
     if (!/\s/.test(x)) x = x.replace(/[_.]+/g, ' ');
     x = x.replace(/^\s*\[[^\]]*\]\s*/, '').replace(/[[(][^\])]*[\])]/g, ' ');
     const words = x.split(/\s+/).filter(Boolean);
-    // Drop the site's own name and everything from the first quality tag on (group names follow it).
-    const siteWord = (site || '').toLowerCase();
-    const known = /^(animepahe|kwik|gogoanime|9anime|zoro|hianime|aniwatch|animekai|crunchyroll)$/i;
+    // Drop the names of the sites involved (the page and its player frames) and everything from the
+    // first quality tag on (group names follow it).
+    const siteWords = new Set((sites || []).filter((x) => x && x.length >= 3).map((x) => x.toLowerCase()));
     const kept = [];
     for (const w of words) {
       if (QUALITY.test(w)) {
@@ -109,16 +109,17 @@
         break;
       }
       QUALITY.lastIndex = 0;
-      if (known.test(w) || (siteWord && w.toLowerCase() === siteWord)) continue;
+      if (siteWords.has(w.toLowerCase())) continue;
       kept.push(w);
     }
     return kept.join(' ').trim() || t;
   }
 
-  function fromTitle(title, url) {
+  // otherSites: names of the other sites in play (the page around a player frame), also left out.
+  function fromTitle(title, url, otherSites) {
     let t = String(title || '').trim();
     if (!t) return null;
-    t = cleanReleaseName(t, url ? siteLabel(url) : '');
+    t = cleanReleaseName(t, [url ? siteLabel(url) : ''].concat(otherSites || []));
     const site = url ? siteLabel(url) : '';
     const out = {};
     let m;
@@ -166,7 +167,8 @@
       }
     };
     for (const s of sources) fill(fromUrl(s.url), false);
-    for (const s of sources) fill(fromTitle(s.title, s.url), false);
+    const sites = sources.map((s) => (s.url ? siteLabel(s.url) : '')).filter(Boolean);
+    for (const s of sources) fill(fromTitle(s.title, s.url, sites), false);
     if (result.type === 'movie') {
       result.season = null;
       result.episode = null;

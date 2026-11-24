@@ -7,19 +7,19 @@ docs/pending-notes.md and get loaded in as part of item 5.
 ## 1. Fixes (first)
 
 - [x] **Full-screen clicks.** In the player's full screen, clicking subtitle words, the word card or the panel
-  does nothing (animepahe's player grabs every click first). Catch clicks on Langtitles' own elements
+  does nothing (one anime site's player grabs every click first). Catch clicks on Langtitles' own elements
   before the player, start the content script earlier (document_start) so it registers first, and stop
   the player from also pausing. Test with a fake player that grabs all clicks in full screen.
-- [x] **Panel layout bugs** (seen on animepahe at a narrow panel width):
+- [x] **Panel layout bugs** (seen on an anime site at a narrow panel width):
   - "Langtitles" title overlaps the Subtitles switch; status cut to "213/335…". Let the title shrink,
     make the switch icon-only when narrow.
   - Tabs cut off ("Transcr…"): fit at narrow widths (short labels or scrolling tab row).
   - Track box squashed to a thin line: children of the scrolling tab must not shrink (flex-shrink: 0).
   - Number boxes show the browser's own up/down arrows: style them.
   - The site's own styles leak in (text larger than intended): put the overlay in a Shadow DOM.
-  - Test at the panel's narrowest width and on animepahe-like layouts before sending.
-- [x] **Show detection.** Read the show name from the page title ("Monster Ep. 62 :: animepahe" -> Monster,
-  episode 62), removing site names, instead of "animepahe_monster".
+  - Test at the panel's narrowest width and on layouts like that one before sending.
+- [x] **Show detection.** Read the show name from the page title ("Monster Ep. 62 :: SiteName" -> Monster,
+  episode 62), removing site names, instead of "sitename_monster".
 - [x] **ID box.** Picking a show in "Find the show" sets its correct ID; typing a new title clears an ID
   that doesn't match; an ID search with no results falls back to the title.
 
@@ -28,7 +28,7 @@ docs/pending-notes.md and get loaded in as part of item 5.
 - [x] **Saved shows / show presets** (the "Monster preset"): pick "Monster (2004)" once, with its poster;
   save the show, subtitle site, subtitle group and timing. "My shows" appear first in Find subtitles;
   one click loads them. A "Use for every episode" button on each subtitle result. Remember that a
-  site's title ("Monster Ep. 62" on animepahe) is this saved show, so later episodes load with no
+  site's title ("Monster Ep. 62" on a streaming site) is this saved show, so later episodes load with no
   searching. Show what is saved; Forget button.
 - [x] **Posters for every kind of show:** AniList for anime (no key), TVmaze for TV series (no key),
   OpenSubtitles' catalogue for films (existing key), optional TMDB key for best quality; fall back to

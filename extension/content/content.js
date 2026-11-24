@@ -3921,7 +3921,7 @@
     if (og && og.content) sources.push({ url: '', title: og.content });
     const ep = SG.episode.detect(sources);
     lastSiteTitle = ep.title || '';
-    // A show you've saved, recognised by the name this site gives it (Monster on animepahe -> your Monster).
+    // A show you've saved, recognised by the name this site gives it ("Monster" on some site -> your Monster).
     if (!ep.tmdbId && !ep.imdbId && !ep.jimakuId) {
       const saved = (await request({ type: 'matchShow', episode: ep })).entry;
       if (saved) {

@@ -6,7 +6,7 @@ questions" notes) once guide notes are built. Also guides to write on request.
 ## Notes
 
 ### Line: 自分などまだ吸血鬼を取り巻くコウモリ程度でしかないと
-Show: Monster (2004) · animepahe · same episode as 素行調査 / 必要としていた
+Show: Monster (2004) · anime site · same episode as 素行調査 / 必要としていた
 
 **For the grammar guide "noun-modifying clause" (relative clause), and the word guide 取り巻く**
 
@@ -31,7 +31,7 @@ So 程度 contributes "a mere level", and the context makes it an insult to hims
 (コウモリ程度だ) it still leans dismissive because of the other clues, just less strongly.
 
 ### Line: 俺が殺した連中は要らない連中なんだよ
-Show: Monster (2004) · animepahe
+Show: Monster (2004) · anime site
 
 **For the past ～た guide (built-in) and the noun-modifying clause guide**
 

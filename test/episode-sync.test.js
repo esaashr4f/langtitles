@@ -6,18 +6,18 @@ require('../extension/shared/sync.js');
 const { detect, fromTitle, confident, key } = globalThis.SG.episode;
 const { align } = globalThis.SG.sync;
 
-test('donkey.to player frames and pages', () => {
+test('embedded player frames and pages', () => {
   const ep = detect([
     { url: 'https://player.videasy.net/tv/1399/2/5?color=FFA500', title: '' },
-    { url: 'https://donkey.to/watch-now?type=tv&id=1399', title: 'Donkey | Watch Free Movies Online' },
+    { url: 'https://example-stream.to/watch-now?type=tv&id=1399', title: 'Example-stream | Watch Free Movies Online' },
   ]);
   assert.deepEqual([ep.type, ep.tmdbId, ep.season, ep.episode], ['tv', '1399', 2, 5]);
-  assert.equal(ep.title, ''); // "Donkey | Watch Free Movies Online" is the site, not the show
+  assert.equal(ep.title, ''); // "Example-stream | Watch Free Movies Online" is the site, not the show
   assert.ok(confident(ep));
   const movie = detect([{ url: 'https://vidsrc.sh/embed/movie/tt0133093', title: '' }]);
   assert.deepEqual([movie.type, movie.imdbId, movie.season], ['movie', 'tt0133093', null]);
   assert.ok(confident(movie));
-  const page = detect([{ url: 'https://donkey.to/watch-now?type=tv&id=1399&seasonId=3&episodeId=4', title: '' }]);
+  const page = detect([{ url: 'https://example-stream.to/watch-now?type=tv&id=1399&seasonId=3&episodeId=4', title: '' }]);
   assert.deepEqual([page.type, page.tmdbId, page.season, page.episode], ['tv', '1399', 3, 4]);
 });
 
@@ -90,9 +90,17 @@ test('align refuses unrelated subtitles', () => {
   assert.equal(align(a, b).ok, false);
 });
 
-test('show names from file-style frame titles (animepahe / kwik)', () => {
+test('show names from file-style frame titles', () => {
   const E = globalThis.SG.episode;
-  assert.deepStrictEqual(E.fromTitle('AnimePahe_Monster_-_62_BD_1080p_Kitsune.mp4', 'https://kwik.cx/e/abc'), { episode: 62, type: 'tv', title: 'Monster' });
+  assert.deepStrictEqual(E.fromTitle('ExampleSite_Monster_-_62_BD_1080p_Kitsune.mp4', 'https://player.example/e/abc', ['examplesite']), { episode: 62, type: 'tv', title: 'Monster' });
   assert.deepStrictEqual(E.fromTitle('[Kitsune] Monster - 62 (BD 1080p).mkv', ''), { episode: 62, type: 'tv', title: 'Monster' });
-  assert.strictEqual(E.fromTitle('Monster Ep. 62 :: animepahe', 'https://animepahe.pw/play/x').title, 'Monster');
+  assert.strictEqual(E.fromTitle('Monster Ep. 62 :: examplesite', 'https://examplesite.pw/play/x').title, 'Monster');
+});
+
+test('the page site name is dropped from a player frame file name', () => {
+  const ep = detect([
+    { url: 'https://examplesite.pw/play/x', title: '' },
+    { url: 'https://player.example/e/abc', title: 'ExampleSite_Monster_-_62_BD_1080p_Kitsune.mp4' },
+  ]);
+  assert.deepEqual([ep.title, ep.episode], ['Monster', 62]);
 });

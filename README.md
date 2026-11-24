@@ -71,7 +71,7 @@ Every kanji and hanzi entry shows its stroke order, animated and numbered. For J
 
 Streaming sites often have no subtitles in the language you are learning. Langtitles can fetch them from **OpenSubtitles**, **SubDL** and **Jimaku** (Japanese anime subtitles) through their official APIs. Each needs a free account; add the keys under **Options → Subtitle sites**.
 
-- **Automatic:** after a few seconds of playback, if the site has no subtitles in your languages, Langtitles works out which episode is playing, picks the best match and loads it. Embedded players such as the ones donkey.to uses put the show's TMDB id, season and episode in their own address, so the episode is exact. On other sites it falls back to the page title, and only fills in the search form.
+- **Automatic:** after a few seconds of playback, if the site has no subtitles in your languages, Langtitles works out which episode is playing, picks the best match and loads it. Some embedded players put the show's TMDB id, season and episode in their own address, so the episode is exact. On other sites it falls back to the page title, and only fills in the search form.
 - **Timing:** downloaded files are often a second or more off. If the site has its own subtitles in any language (often English), Langtitles lines the file up with them automatically, including the 25 / 23.976 fps mismatch. Otherwise use **−** / **+** in the panel (Shift-click for 2-second steps). The timing you set is remembered for that episode.
 - **By hand:** press **G** → **Find subtitles** to see every match, best first, and pick another file.
 - **Find the show by title:** if the right show isn't found (or the page doesn't say which show it is), type its title in Find subtitles and click **Find the show**. Langtitles searches OpenSubtitles, SubDL and Jimaku for shows and movies with that title and lists them with year, type, their IMDb id or Jimaku entry, and how many subtitles OpenSubtitles has in your language. Add the year to narrow it down: `Monster (2004)`. Pick one and it is used for the search and remembered for that page, so later episodes find it automatically. For anime, picking the Jimaku entry is often what finds Japanese subtitles.
@@ -146,9 +146,9 @@ Langtitles tries these in order, so it works on sites nobody has written special
 
 Subtitles that are burned into the video picture cannot be read.
 
-### Sites like donkey.to
+### Sites with embedded players
 
-donkey.to and similar sites play the video in an embedded player from another domain. Langtitles runs inside embedded players and captures their subtitle requests, so turning subtitles on in that player should be enough. If no subtitles show up, use **Pick on page** or **Load file**. The popup lists every subtitle file it has captured on the tab, which helps when reporting a site that doesn't work.
+Some sites play the video in an embedded player from another domain. Langtitles runs inside embedded players and captures their subtitle requests, so turning subtitles on in that player should be enough. If no subtitles show up, use **Pick on page** or **Load file**. The popup lists every subtitle file it has captured on the tab, which helps when reporting a site that doesn't work.
 
 ## Phrases, and how the sentence works
 
