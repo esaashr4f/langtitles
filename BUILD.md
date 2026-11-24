@@ -6,7 +6,7 @@ generated, and each is described below with the script that makes it.
 
 ## Requirements
 
-- Node.js 22 (tested with 22.23.4) and npm 10 (tested with 10.9.9)
+- Node.js 22.2 or newer (tested with 22.23.4) and npm 10 (tested with 10.9.9)
 - Any operating system (Linux, macOS or Windows)
 
 ## Steps
@@ -48,6 +48,23 @@ from the original releases:
 
 The output depends on the dictionary release you download, so a newer release gives slightly different
 files.
+
+## The Chrome version
+
+`npm run package:chrome` runs `scripts/build-chrome.mjs`, which copies `extension/` to `dist/chrome/` and turns
+it into a Manifest V3 extension without changing any source file:
+
+- `manifest.json` is rewritten for Manifest V3 (service worker background, `action`, `host_permissions`,
+  `contextMenus` and `alarms` in place of `menus`, PNG icons from `chrome/icons/`).
+- `sw.js` loads the same background scripts as the Firefox manifest, in the same order.
+- `vendor/browser-polyfill.js` is Mozilla's `webextension-polyfill` 0.12.0, copied unmodified from npm, so
+  Chrome has the `browser` API. `chrome/chrome-compat.js` adds the rest (menus and action names, alarms
+  for long timers).
+- `chrome/netcapture.js` (in the page) and `chrome/netbridge.js` pass subtitle files to the background,
+  since Chrome can't read response bodies.
+- A few sentences in the Options page that name Firefox are reworded for Chrome.
+
+The output is the same on every run (fixed file dates in the zip).
 
 ## Other contents
 

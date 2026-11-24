@@ -142,3 +142,31 @@ Generated data files (dictionaries, grammar JSON) are also described in BUILD.md
 - **Google Drive client ID:** follow `docs/google-drive-setup.md` and put the ID in
   `extension/background/drive.js` first, or Drive backups will ask each person for their own client ID.
 - `npm run lint` passes with no errors or warnings.
+
+---
+
+# Chrome Web Store
+
+Upload `dist/langtitles-chrome-<version>.zip` from `npm run package:chrome` at
+https://chrome.google.com/webstore/devconsole (a one-time $5 developer registration).
+
+- **Description, screenshots, category:** the same as above (category: Education, or Tools).
+- **Small promo tile (440×280):** required. Not made yet.
+- **Single purpose:** "Helps people learn a language from the films, TV and music they watch, by breaking
+  down the subtitles word by word."
+- **Permission justifications** (one box each):
+  - *host permissions (all sites):* the subtitle overlay works on any streaming site, which can't be listed in advance.
+  - *webRequest:* to notice the subtitle files a video player loads, so they can be broken down. Requests are only observed.
+  - *webNavigation:* to notice when a single-page player moves to the next episode.
+  - *storage / unlimitedStorage:* saved breakdowns, dictionaries and the word bank.
+  - *contextMenus:* right-click items to turn Langtitles on or off.
+  - *downloads:* automatic backups and Anki export.
+  - *identity:* optional Google Drive backups.
+  - *alarms:* hourly backups, sync and checks on batch jobs.
+- **Remote code:** "No, I am not using remote code." (Stroke-order and pitch data are fetched as data, not code.)
+- **Data usage:** tick *Website content* (subtitle lines sent to Claude) and *Authentication information*
+  (the user's own API keys, sent only to their services). Certify: not sold, not used for unrelated
+  purposes, not used for creditworthiness.
+- **Privacy policy URL:** a public link to `PRIVACY.md`.
+- **Google Drive:** add the store-assigned ID's `https://<id>.chromiumapp.org/` to the Google client
+  (docs/google-drive-setup.md).

@@ -17,12 +17,16 @@
   }
 
   async function write(name, text) {
-    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    // Chrome's background (a service worker) has no object URLs; a data: URL does the same job there.
+    const blobUrl = typeof URL.createObjectURL === 'function';
+    const url = blobUrl
+      ? URL.createObjectURL(new Blob([text], { type: 'application/json' }))
+      : 'data:application/json;base64,' + btoa(unescape(encodeURIComponent(text)));
     try {
       const id = await browser.downloads.download({ url, filename: `${FOLDER}/${name}`, saveAs: false, conflictAction: 'uniquify' });
       return id;
     } finally {
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      if (blobUrl) setTimeout(() => URL.revokeObjectURL(url), 60000);
     }
   }
 

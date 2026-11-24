@@ -2,19 +2,21 @@
   "name": "langtitles",
   "version": "0.6.2",
   "private": true,
-  "description": "Firefox extension: interlinear word-by-word subtitle breakdowns for any streaming site, powered by Claude.",
+  "description": "Browser extension (Firefox and Chrome): interlinear word-by-word subtitle breakdowns for any streaming site, powered by Claude.",
   "scripts": {
     "build:vendor": "node scripts/build-vendor.mjs",
     "test": "node --test test/*.test.js",
     "lint": "web-ext lint --source-dir extension",
     "package": "npm run build:data && web-ext build --source-dir extension --artifacts-dir dist --overwrite-dest",
     "build:data": "node scripts/build-grammar.mjs && node scripts/build-library-fixes.mjs",
-    "build:dict": "echo \"node scripts/build-dict.mjs JMdict_e kanjidic2.xml; node scripts/build-kodict.mjs kaikki-Korean.jsonl; node scripts/build-zhdict.mjs cedict.txt (see README)\""
+    "build:dict": "echo \"node scripts/build-dict.mjs JMdict_e kanjidic2.xml; node scripts/build-kodict.mjs kaikki-Korean.jsonl; node scripts/build-zhdict.mjs cedict.txt (see README)\"",
+    "package:chrome": "npm run build:data && node scripts/build-chrome.mjs"
   },
   "license": "MIT",
   "devDependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
     "esbuild": "^0.28.2",
-    "web-ext": "^10.8.0"
+    "web-ext": "^10.8.0",
+    "webextension-polyfill": "^0.12.0"
   }
 }

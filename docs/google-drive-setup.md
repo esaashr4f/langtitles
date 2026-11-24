@@ -25,6 +25,9 @@ classes as **non-sensitive**, so there is no security review or verification fee
      `https://77885ee350c86f916a7f8158047d7f77e7d205a8.extensions.allizom.org/`
      This is Firefox's redirect address for the add-on ID `langtitles@langtitles.local`. It changes if the
      ID changes, and Options → Backups → Advanced always shows the exact one for the installed copy.
+     **Chrome** uses `https://<extension id>.chromiumapp.org/`: add that one to the same client too. The
+     Chrome Web Store gives the extension its permanent ID when you first upload it; a copy loaded
+     unpacked has a different ID (shown in Options → Backups → Advanced).
    - Create, then copy the **Client ID** (ends in `.apps.googleusercontent.com`). There's no need for the
      client secret: the extension never uses it.
 7. Put the client ID in `extension/background/drive.js`:

@@ -1365,7 +1365,7 @@
 
   // ---- popup and options page --------------------------------------------
 
-  browser.runtime.onMessage.addListener((msg) => {
+  browser.runtime.onMessage.addListener((msg, sender) => {
     if (!msg || typeof msg !== 'object') return undefined;
     if (msg.type === 'status') {
       return ready.then(async () => ({
@@ -1406,6 +1406,12 @@
     if (msg.type === 'spendLog') return browser.storage.local.get('spendLog').then((r) => r.spendLog || { days: {}, shows: {}, top: [] });
     if (msg.type === 'backupNow') return SG.autobackup.check(true);
     if (msg.type === 'backupStatus') return SG.autobackup.status();
+    // Chrome: subtitle files the page's player fetched, passed on by chrome/netcapture.js.
+    if (msg.type === 'netSub' && sender && sender.tab) {
+      sniffer.ingest(sender.tab.id, String(msg.url || ''), String(msg.contentType || ''), msg.text);
+      return Promise.resolve(true);
+    }
+    if (msg.type === 'ltPing') return Promise.resolve(true);
     if (msg.type === 'syncNow') return SG.cloudsync.check();
     if (msg.type === 'syncStatus') return SG.cloudsync.status();
     if (msg.type === 'driveStatus') return SG.drive.status();
@@ -1492,7 +1498,7 @@
   function buildMenus() {
     if (!browser.menus) return;
     browser.menus.removeAll().then(() => {
-      const contexts = ['page', 'video', 'frame', 'browser_action'];
+      const contexts = ['page', 'video', 'frame', SG.isChrome ? 'action' : 'browser_action'];
       browser.menus.create({ id: 'lt-toggle', title: settings.enabled ? 'Turn Langtitles off' : 'Turn Langtitles on', contexts });
       browser.menus.create({ id: 'lt-site', title: 'Langtitles on this site: switch on or off', contexts });
     });

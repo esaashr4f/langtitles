@@ -442,13 +442,23 @@
 
   // ------------------------------------------------------------- background
 
+  let pingTimer = null;
   function connect() {
     if (port) return;
-    port = browser.runtime.connect({ name: 'langtitles' });
+    try {
+      port = browser.runtime.connect({ name: 'langtitles' });
+    } catch (e) {
+      return; // Langtitles was updated or removed: this page's copy is orphaned
+    }
     port.onMessage.addListener(onMessage);
     port.onDisconnect.addListener(() => {
       port = null;
+      // Chrome stops an idle background and restarts it on demand: reconnect, and it sends init again.
+      if (SG.isChrome && video) setTimeout(connect, 1000);
     });
+    // Chrome: messages keep the background awake while a video is open, so subtitles it has
+    // captured for this tab aren't lost.
+    if (SG.isChrome && !pingTimer) pingTimer = setInterval(() => port && post({ type: 'ping' }), 25000);
   }
 
   function post(msg) {

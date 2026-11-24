@@ -238,8 +238,8 @@ docs/pending-notes.md and get loaded in as part of item 5.
 
 - [ ] **Firefox public listing:** description in terms of legal sites, screenshots, privacy policy page,
   source zip; also gets Firefox for Android.
-- [ ] **Chrome version:** Manifest V3 (service worker background), subtitle capture from inside the page,
-  contextMenus; one codebase builds both; $5 developer fee.
+- [x] **Chrome version:** Manifest V3 (service worker background), subtitle capture from inside the page,
+  contextMenus; one codebase builds both (npm run package:chrome); $5 developer fee. Store details in docs/store-listing.md.
 - [ ] **Money (later):** donation link first; hosted "no key needed" plan with accounts and payments; check
   OpenSubtitles / SubDL / Jimaku terms for commercial use.
 

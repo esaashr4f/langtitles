@@ -37,7 +37,7 @@ Langtitles only contacts a service when you use a feature that needs it.
 | **Lyrics:** LRCLIB, Apple iTunes search | The song title and artist | In Listen mode, to find lyrics and identify the song |
 | **jsDelivr CDN** (cdn.jsdelivr.net) | The single character whose stroke order you open; a one-time download of the public pitch-accent list | When you open stroke order, or first use pitch accent |
 | **Google Drive** (only if you connect it) | Your backup files, to a *Langtitles backups* folder in your own Drive. Encrypted first if you set a passphrase | When a backup is made, and when you restore from Drive |
-| **Firefox Sync** (only if you turn on "Sync between computers") | Your settings (without keys or logins), known words and word bank, through Mozilla's Firefox Sync, which encrypts it end to end so Mozilla can't read it | Every few minutes while something has changed |
+| **Firefox Sync or Chrome sync** (only if you turn on "Sync between computers") | Your settings (without keys or logins), known words and word bank, through your browser's own sync. Firefox Sync encrypts it end to end so Mozilla can't read it; Chrome sync is encrypted by Google, and end to end only if you set a sync passphrase in Chrome | Every few minutes while something has changed |
 | **The streaming site itself** | Langtitles re-downloads the subtitle file the site is already loading, without your cookies | When you watch something with Langtitles on |
 
 Each service handles that data under its own privacy policy. Anthropic's commercial terms say API data is

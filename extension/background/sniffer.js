@@ -223,12 +223,43 @@
     };
   }
 
+  // Chrome can't read response bodies. There, a script in the page passes on the subtitle files its
+  // player fetches (chrome/netcapture.js), and anything it didn't see (a <track> element, a worker) is
+  // downloaded again here a moment later.
+  const passedOn = new Map(); // url -> time a page passed it on
+  const MISSED_AFTER = 2500;
+
+  function ingest(tabId, url, contentType, text) {
+    const details = { tabId, url, statusCode: 200, responseHeaders: [{ name: 'content-type', value: contentType || '' }] };
+    const kind = classify(details);
+    if (!kind || typeof text !== 'string' || text.length > MAX_BYTES) return false;
+    passedOn.set(url, Date.now());
+    if (passedOn.size > 500) passedOn.delete(passedOn.keys().next().value);
+    if (ownSegments.has(url)) return true;
+    if (kind === 'hls') handleHls(details, text).catch(() => {});
+    else handleSubtitle(details, text);
+    return true;
+  }
+
+  function onHeadersSeen(details) {
+    const kind = classify(details);
+    if (!kind || ownSegments.has(details.url)) return;
+    setTimeout(() => {
+      if (passedOn.has(details.url) || ownSegments.has(details.url)) return;
+      fetchText(details.url)
+        .then((text) => {
+          if (passedOn.has(details.url)) return;
+          if (kind === 'hls') return handleHls(details, text);
+          handleSubtitle(details, text);
+        })
+        .catch(() => {});
+    }, MISSED_AFTER);
+  }
+
   function start() {
-    browser.webRequest.onHeadersReceived.addListener(
-      onHeaders,
-      { urls: ['http://*/*', 'https://*/*'], types: ['xmlhttprequest', 'media', 'other', 'object'] },
-      ['blocking', 'responseHeaders'],
-    );
+    const filter = { urls: ['http://*/*', 'https://*/*'], types: ['xmlhttprequest', 'media', 'other', 'object'] };
+    if (browser.webRequest.filterResponseData) browser.webRequest.onHeadersReceived.addListener(onHeaders, filter, ['blocking', 'responseHeaders']);
+    else browser.webRequest.onHeadersReceived.addListener(onHeadersSeen, filter, ['responseHeaders']);
     // A real page load in the tab means the previous video's subtitles no longer apply.
     browser.webRequest.onBeforeRequest.addListener(
       (details) => {
@@ -241,6 +272,7 @@
 
   SG.sniffer = {
     start,
+    ingest,
     onTrack: (fn) => listeners.add(fn),
     tracksFor: (tabId) => Array.from((tabs.get(tabId) || new Map()).values()),
     _internals: { classify, groupId, decode },

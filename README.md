@@ -2,7 +2,7 @@
 
 <img src="extension/icons/icon.svg" width="72" alt="">
 
-A Firefox extension that turns the subtitles on any streaming site into a word-by-word breakdown, written by Claude.
+A Firefox and Chrome extension that turns the subtitles on any streaming site into a word-by-word breakdown, written by Claude.
 
 Above every word you see its best translation for this sentence, and its reading. Click (or rest on) a word for the rest: the pieces it is built from with what each piece does (`食べ eat + させ make/let (causative) + られ be done to (passive) + た past`), other meanings, notes and guides. The pieces can also be shown above the words (Show → Pieces). Under each phrase, a coloured bar shows its job in the sentence (topic, object, predicate…). Hovering a word pauses the video and opens a note. A side panel shows the translation, a literal word-for-word rendering, the sentence structure, grammar notes and a clickable transcript.
 
@@ -122,6 +122,20 @@ You need Firefox 140 or newer and an Anthropic API key from [console.anthropic.c
 3. Click the Langtitles toolbar button → **Options**, paste your API key, and click **Test key**.
 
 **Keep it installed:** Firefox only installs signed add-ons permanently. Either sign it for yourself (free, not published) on [addons.mozilla.org](https://addons.mozilla.org/developers/) as an "On your own" add-on, using the zip from `npm run package`, or use Firefox Developer Edition or Nightly with `xpinstall.signatures.required` set to `false` in `about:config`.
+
+### Chrome (and Edge, Brave, Opera)
+
+Chrome 116 or newer. The Chrome version is built from the same source:
+
+1. `npm ci`, then `npm run package:chrome`. This makes `dist/chrome/` and `dist/langtitles-chrome-<version>.zip`.
+2. Open `chrome://extensions`, turn on **Developer mode**, click **Load unpacked** and choose `dist/chrome`. It stays installed.
+3. Click the Langtitles toolbar button → **Options**, paste your API key, and click **Test key**.
+
+Differences on Chrome:
+- Chrome doesn't let extensions read the subtitle files a site downloads, so a small script in the page passes them on as the player fetches them. Files the page script can't see, such as a `<track>` element's file, are downloaded again a moment later. This covers the same sites in testing, but a site whose player fetches subtitles from a background worker will need **Find subtitles** or **Load file**.
+- **Sync between computers** uses Chrome sync (with Extensions included) instead of Firefox Sync.
+- Chrome can stop the background when it's idle. Langtitles keeps it awake while a video or one of its pages is open, and the backups, sync and batch checks run on Chrome's alarms.
+- Change the Alt+Shift+L shortcut at `chrome://extensions/shortcuts`.
 
 ## Using it
 
