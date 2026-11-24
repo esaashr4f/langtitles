@@ -14,7 +14,7 @@ test('embedded player frames and pages', () => {
   assert.deepEqual([ep.type, ep.tmdbId, ep.season, ep.episode], ['tv', '1399', 2, 5]);
   assert.equal(ep.title, ''); // "Example-stream | Watch Free Movies Online" is the site, not the show
   assert.ok(confident(ep));
-  const movie = detect([{ url: 'https://vidsrc.sh/embed/movie/tt0133093', title: '' }]);
+  const movie = detect([{ url: 'https://player.example/embed/movie/tt0133093', title: '' }]);
   assert.deepEqual([movie.type, movie.imdbId, movie.season], ['movie', 'tt0133093', null]);
   assert.ok(confident(movie));
   const page = detect([{ url: 'https://example-stream.to/watch-now?type=tv&id=1399&seasonId=3&episodeId=4', title: '' }]);
