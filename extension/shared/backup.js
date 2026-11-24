@@ -11,7 +11,7 @@
   // What a backup holds. Caches can be rebuilt (at a cost), so they're optional.
   const KEEP = ['bank', 'guides', 'questions', 'picks', 'chars', 'strokes', 'history', 'episodes', 'frames'];
   const CACHES = ['lines', 'deep', 'subs'];
-  const SECRETS = ['apiKey', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey', 'backupPassphrase'];
+  const SECRETS = ['apiKey', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey', 'backupPassphrase', 'tmdbKey'];
   // Storage keys that are only working state, not worth backing up.
   const SKIP_STORAGE = ['seasonJobs', 'backupState'];
 
