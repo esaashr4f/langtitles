@@ -4,8 +4,8 @@
   const $ = (id) => document.getElementById(id);
   let settings = await SG.loadSettings();
 
-  const CHECKS = ['sceneFrames', 'sceneToClaude', 'hideKnownGlosses', 'toneColors', 'hanja', 'pitchAccent', 'addGrammarToReview', 'highlightNew', 'pauseOnePlus', 'slowReplay', 'autoKnownFromReview', 'autoFind', 'enabled', 'showMeaning', 'showParts', 'furigana', 'pinyin', 'hideKnownPinyin', 'showRoles', 'showTranslation', 'hideNative', 'hoverPause', 'resumeOnLeave', 'autoDeep', 'autoBackup', 'backupCaches', 'backupKeys'];
-  const TEXTS = ['apiKey', 'baseURL', 'nativeLang', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey', 'backupPassphrase', 'tmdbKey'];
+  const CHECKS = ['sceneFrames', 'sceneToClaude', 'hideKnownGlosses', 'toneColors', 'hanja', 'pitchAccent', 'addGrammarToReview', 'highlightNew', 'pauseOnePlus', 'slowReplay', 'autoKnownFromReview', 'autoFind', 'enabled', 'showMeaning', 'showParts', 'furigana', 'pinyin', 'hideKnownPinyin', 'showRoles', 'showTranslation', 'hideNative', 'hoverPause', 'resumeOnLeave', 'autoDeep', 'autoBackup', 'backupCaches', 'backupKeys', 'firefoxSync', 'driveBackup'];
+  const TEXTS = ['apiKey', 'baseURL', 'nativeLang', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey', 'backupPassphrase', 'tmdbKey', 'driveClientId'];
 
   const modelSel = $('model');
   for (const m of SG.MODELS) modelSel.append(new Option(m.name, m.id));
@@ -151,6 +151,77 @@
     a.remove();
     $('backupResult').textContent = 'Saved: ' + SG.backup.describe(SG.backup.summary(data)) + (pass ? ' (encrypted)' : '');
   });
+  // ---- Firefox Sync
+  async function syncStatus(r) {
+    const st = await browser.runtime.sendMessage({ type: 'syncStatus' });
+    let text = !st.on ? 'Off.' : st.error ? 'Sync failed: ' + st.error : `Last synced: ${ago(st.last)}.`;
+    if (st.on && !st.error && st.level === 1) text += ' The word bank is big, so example lines stay on each computer.';
+    if (st.on && !st.error && st.level >= 2) text += ' The word bank is too big for Firefox Sync now; it moves with backups instead.';
+    if (r && r.skipped && r.skipped !== 'off') text = 'Not now: ' + r.skipped + '.';
+    if (r && r.done && r.changedHere) text += ` Brought in ${r.puts} saved item${r.puts === 1 ? '' : 's'}` + (r.removes ? `, removed ${r.removes}` : '') + '.';
+    $('syncResult').textContent = text;
+  }
+  syncStatus();
+  $('firefoxSync').addEventListener('change', async (e) => {
+    if (!e.target.checked) return syncStatus();
+    $('syncResult').textContent = 'Syncing…';
+    syncStatus(await browser.runtime.sendMessage({ type: 'syncNow' }));
+  });
+  $('syncNow').addEventListener('click', async () => {
+    if (!settings.firefoxSync) await save({ firefoxSync: true });
+    $('syncResult').textContent = 'Syncing…';
+    syncStatus(await browser.runtime.sendMessage({ type: 'syncNow' }));
+  });
+
+  // ---- Google Drive
+  async function driveStatus(err) {
+    const st = await browser.runtime.sendMessage({ type: 'driveStatus' });
+    $('driveRedirect').textContent = st.redirect;
+    $('driveConnect').hidden = st.connected && !st.needsSignIn;
+    $('driveConnect').textContent = st.connected ? 'Sign in to Google again' : 'Connect Google Drive';
+    $('driveDisconnect').hidden = !st.connected;
+    $('driveRestore').hidden = !st.connected;
+    if (!st.hasClientId) $('driveAdvanced').open = true;
+    let text;
+    if (err) text = err === 'no client id' ? 'Add a Google client ID under Advanced first.' : 'Could not connect: ' + err;
+    else if (!st.connected) text = 'Not connected.';
+    else if (st.needsSignIn) text = `Google needs you to sign in again${st.email ? ' as ' + st.email : ''}.`;
+    else text = `Connected${st.email ? ' as ' + st.email : ''}. Last upload: ${ago(st.lastUpload)}.` + (st.error ? ' Last attempt failed: ' + st.error : '');
+    $('driveResult').textContent = text;
+    $('driveResult').className = 'note' + (err || st.needsSignIn || st.error ? ' bad' : st.connected ? ' ok' : '');
+  }
+  driveStatus();
+  $('driveConnect').addEventListener('click', async () => {
+    $('driveResult').textContent = 'Opening Google sign-in…';
+    const r = await browser.runtime.sendMessage({ type: 'driveConnect' });
+    if (r && r.error) return driveStatus(r.error);
+    if (!settings.driveBackup) await save({ driveBackup: true });
+    $('driveResult').textContent = 'Connected. Making the first backup…';
+    await browser.runtime.sendMessage({ type: 'backupNow' });
+    driveStatus();
+    backupStatus();
+  });
+  $('driveDisconnect').addEventListener('click', async () => {
+    await browser.runtime.sendMessage({ type: 'driveDisconnect' });
+    await save({ driveBackup: false });
+    driveStatus();
+  });
+  $('driveRestore').addEventListener('click', async () => {
+    $('restoreBox').hidden = false;
+    $('restoreSummary').textContent = 'Fetching the newest backup from Google Drive…';
+    const r = await browser.runtime.sendMessage({ type: 'driveRestoreFiles' });
+    if (r.error) {
+      $('restoreSummary').textContent = 'Could not fetch from Google Drive: ' + r.error;
+      return;
+    }
+    if (!r.files.length) {
+      $('restoreSummary').textContent = 'There are no backups in Google Drive yet.';
+      return;
+    }
+    restoreFiles = r.files.map((f) => ({ name: f.name, text: async () => f.text }));
+    showRestore();
+  });
+
   let restoreFiles = [];
   async function readRestore() {
     const pass = $('restorePass').value;

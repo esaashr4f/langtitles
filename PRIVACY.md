@@ -19,8 +19,10 @@ Kept in your browser's extension storage (IndexedDB and `storage.local`), never 
 - if "keep a picture of the scene" is on (it is by default), small still images of the scene for saved
   lines, words and questions.
 
-Automatic backups are written as files to your own Downloads folder. If you set a backup passphrase, they
-are encrypted with it first. Removing the extension removes its storage; backup files stay where you saved
+Automatic backups are written as files to your own Downloads folder, and to your own Google Drive if you
+connect it. If you set a backup passphrase, they are encrypted with it first. Connecting Google Drive asks
+only for access to files Langtitles creates; it can't see anything else in your Drive. Disconnecting revokes
+that access. Removing the extension removes its storage; backup files stay where you saved
 them.
 
 ## What is sent, and to whom
@@ -34,6 +36,8 @@ Langtitles only contacts a service when you use a feature that needs it.
 | **Show information:** TVmaze, AniList, Jikan (MyAnimeList), TMDB (only if you add a TMDB key) | The show or film title | To identify the show and its episodes, and get a poster |
 | **Lyrics:** LRCLIB, Apple iTunes search | The song title and artist | In Listen mode, to find lyrics and identify the song |
 | **jsDelivr CDN** (cdn.jsdelivr.net) | The single character whose stroke order you open; a one-time download of the public pitch-accent list | When you open stroke order, or first use pitch accent |
+| **Google Drive** (only if you connect it) | Your backup files, to a *Langtitles backups* folder in your own Drive. Encrypted first if you set a passphrase | When a backup is made, and when you restore from Drive |
+| **Firefox Sync** (only if you turn on "Sync between computers") | Your settings (without keys or logins), known words and word bank, through Mozilla's Firefox Sync, which encrypts it end to end so Mozilla can't read it | Every few minutes while something has changed |
 | **The streaming site itself** | Langtitles re-downloads the subtitle file the site is already loading, without your cookies | When you watch something with Langtitles on |
 
 Each service handles that data under its own privacy policy. Anthropic's commercial terms say API data is
@@ -46,7 +50,8 @@ overlay. It does not read or send anything else from the page, such as your acco
 ## Keys and passwords
 
 API keys and the OpenSubtitles login are stored only in your browser. They are sent only to the service
-they belong to, and are left out of backup files unless you choose otherwise.
+they belong to, are never synced, and are left out of backup files unless you choose otherwise. The Google
+sign-in token is kept only in your browser and never goes into backups.
 
 ## Children
 

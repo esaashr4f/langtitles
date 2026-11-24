@@ -222,12 +222,34 @@
     </section>
 
     <section>
+      <h2>Sync between computers</h2>
+      <label class="check"><input id="firefoxSync" type="checkbox"> Keep my settings, known words and word bank the same on every computer signed in to Firefox</label>
+      <small class="block">Uses Firefox Sync, which encrypts everything end to end. It needs Firefox Sync turned on with <b>Add-ons</b> ticked (Firefox Settings → Sync), on each computer. API keys and logins are never synced: add them on each computer. Firefox Sync has room for about 100 KB, so each word keeps one example line there; if the word bank outgrows even that, sync carries the rest and the word bank moves with Google Drive backups instead.</small>
+      <div class="row">
+        <button id="syncNow" type="button">Sync now</button>
+        <span id="syncResult" class="note"></span>
+      </div>
+    </section>
+
+    <section>
       <h2>Backups</h2>
       <label class="check"><input id="autoBackup" type="checkbox"> Back up automatically to Downloads/Langtitles backups</label>
       <label>Back up every
         <select id="backupEveryHours"><option value="6">6 hours</option><option value="12">12 hours</option><option value="24">day</option><option value="72">3 days</option><option value="168">week</option></select>
       </label>
-      <small>Checked when Firefox starts and every hour while it's open, so a long break is covered the moment you open Firefox again. Each backup is a small file with what changed; once a week a full snapshot is written and older files are cleaned up (the last <select id="backupKeep"><option value="2">2</option><option value="4">4</option><option value="8">8</option></select> snapshots are kept). Tip: add that folder to the Google Drive desktop app (or any cloud folder) to keep a copy online.</small>
+      <small>Checked when Firefox starts and every hour while it's open, so a long break is covered the moment you open Firefox again. Each backup is a small file with what changed; once a week a full snapshot is written and older files are cleaned up (the last <select id="backupKeep"><option value="2">2</option><option value="4">4</option><option value="8">8</option></select> snapshots are kept).</small>
+      <label class="check"><input id="driveBackup" type="checkbox"> Also save backups to Google Drive</label>
+      <div class="row">
+        <button id="driveConnect" type="button">Connect Google Drive</button>
+        <button id="driveDisconnect" type="button" hidden>Disconnect</button>
+        <span id="driveResult" class="note"></span>
+      </div>
+      <small class="block">Backups go to a <b>Langtitles backups</b> folder in your Drive. Langtitles can only see the files it made there, nothing else in your Drive. Use a passphrase below if you'd like them encrypted.</small>
+      <details id="driveAdvanced">
+        <summary>Advanced: your own Google client ID</summary>
+        <small class="block">Only needed for a copy you built yourself. In Google Cloud Console, create an OAuth client of type <b>Web application</b>, enable the Google Drive API, and add this as an authorised redirect URI: <code id="driveRedirect"></code></small>
+        <label>Client ID <input id="driveClientId" type="text" spellcheck="false" placeholder="…apps.googleusercontent.com"></label>
+      </details>
       <label class="check"><input id="backupCaches" type="checkbox"> Include saved line breakdowns (bigger files; they'd otherwise cost a little to recreate)</label>
       <label>Passphrase (optional)
         <input id="backupPassphrase" type="password" autocomplete="new-password" placeholder="Encrypts backups; you'll need it to restore">
@@ -242,6 +264,7 @@
       <small>Pick a <code>.langtitles</code> file: a single backup, or a full snapshot together with the change files after it (select them all at once).</small>
       <div class="row">
         <input id="restoreFiles" type="file" accept=".langtitles,application/json" multiple>
+        <button id="driveRestore" type="button" hidden>Restore from Google Drive</button>
       </div>
       <div id="restoreBox" class="restore" hidden>
         <div id="restoreSummary"></div>

@@ -90,6 +90,9 @@
     backupCaches: false,
     backupKeys: false, // only when a passphrase is set
     backupPassphrase: '',
+    driveBackup: false, // also save backups to Google Drive (background/drive.js)
+    driveClientId: '', // advanced: your own Google OAuth client ID for a self-built copy
+    firefoxSync: false, // settings, known words and the word bank through Firefox Sync (background/cloudsync.js)
     monthlyCap: 0, // stop Claude requests once this month's estimated spend reaches this many dollars; 0 = no cap
     glossClasses: ['noun', 'name', 'verb', 'adjective', 'adverb', 'particle', 'other'], // kinds of words that get notes above them
     jlptFrom: 5, // notes above Japanese words from this JLPT level up: 5 = every level, 4 = N4 and harder (N5 words plain), …

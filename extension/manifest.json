@@ -30,7 +30,8 @@
     "storage",
     "unlimitedStorage",
     "menus",
-    "downloads"
+    "downloads",
+    "identity"
   ],
   "background": {
     "scripts": [
@@ -50,7 +51,10 @@
       "shared/srs.js",
       "shared/pitch.js",
       "shared/backup.js",
+      "shared/syncmerge.js",
+      "background/drive.js",
       "background/autobackup.js",
+      "background/cloudsync.js",
       "shared/guidetext.js",
       "background/libraryfixes.js",
       "background/shows.js",

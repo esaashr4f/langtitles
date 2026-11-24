@@ -48,10 +48,10 @@ docs/pending-notes.md and get loaded in as part of item 5.
   "Back up now". Line breakdown cache optional. API keys excluded unless the backup is encrypted
   with a passphrase (optional encryption for everything). Tip in Options: sync that folder with the
   Google Drive desktop app.
-- [ ] **Google Drive backups (optional):** a "Langtitles backups" folder, the app can only see its own
+- [x] **Google Drive backups (optional):** a "Langtitles backups" folder, the app can only see its own
   files; step-by-step setup for the Google app ID, including switching it to production so the
-  sign-in doesn't expire weekly. Restore from the Drive folder.
-- [ ] **Firefox Sync** for settings and known words.
+  sign-in doesn't expire weekly (docs/google-drive-setup.md). Restore from the Drive folder.
+- [x] **Firefox Sync** for settings, known words and the word bank (compact, merged both ways).
 - [ ] **Account system (later, when going public or paid; private to you first):** sign in with email or
   Google, two-way sync of everything across devices (e.g. your dad's laptop), newest edit wins per
   item, review history merged, API key synced encrypted with a passphrase, "Sign out and remove my

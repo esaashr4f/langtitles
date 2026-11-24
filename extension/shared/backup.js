@@ -13,7 +13,7 @@
   const CACHES = ['lines', 'deep', 'subs'];
   const SECRETS = ['apiKey', 'osApiKey', 'osUser', 'osPass', 'subdlKey', 'jimakuKey', 'backupPassphrase', 'tmdbKey'];
   // Storage keys that are only working state, not worth backing up.
-  const SKIP_STORAGE = ['seasonJobs', 'backupState'];
+  const SKIP_STORAGE = ['seasonJobs', 'backupState', 'driveState', 'syncState', 'syncDevice'];
 
   async function collect(opts) {
     opts = opts || {};

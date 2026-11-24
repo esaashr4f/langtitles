@@ -1406,6 +1406,12 @@
     if (msg.type === 'spendLog') return browser.storage.local.get('spendLog').then((r) => r.spendLog || { days: {}, shows: {}, top: [] });
     if (msg.type === 'backupNow') return SG.autobackup.check(true);
     if (msg.type === 'backupStatus') return SG.autobackup.status();
+    if (msg.type === 'syncNow') return SG.cloudsync.check();
+    if (msg.type === 'syncStatus') return SG.cloudsync.status();
+    if (msg.type === 'driveStatus') return SG.drive.status();
+    if (msg.type === 'driveConnect') return SG.drive.connect().catch((err) => ({ error: err.message }));
+    if (msg.type === 'driveDisconnect') return SG.drive.disconnect();
+    if (msg.type === 'driveRestoreFiles') return SG.drive.latestSet().then((files) => ({ files })).catch((err) => ({ error: err.message }));
     if (msg.type === 'restored') {
       // A backup was restored in the options page: reload settings and tell open tabs.
       return SG.loadSettings().then((s) => {
@@ -1420,7 +1426,7 @@
     // The word bank page changes saved items through here, so this page's copy stays current.
     if (msg.type === 'bankRemove' && msg.key) return cache.remove('bank', msg.key).then(() => ({ ok: true }));
     if (msg.type === 'bankPut' && Array.isArray(msg.items)) {
-      return cache.putMany('bank', msg.items.filter((x) => x && x.key).map((x) => [x.key, x])).then(() => ({ ok: true, count: msg.items.length }));
+      return cache.putMany('bank', msg.items.filter((x) => x && x.key).map((x) => [x.key, Object.assign({}, x, { updatedAt: Date.now() })])).then(() => ({ ok: true, count: msg.items.length }));
     }
     if (msg.type === 'pitch') return pitchFor(msg.items || []).then((results) => ({ results }));
     if (msg.type === 'reviewed') {

@@ -1,4 +1,4 @@
-// Automatic backups to Downloads/Langtitles backups/. Checked when Firefox starts and every hour while
+// Automatic backups to Downloads/Langtitles backups/, and/or Google Drive (background/drive.js). Checked when Firefox starts and every hour while
 // it runs; a backup is made when the last one is older than the chosen interval (a day by default),
 // so a long break is covered as soon as Firefox is opened again.
 // Each run writes a small "changes" file with what changed since the last run; once a week (or when
@@ -28,7 +28,10 @@
 
   async function run(force) {
     const settings = await SG.loadSettings();
-    if (!settings.autoBackup && !force) return { skipped: 'off' };
+    const drive = settings.driveBackup && SG.drive ? await SG.drive.driveState() : {};
+    const toDrive = Boolean(settings.driveBackup && drive.connected);
+    const toDownloads = Boolean(settings.autoBackup || (force && !toDrive));
+    if (!toDownloads && !toDrive) return { skipped: 'off' };
     const st = await state();
     const now = Date.now();
     const every = Math.max(1, Number(settings.backupEveryHours) || 24) * 3600 * 1000;
@@ -36,7 +39,8 @@
     const pass = settings.backupPassphrase || '';
     const opts = { includeCaches: settings.backupCaches, includeKeys: Boolean(pass && settings.backupKeys) };
     const data = await SG.backup.collect(opts);
-    const full = !st.lastFull || now - st.lastFull > WEEK;
+    // Drive starts with a full snapshot too, so its files can be restored on their own.
+    const full = !st.lastFull || now - st.lastFull > WEEK || (toDrive && !drive.hasFull);
     let kind = 'full';
     let changes = 0;
     if (!full) {
@@ -59,12 +63,24 @@
       changes = Object.values(data.stores).reduce((a, l) => a + l.length, 0);
     }
     const name = SG.backup.fileName(now).replace('.langtitles', kind === 'full' ? '-full.langtitles' : '-changes.langtitles');
-    const id = await write(name, await SG.backup.serialize(data, pass));
+    const text = await SG.backup.serialize(data, pass);
+    const id = toDownloads ? await write(name, text) : null;
+    let driveId = null;
+    if (toDrive) {
+      try {
+        driveId = await SG.drive.upload(name, text);
+        await SG.drive.setDriveState({ lastUpload: now, error: '', hasFull: drive.hasFull || kind === 'full' });
+      } catch (e) {
+        // A missed change file would leave a gap, so the next Drive backup is a full snapshot.
+        await SG.drive.setDriveState({ error: e.message, hasFull: false });
+        if (!toDownloads) throw e;
+      }
+    }
     // Remember every key now held, so the next changes file can include new unstamped records.
     const all = await SG.backup.collect(opts);
     st.seen = {};
     for (const [n, entries] of Object.entries(all.stores)) st.seen[n] = entries.map(([k]) => String(k));
-    st.files.push({ id, name, kind, at: now, changes });
+    st.files.push({ id, driveId, name, kind, at: now, changes });
     st.last = now;
     if (kind === 'full') st.lastFull = now;
     // Clean up: keep the last N full snapshots and every change file after the oldest kept one.
@@ -73,12 +89,15 @@
     if (fulls.length > keep) {
       const cutoff = fulls[fulls.length - keep].at;
       for (const f of st.files.filter((x) => x.at < cutoff)) {
-        try {
-          await browser.downloads.removeFile(f.id);
-          await browser.downloads.erase({ id: f.id });
-        } catch (e) {
-          /* already moved or deleted by hand */
+        if (f.id != null) {
+          try {
+            await browser.downloads.removeFile(f.id);
+            await browser.downloads.erase({ id: f.id });
+          } catch (e) {
+            /* already moved or deleted by hand */
+          }
         }
+        if (f.driveId && SG.drive) await SG.drive.remove(f.driveId);
       }
       st.files = st.files.filter((x) => x.at >= cutoff);
     }

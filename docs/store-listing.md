@@ -59,7 +59,7 @@ Langtitles can fetch subtitles in the language you're learning from OpenSubtitle
 Listen mode does the same for song lyrics on YouTube Music, Spotify and Apple Music.
 
 <b>Your key, your data</b>
-Langtitles has no server and no account. It uses your own Anthropic API key, so you pay Anthropic directly for what you use, and a spending tracker shows what you've spent. Everything you save stays in your browser, with automatic backups to your Downloads folder.
+Langtitles has no server and no account. It uses your own Anthropic API key, so you pay Anthropic directly for what you use, and a spending tracker shows what you've spent. Everything you save stays in your browser, with automatic backups to your Downloads folder or your own Google Drive, and optional Firefox Sync between your computers.
 
 You need an Anthropic API key (console.anthropic.com) to use the breakdowns and guides.
 ```
@@ -119,10 +119,12 @@ Permissions:
 • storage / unlimitedStorage: saved breakdowns, dictionaries and the word bank, kept in IndexedDB.
 • menus: right-click items to turn Langtitles on or off, everywhere or for one site.
 • downloads: automatic backups and Anki export, saved to the Downloads folder.
+• identity: only for "Connect Google Drive" (optional backups to the user's own Drive, drive.file scope).
+• storage.sync: only when the user turns on "Sync between computers" (settings, known words, word bank).
 
 Remote requests (data only; no remote code is loaded or run): api.anthropic.com; the OpenSubtitles, SubDL
 and Jimaku APIs (only with the user's own keys); TVmaze, AniList, Jikan and TMDB for show names; LRCLIB and
-iTunes search for lyrics; cdn.jsdelivr.net for stroke-order data (KanjiVG SVG, hanzi-writer-data JSON) and
+iTunes search for lyrics; accounts.google.com and googleapis.com for optional Drive backups; cdn.jsdelivr.net for stroke-order data (KanjiVG SVG, hanzi-writer-data JSON) and
 the Kanjium pitch-accent text file. Remote SVG is parsed for its path data and redrawn, never inserted as markup.
 
 Third-party code: extension/vendor/anthropic-sdk.js is the official @anthropic-ai/sdk 1.8.0, bundled
@@ -137,4 +139,6 @@ Generated data files (dictionaries, grammar JSON) are also described in BUILD.md
 - **Data collection** in the manifest declares `websiteContent` (subtitle lines go to Claude) and
   `authenticationInfo` (your API keys and OpenSubtitles login go to their own sites). Firefox shows both
   when someone installs.
+- **Google Drive client ID:** follow `docs/google-drive-setup.md` and put the ID in
+  `extension/background/drive.js` first, or Drive backups will ask each person for their own client ID.
 - `npm run lint` passes with no errors or warnings.
