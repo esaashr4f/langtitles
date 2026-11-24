@@ -146,7 +146,40 @@
       fn_로: 'particle_ro_euro', fn_으로: 'particle_ro_euro', fn_부터: 'particle_buteo_kkaji', fn_까지: 'particle_buteo_kkaji', fn_보다: 'particle_boda', fn_처럼: 'particle_cheoreom', fn_이다: 'copula_ida',
       propositive: 'propositive_ja', lets: 'propositive_ja', quotation: 'quotation_dago', reported_speech: 'quotation_dago', dago: 'quotation_dago',
     },
-    zh: {},
+    zh: {
+      de: 'particle_de_possessive', possessive: 'particle_de_possessive', possessive_de: 'particle_de_possessive', de_possessive: 'particle_de_possessive', attributive_de: 'particle_de_possessive', structural_de: 'particle_de_possessive', modifier_de: 'particle_de_possessive',
+      adverbial_de: 'particle_de_adverbial', de_adverbial: 'particle_de_adverbial',
+      complement_de: 'particle_de_complement', de_complement: 'particle_de_complement', degree_de: 'particle_de_complement',
+      le: 'aspect_le', perfective_le: 'aspect_le', completion_le: 'aspect_le', verb_le: 'aspect_le', aspect_particle_le: 'aspect_le', past_le: 'aspect_le',
+      change_le: 'sentence_le', modal_le: 'sentence_le', final_le: 'sentence_le', sentence_final_le: 'sentence_le', change_of_state_le: 'sentence_le',
+      guo: 'aspect_guo', experiential_guo: 'aspect_guo', experience_guo: 'aspect_guo',
+      zhe: 'aspect_zhe', durative_zhe: 'aspect_zhe', continuous_zhe: 'aspect_zhe',
+      zai: 'progressive_zai', progressive: 'progressive_zai', zhengzai: 'progressive_zai', in_progress: 'progressive_zai',
+      ma: 'particle_ma', question_ma: 'particle_ma', yes_no_question: 'particle_ma',
+      ne: 'particle_ne', question_ne: 'particle_ne',
+      ba: 'particle_ba', suggestion_ba: 'particle_ba', final_ba: 'particle_ba',
+      a: 'particle_a', particle_ya: 'particle_ya_ou', ya: 'particle_ya_ou', ou: 'particle_ya_ou', wa: 'particle_a',
+      ba_sentence: 'ba_construction', disposal_ba: 'ba_construction', ba_structure: 'ba_construction',
+      bei: 'bei_passive', passive: 'bei_passive', passive_bei: 'bei_passive',
+      shi_de_construction: 'shi_de', emphasis_shi_de: 'shi_de',
+      resultative: 'resultative_complement', result_complement: 'resultative_complement',
+      directional: 'directional_complement', potential: 'potential_complement', potential_de_bu: 'potential_complement',
+      degree: 'degree_complement', measure: 'measure_word', classifier: 'measure_word', measure_words: 'measure_word',
+      bi: 'comparison_bi', comparison: 'comparison_bi', comparative_bi: 'comparison_bi', mei_you_comparison: 'comparison_mei_you',
+      bu: 'negation_bu_mei', mei: 'negation_bu_mei', meiyou: 'negation_bu_mei', negation: 'negation_bu_mei', negative: 'negation_bu_mei',
+      hui: 'modal_hui_neng_keyi', neng: 'modal_hui_neng_keyi', keyi: 'modal_hui_neng_keyi', can: 'modal_hui_neng_keyi', ability: 'modal_hui_neng_keyi',
+      yao: 'modal_yao_xiang', xiang: 'modal_yao_xiang', want: 'modal_yao_xiang', yinggai: 'modal_yinggai', should: 'modal_yinggai',
+      yi_jiu_pattern: 'yi_jiu', youyou: 'you_you', yueyue: 'yue_yue', because_so: 'yinwei_suoyi', yinwei: 'yinwei_suoyi', suoyi: 'yinwei_suoyi',
+      although_but: 'suiran_danshi', suiran: 'suiran_danshi', danshi: 'suiran_danshi', if_then: 'ruguo_jiu', ruguo: 'ruguo_jiu',
+      even: 'lian_dou', lian: 'lian_dou', jile: 'ji_le', jiu: 'jiu_cai', cai: 'jiu_cai', still: 'hai', question_word: 'question_words',
+      fn_的: 'particle_de_possessive', fn_地: 'particle_de_adverbial', fn_得: 'particle_de_complement', fn_了: 'aspect_le', fn_过: 'aspect_guo',
+      fn_着: 'aspect_zhe', fn_在: 'progressive_zai', fn_正在: 'progressive_zai', fn_吗: 'particle_ma', fn_呢: 'particle_ne', fn_吧: 'particle_ba',
+      fn_啊: 'particle_a', fn_呀: 'particle_ya_ou', fn_哦: 'particle_ya_ou', fn_把: 'ba_construction', fn_被: 'bei_passive', fn_比: 'comparison_bi',
+      fn_不: 'negation_bu_mei', fn_没: 'negation_bu_mei', fn_没有: 'negation_bu_mei', fn_会: 'modal_hui_neng_keyi', fn_能: 'modal_hui_neng_keyi',
+      fn_可以: 'modal_hui_neng_keyi', fn_要: 'modal_yao_xiang', fn_想: 'modal_yao_xiang', fn_应该: 'modal_yinggai', fn_就: 'jiu_cai', fn_才: 'jiu_cai',
+      fn_还: 'hai', fn_因为: 'yinwei_suoyi', fn_所以: 'yinwei_suoyi', fn_虽然: 'suiran_danshi', fn_但是: 'suiran_danshi', fn_如果: 'ruguo_jiu',
+      fn_連: 'lian_dou', fn_连: 'lian_dou', fn_極了: 'ji_le', fn_极了: 'ji_le',
+    },
   };
 
   // Letters of any script survive (fn_なり), everything else becomes "_".
@@ -165,14 +198,14 @@
     if (known[lang] && known[lang].has(id)) return lang + '.' + id;
     const alias = ALIASES[lang] && ALIASES[lang][id];
     if (alias) return lang + '.' + alias;
-    // Korean names not seen before: match by their key words (object_marker_eul -> the object particle).
-    if (lang === 'ko') {
+    // Korean and Chinese names not seen before: match by their key words (object_marker_eul -> the object particle).
+    if (lang === 'ko' || lang === 'zh') {
       const parts = id.split('_');
       for (let n = parts.length - 1; n >= 1; n--) {
         for (let i = 0; i + n <= parts.length; i++) {
           const sub = parts.slice(i, i + n).join('_');
-          if (known.ko.has(sub)) return 'ko.' + sub;
-          if (ALIASES.ko[sub]) return 'ko.' + ALIASES.ko[sub];
+          if (known[lang].has(sub)) return lang + '.' + sub;
+          if (ALIASES[lang][sub]) return lang + '.' + ALIASES[lang][sub];
         }
       }
     }

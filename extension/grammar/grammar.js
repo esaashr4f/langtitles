@@ -633,7 +633,7 @@
     view.append(h('h2', '', 'Check my guides'), h('p', 'sub', 'Looking through your guides…'));
     let builtin = {};
     try {
-      for (const l of ['ja', 'ko']) Object.assign(builtin, (await (await fetch(`../data/grammar/${l}.json`)).json()).forms || {});
+      for (const l of ['ja', 'ko', 'zh']) Object.assign(builtin, (await (await fetch(`../data/grammar/${l}.json`)).json()).forms || {});
     } catch (e) {
       /* no built-in guides */
     }

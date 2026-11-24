@@ -16,7 +16,7 @@
   // Guides saved under different names for the same form (ko.casual_speech / ko.casual_banmal …) become one:
   // the oldest text is kept, notes and lines met are combined, the duplicates go to history. Runs once per
   // change to the name list.
-  const MERGE_VERSION = 1;
+  const MERGE_VERSION = 2; // 2: Chinese name matching and built-in Chinese guides
   async function mergeDuplicateGuides() {
     const done = (await browser.storage.local.get('guideMergeVersion')).guideMergeVersion || 0;
     if (done >= MERGE_VERSION) return;
@@ -48,10 +48,10 @@
       byKey.delete(g.key);
       merged++;
     }
-    // Korean grammar guides written from a single line give way to the built-in ones (notes and lines kept).
+    // Korean and Chinese grammar guides written from a single line give way to the built-in ones (notes and lines kept).
     let swapped = 0;
     for (const g of byKey.values()) {
-      if (!g || !/^ko\./.test(g.k || '') || g.model === 'built-in') continue;
+      if (!g || !/^(ko|zh)\./.test(g.k || '') || g.model === 'built-in') continue;
       const built = await builtinGuide(g.k);
       if (!built) continue;
       await cache.putMany('history', [[g.key + '|builtin|' + Date.now(), Object.assign({}, g, { retiredAt: Date.now() })]]);

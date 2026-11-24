@@ -1,0 +1,493 @@
+=== zh.particle_de_possessive | 的 (de): "'s" and describing a noun
+## What it is
+的 (de) links a describer to a noun: "my book" 我的书, "a red car" 红色的车, "the person who came" 来的人. Whatever comes before 的 describes what comes after it.
+
+## How to make it
+- Pronoun or noun + 的 + noun: 我的手机 (wǒ de shǒujī) — my phone
+- Adjective + 的 + noun: 很漂亮的衣服 — very pretty clothes
+- A whole clause + 的 + noun: 我昨天买的书 — the book I bought yesterday
+- The noun can be dropped when it's clear: 这是我的。 — This is mine.
+
+## When to use it
+- Ownership and belonging.
+他的朋友 — his friend
+- Describing with an adjective phrase (often after 很 or with two-syllable adjectives).
+很好的主意 — a really good idea
+- Describing with a clause (where English uses "who / that / which").
+在门口等你的人 — the person waiting for you at the door
+
+## When it seems to fit but doesn't
+- Close relationships and set pairs usually drop 的: 我妈妈, 我们学校, 中国人 (not 中国的人 for "a Chinese person").
+- Single-syllable adjectives with their noun: 好人, 大房子, without 的.
+- Describing *how* something is done: 地 (see that guide). Describing *how well*: 得.
+
+## Nuance and register
+Neutral and everywhere. Leaving 的 out sounds closer and more fixed; putting it in adds a little weight.
+
+## Common mistakes
+- 我的妈妈 in casual speech: natural is 我妈妈.
+- Mixing up the three "de": 的 before a noun, 地 before a verb, 得 after a verb.
+
+=== zh.particle_de_adverbial | 地 (de): "-ly", how something is done
+## What it is
+地 (de) turns a describing word into "how": 慢慢地走 "walk slowly", 认真地学习 "study seriously". It goes before the verb.
+
+## How to make it
+- Adjective (often doubled or with 很) + 地 + verb: 高兴地说 — said happily
+- Doubled adjectives are common: 慢慢地, 好好地, 轻轻地
+
+## When to use it
+- Describing the manner of an action.
+他开心地笑了。 — He laughed happily.
+- Adverb phrases built from adjectives.
+她很快地跑过来。 — She ran over quickly.
+
+## When it seems to fit but doesn't
+- After the verb, rating how well it's done: 得 (他跑得很快).
+- Plain adverbs need no 地: 很, 都, 也, 马上 go straight before the verb.
+
+## Nuance and register
+Many people write 的 instead of 地 informally; in careful writing 地 is correct.
+
+## Common mistakes
+- 地 after the verb (他跑地很快): it's 得.
+
+=== zh.particle_de_complement | 得 (de): how well, how much (after the verb)
+## What it is
+得 (de) comes after a verb or adjective and adds how well or to what degree: 说得很好 "speaks very well", 累得不行 "so tired I can't go on".
+
+## How to make it
+- Verb + 得 + description: 他唱得很好听。 — He sings beautifully.
+- With an object, repeat the verb: 他说中文说得很流利 / 他中文说得很流利. — He speaks Chinese fluently.
+- Negative: 说得不好 — doesn't speak well.
+
+## When to use it
+- Rating an action.
+你做得很好！ — You did really well!
+- Saying how extreme a state is.
+我饿得要死。 — I'm starving to death.
+
+## When it seems to fit but doesn't
+- Manner before the verb: 地 (慢慢地说).
+- Ability to do something (can / can't): the potential form 看得见 / 看不见 (see that guide), which looks similar but means "able to see".
+
+## Nuance and register
+Very common in speech.
+
+## Common mistakes
+- 他说中文很流利得 (wrong order): 他中文说得很流利.
+
+=== zh.aspect_le | 了 (le) after a verb: done, completed
+## What it is
+了 (le) right after a verb marks the action as completed: 我吃了 "I ate (it's done)". It's about the action being finished, not about the past as such.
+
+## How to make it
+- Verb + 了 + (amount or object): 我买了三本书。 — I bought three books.
+- Negative: 没 + verb, with no 了: 我没买。 — I didn't buy (it).
+- Question: 你吃了吗？ / 你吃了没有？ — Have you eaten?
+
+## When to use it
+- A completed action, especially with an amount or a specific object.
+我看了一部电影。 — I watched a movie.
+- One action done before the next.
+下了课我们去吃饭。 — After class, let's go eat.
+
+## When it seems to fit but doesn't
+- Habits or ongoing states in the past need no 了: 我以前常常去那儿。 — I used to go there often.
+- After 没 there's no 了: 没去了 is wrong.
+- 了 at the end of the sentence is a different 了 (change of situation; see that guide); a sentence can have both.
+
+## Nuance and register
+Everywhere. A bare "verb + 了 + object" can sound unfinished; Chinese speakers usually add an amount or another clause.
+
+## Common mistakes
+- Using 了 for every past event, like English "-ed".
+- 我没吃了: it's 我没吃.
+
+=== zh.sentence_le | 了 (le) at the end: a new situation
+## What it is
+了 at the end of a sentence says something has changed or is now the case: 下雨了 "it's started raining", 我饿了 "I'm hungry now".
+
+## How to make it
+- Sentence + 了: 天黑了。 — It's got dark.
+- With 不 / 别: 我不去了。 — I'm not going any more. 别哭了。 — Stop crying.
+- With 太: 太好了！ — Great!
+
+## When to use it
+- A new situation or a change.
+他是大学生了。 — He's a university student now.
+- Something about to happen: 快 / 要 … 了.
+车要开了。 — The bus is about to leave.
+- Plans changed: 不……了.
+我不想去了。 — I don't feel like going any more.
+
+## When it seems to fit but doesn't
+- Plain facts that haven't changed: no 了 (我是学生 — I'm a student).
+
+## Nuance and register
+Very common in speech; it often makes a sentence sound lively and current.
+
+## Common mistakes
+- Treating every final 了 as "past"; 我饿了 is "I'm hungry (now)".
+
+=== zh.aspect_guo | 过 (guo): have ever done
+## What it is
+过 (guo) after a verb means you have done it at some point, as an experience: 我去过北京 "I've been to Beijing".
+
+## How to make it
+- Verb + 过: 吃过, 看过
+- Negative: 没 + verb + 过: 我没去过。 — I've never been.
+- Question: 你去过吗？ / 你去过没有？
+
+## When to use it
+- Life experience.
+你吃过北京烤鸭吗？ — Have you ever had Peking duck?
+- Something that happened and is over.
+我们见过面。 — We've met before.
+
+## When it seems to fit but doesn't
+- A specific completed action, "did it" (not "have ever"): 了.
+我昨天去了北京。 — I went to Beijing yesterday.
+
+## Nuance and register
+Neutral.
+
+## Common mistakes
+- 我不去过: it's 没去过.
+
+=== zh.aspect_zhe | 着 (zhe): in a continuing state
+## What it is
+着 (zhe) after a verb describes a lasting state or a way of doing something: 门开着 "the door is open", 笑着说 "said smiling".
+
+## How to make it
+- Verb + 着: 坐着, 拿着, 穿着
+- Two actions at once: verb 1 + 着 + verb 2 (the first describes the second): 走着去 — go on foot
+
+## When to use it
+- A state that continues.
+灯还亮着。 — The light is still on.
+- Doing one thing while (or by) doing another.
+他听着音乐做作业。 — He does homework with music on.
+- Describing a scene: place + verb + 着 + thing.
+墙上挂着一张画。 — A painting hangs on the wall.
+
+## When it seems to fit but doesn't
+- An action in progress: 在 / 正在 (我在吃饭 — I'm eating), not 着.
+
+## Nuance and register
+More descriptive than 在; common in stories and descriptions.
+
+## Common mistakes
+- 我吃着饭 for "I'm eating": 我在吃饭 is the everyday form.
+
+=== zh.progressive_zai | 在 / 正在 (zài): doing right now
+## What it is
+在 (zài) before a verb means the action is going on right now: 我在吃饭 "I'm eating". 正在 stresses "right at this moment".
+
+## How to make it
+- 在 + verb (+ 呢): 他在睡觉（呢）。 — He's sleeping.
+- 正在 + verb: 我们正在开会。 — We're in a meeting right now.
+- Negative: 没在 + verb: 我没在看。 — I'm not watching.
+
+## When to use it
+- Ongoing actions now or at a past moment.
+你给我打电话的时候我在洗澡。 — I was in the shower when you called.
+
+## When it seems to fit but doesn't
+- Lasting states (open, sitting, wearing): 着.
+- 在 before a place means "at": 我在家 — I'm at home (see the place meaning; same character).
+
+## Nuance and register
+在 is everyday; 正在 is a bit more emphatic.
+
+## Common mistakes
+- 我是在吃饭 for "I'm eating": no 是.
+
+=== zh.particle_ma | 吗 (ma): yes/no questions
+## What it is
+吗 (ma) at the end turns a statement into a yes/no question: 你是学生吗？ "Are you a student?"
+
+## How to make it
+- Statement + 吗: 你喜欢吗？ — Do you like it?
+- Not with question words (什么, 谁, 哪儿), and not with "verb 不 verb" questions.
+
+## When to use it
+- Plain yes/no questions.
+你饿吗？ — Are you hungry?
+- Surprise or doubt in a statement-question.
+你不知道吗？ — You don't know?!
+
+## When it seems to fit but doesn't
+- Questions with 什么 / 谁 / 哪儿 / 怎么: no 吗 (你吃什么？).
+- "A or B" questions use 还是, not 吗.
+
+## Nuance and register
+Neutral.
+
+## Common mistakes
+- 你去哪儿吗: drop 吗.
+
+=== zh.particle_ne | 呢 (ne): "and…?", "what about…?", softening
+## What it is
+呢 (ne) at the end asks "what about…?", softens a question, or marks something still going on.
+
+## How to make it
+- Noun + 呢: 我很好，你呢？ — I'm fine, and you?
+- Question word question + 呢 (softer): 怎么办呢？ — What should I do?
+- Ongoing action: 他在睡觉呢。 — He's (still) asleep.
+
+## When to use it
+- Turning the question back.
+我去，你呢？ — I'm going, what about you?
+- Asking where something is.
+我的手机呢？ — Where's my phone?
+- Making a question sound thoughtful.
+为什么呢？ — Why, I wonder?
+
+## When it seems to fit but doesn't
+- Plain yes/no questions: 吗, not 呢.
+
+## Nuance and register
+Casual and warm; very common in speech.
+
+## Common mistakes
+- 你饿呢？ for "Are you hungry?": it's 你饿吗？
+
+=== zh.particle_ba | 吧 (ba): suggestions and "right?"
+## What it is
+吧 (ba) at the end softens: a suggestion ("let's"), a guess you want confirmed ("…, right?"), or a gentle "OK then".
+
+## How to make it
+- Suggestion: 我们走吧。 — Let's go.
+- Checking a guess: 你是新来的吧？ — You're new here, right?
+- Reluctant agreement: 好吧。 — OK, fine.
+
+## When to use it
+- Suggesting or softening a request.
+你先吃吧。 — Go ahead and eat first.
+- Asking for confirmation.
+他不会来了吧？ — He's not coming, is he?
+
+## When it seems to fit but doesn't
+- A neutral yes/no question with no guess: 吗.
+
+## Nuance and register
+Friendly and soft; 好吧 can sound grudging.
+
+## Common mistakes
+- Using 吧 when you have no idea of the answer: 吗.
+
+=== zh.ba_construction | 把 (bǎ): doing something to the object
+## What it is
+把 (bǎ) moves the object before the verb to say what you do *to* it and how it ends up: 把门关上 "shut the door", 把饭吃完 "finish the food".
+
+## How to make it
+- Subject + 把 + object + verb + result/extra: 我把书放在桌子上了。 — I put the book on the table.
+- The verb can't stand alone: it needs a result, direction, place, 了 or similar.
+- Negative before 把: 我没把作业做完。 — I didn't finish my homework.
+
+## When to use it
+- Moving, changing or handling something.
+请把窗户打开。 — Please open the window.
+- Commands and requests about a specific thing.
+把手机给我。 — Give me the phone.
+
+## When it seems to fit but doesn't
+- Verbs that don't act on the object (喜欢, 知道, 看见 as "see"): no 把.
+- Unspecified objects ("a book"): 把 is for a definite object.
+
+## Nuance and register
+Very common in speech, especially for instructions.
+
+## Common mistakes
+- 我把书看 (nothing after the verb): 我把书看完了.
+- 我把他喜欢: just 我喜欢他.
+
+=== zh.bei_passive | 被 (bèi): something happened to it (often bad)
+## What it is
+被 (bèi) makes a passive: the subject has something done to it. 我的钱包被偷了 "My wallet got stolen."
+
+## How to make it
+- Thing + 被 + (doer) + verb + result/了: 他被老师批评了。 — He got told off by the teacher.
+- The doer can be left out: 车被撞了。 — The car got hit.
+- Spoken alternatives: 叫 / 让 + doer (他让人骗了).
+
+## When to use it
+- Something unwanted happening to someone.
+我被雨淋湿了。 — I got soaked in the rain.
+
+## When it seems to fit but doesn't
+- Neutral passives in English ("the book was written in 1990") often stay active in Chinese, or use 是……的.
+
+## Nuance and register
+Traditionally for bad or unwanted events; neutral uses are spreading, especially in writing.
+
+## Common mistakes
+- 被 with a bare verb: needs 了 or a result (被偷了).
+
+=== zh.shi_de | 是……的 (shì…de): stressing when, where or how
+## What it is
+是……的 puts the spotlight on one detail of something that already happened: when, where, how or who. 我是坐飞机来的 "I came *by plane*."
+
+## How to make it
+- 是 + the detail + verb + 的: 你是什么时候到的？ — When did you arrive?
+- 是 is often dropped in speech: 我昨天来的。
+- Negative: 不是……的: 我不是一个人去的。 — I didn't go alone.
+
+## When to use it
+- Asking or telling the details of a past event both people know happened.
+你是在哪儿学的中文？ — Where did you learn Chinese?
+
+## When it seems to fit but doesn't
+- Announcing that something happened (news): 了 (我买了一辆车).
+
+## Nuance and register
+Very common in conversation about past events.
+
+## Common mistakes
+- 我是来了 for "I did come": 是……的, not 了.
+
+=== zh.resultative_complement | verb + result (看完, 听懂, 找到)
+## What it is
+A result word after a verb says how the action turned out: 看完 "finish watching", 听懂 "understand (by listening)", 找到 "find (succeed in looking)".
+
+## How to make it
+- Verb + result: 写错 (write wrong), 洗干净 (wash clean), 学会 (learn successfully)
+- Negative with 没: 我没听懂。 — I didn't understand.
+- Common results: 完 (finished), 到 (reached, succeeded), 懂 (understood), 好 (done properly), 错 (wrong), 见 (perceived).
+
+## When to use it
+- Saying whether an action succeeded.
+我找到钥匙了！ — I found the keys!
+- Saying what state it left things in.
+衣服洗干净了。 — The clothes are washed clean.
+
+## When it seems to fit but doesn't
+- "Can / can't" manage it: the potential form (看得完 / 看不完).
+
+## Nuance and register
+Everywhere; Chinese separates "looked" (找) from "found" (找到) where English uses two verbs.
+
+## Common mistakes
+- 我找了钥匙 for "I found the keys" (that's "I looked for them"): 找到.
+
+=== zh.potential_complement | can / can't manage it (看得见, 听不懂)
+## What it is
+得 or 不 between a verb and its result says whether it's possible: 看得见 "can see", 听不懂 "can't understand".
+
+## How to make it
+- Verb + 得 + result: 吃得完 — can finish (eating)
+- Verb + 不 + result: 买不到 — can't get hold of (to buy)
+- Question: 你听得懂吗？ / 听得懂听不懂？
+
+## When to use it
+- Whether circumstances allow a result.
+太远了，我看不清楚。 — It's too far, I can't see clearly.
+- Very common negatives: 来不及 (not enough time), 受不了 (can't stand it), 对不起 (sorry).
+
+## When it seems to fit but doesn't
+- Permission ("may"): 可以. Learned skill: 会.
+
+## Nuance and register
+Everyday speech, especially the negative forms.
+
+## Common mistakes
+- 我不能听懂: 我听不懂.
+
+=== zh.comparison_bi | 比 (bǐ): more than
+## What it is
+A 比 B + adjective: "A is more … than B". 今天比昨天冷 "Today is colder than yesterday."
+
+## How to make it
+- A 比 B + adjective: 他比我高。 — He's taller than me.
+- How much more: add after: 他比我高一点 / 高很多 / 高五厘米.
+- Never 很 before the adjective: 他比我很高 is wrong; use 更 or 还 for "even more".
+- Negative: A 没有 B + adjective (see that guide).
+
+## When to use it
+- Comparing two things.
+坐地铁比打车快。 — The subway is faster than a taxi.
+
+## When it seems to fit but doesn't
+- "Not as … as": A 没有 B adjective, rather than 不比 (which means "no more … than").
+
+## Nuance and register
+Neutral.
+
+## Common mistakes
+- 很 after 比 (他比我很高).
+
+=== zh.negation_bu_mei | 不 (bù) and 没 (méi): not
+## What it is
+Chinese has two "not"s. 不 (bù) for the present, the future, habits and choices; 没 (méi) for things that didn't happen and with 有.
+
+## How to make it
+- 不 + verb / adjective: 我不去。 — I'm not going. 不好。 — Not good.
+- 没 + verb (no 了): 我没去。 — I didn't go.
+- "Don't have": always 没有, never 不有.
+- 不 changes tone before a fourth tone: 不是 (bú shì).
+
+## When to use it
+- 不: won't, don't, isn't (habit, will, quality).
+他不喝酒。 — He doesn't drink.
+- 没: didn't, haven't.
+我还没吃饭。 — I haven't eaten yet.
+
+## When it seems to fit but doesn't
+- Past habits use 不 (他以前不抽烟), not 没.
+
+## Nuance and register
+Both are everyday.
+
+## Common mistakes
+- 不有 (it's 没有).
+- 没 with adjectives for the present: 不贵, not 没贵 (unless "didn't get expensive").
+
+=== zh.measure_word | measure words (个, 本, 张…)
+## What it is
+Between a number (or 这 / 那 / 哪) and a noun, Chinese needs a measure word: 一本书 "a book", 三张纸 "three sheets of paper", 这个人 "this person".
+
+## How to make it
+- Number / this / that + measure word + noun: 两杯咖啡 — two cups of coffee
+- 个 (ge) is the general one, and works in a pinch for most things in speech.
+- Common ones: 本 (books), 张 (flat things), 只 (animals), 条 (long things), 件 (clothes, matters), 辆 (vehicles), 位 (people, polite), 杯 (cups).
+
+## When to use it
+- Counting or pointing at things.
+我要一杯水。 — I'd like a glass of water.
+- Measure word alone when the noun is clear.
+我要这个。 — I want this one.
+
+## When it seems to fit but doesn't
+- Two is 两, not 二, before a measure word: 两个人.
+
+## Nuance and register
+Using the specific measure word sounds natural and educated; 个 everywhere sounds casual.
+
+## Common mistakes
+- 一书 / 三人 without a measure word (except set expressions).
+- 二个 for "two": 两个.
+
+=== zh.modal_hui_neng_keyi | 会, 能, 可以: can
+## What it is
+Three words for "can": 会 (huì) learned skill, 能 (néng) able given the situation, 可以 (kěyǐ) allowed. 会 also means "will (probably)".
+
+## How to make it
+- Modal + verb: 我会游泳。 — I can swim. 我今天不能来。 — I can't come today. 这儿可以抽烟吗？ — Can I smoke here?
+
+## When to use it
+- 会: skills you learned, and predictions.
+明天会下雨。 — It'll rain tomorrow.
+- 能: physical ability or circumstances.
+你能帮我吗？ — Can you help me?
+- 可以: permission, and "it's fine to".
+你可以走了。 — You can go now.
+
+## When it seems to fit but doesn't
+- Managing a result ("can't hear"): 听不见, the potential form.
+
+## Nuance and register
+In speech the lines blur (能 and 可以 overlap for requests); 会 for skills stays distinct.
+
+## Common mistakes
+- 我能说中文 for a learned skill: 会 is more natural.
